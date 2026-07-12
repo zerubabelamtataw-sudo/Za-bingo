@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>ZA Bingo V3</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#121212;
+margin:0;
+}
+
+.box{
+background:white;
+margin:10px;
+padding:15px;
+border-radius:15px;
+box-shadow:0 0 8px #aaa;
+}
+
+button{
+padding:12px 18px;
+margin:5px;
+border:0;
+border-radius:10px;
+font-size:18px;
+background:#1976d2;
+color:white;
+}
+#caller{
+font-size:14px;
+font-weight:bold;
+color:#ff5722;
+background:#fff3e0;
+border:2px solid #ff5722;
+border-radius:8px;
+padding:3px;
+margin:3px;
+}
+
+button:active{
+transform:scale(.95);
+}
+
+#lobby,#game{
+display:none;
+}
+
+.cartelaBtn{
+width:32px;
+height:32px;
+padding:0;
+font-size:12px;
+margin:2px;
+background:#555;
+}
+
+.selected{
+background:green!important;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="box" id="home">
+
+<h1>🎱 ZA Bingo V3</h1>
+
+<h3>Welcome Player</h3>
+
+<p>
+Player ID:
+<span id="playerID"></span>
+</p>
+
+
+<h2>
+💰 Balance:
+<span id="balance">0</span> ETB
+</h2>
+
+
+<button onclick="deposit()">
+Deposit
+</button>
+
+
+<button onclick="withdraw()">
+Withdraw
+</button>
+
+
+<button onclick="openLobby()">
+Play Bingo
+</button>
+
+
+<p id="msg"></p>
+
+
+</div>
+
+
+
+
+<div class="box" id="lobby">
+
+<h2>
+🎴 Choose Cartela
+</h2>
+
+
+<div id="cartelas"></div>
+
+
+<p>
+Selected:
+<span id="selected">
+None
+</span>
+</p>
+
+
+<button onclick="joinGame()">
+Join Game
+</button>
+
+
+</div>
+
+
+
+
+<div class="box" id="game">
+
+<h2>
+🎱 Bingo Game
+</h2>
+
+
+<div style="display:flex;justify-content:center;gap:20px;align-items:flex-start;">
+
+<div style="display:flex;justify-content:center;gap:10px;align-items:flex-start;">
+
+<div id="cards"></div>
+
+<div>
+ 
+<h2 id="caller">
+Waiting...
+</h2>
+
+<h3>Called Numbers</h3>
+<div id="calledList"></div>
+</div>
+
+</div>
+
+<div id="calledList">
+</div>
+
+</div>
+
+
+
+
+
+
+<button onclick="toggleAutoMark()" id="autoBtn">
+Auto Mark: OFF
+</button>
+<button onclick="claimBingo()">
+BINGO
+</button>
+
+
+</div>
+
+
+
+<script type="module">
+
+import {initializeApp}
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+
+
+import {
+getDatabase,
+ref,
+set,
+push,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
+
+
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyC39N7doWt-pmfr-obfuqP54TRvb4FB8rc",
+
+authDomain: "za-bingo.firebaseapp.com",
+
+databaseURL: "https://za-bingo-default-rtdb.firebaseio.com",
+
+projectId: "za-bingo",
+
+storageBucket: "za-bingo.firebasestorage.app",
+
+messagingSenderId: "766799040123",
+
+appId: "1:766799040123:web:c6f7e93dd30569df375cde"
+
+};
+
+
+const app=initializeApp(firebaseConfig);
+
+const db=getDatabase(app);
+
+
+
+let playerID=
+localStorage.getItem("playerID");
+
+
+if(!playerID){
+
+playerID=
+"player"+Math.floor(Math.random()*999999);
+
+localStorage.setItem(
+"playerID",
+playerID
+);
+
+}
+
+
+document.getElementById("playerID")
+.innerHTML=playerID;
+
+
+
+let balance=0;
+
+let selectedCartela=[];
+
+
+window.openLobby=function(){
+
+home.style.display="none";
+lobby.style.display="block";
+
+}
+
+
+
+function createCartelas(){
+
+let box=document.getElementById("cartelas");
+
+
+for(let i=1;i<=150;i++){
+
+let b=document.createElement("button");
+
+b.innerHTML=i;
+
+b.className="cartelaBtn";
+
+
+b.onclick=function(){
+
+if(selectedCartela.includes(i)){
+
+selectedCartela=
+selectedCartela.filter(x=>x!=i);
+
+b.classList.remove("selected");
+
+
+}else{
+
+
+if(selectedCartela.length>=2){
+
+alert(
+"Maximum 2 cartelas"
+);
+
+return;
+
+}
+
+
+selectedCartela.push(i);
+
+b.classList.add("selected");
+
+}
+
+
+document.getElementById("selected")
+.innerHTML=
+selectedCartela.join(",");
+
+}
+
+
+box.appendChild(b);
+
+
+}
+
+
+}
+
+
+createCartelas();
+
+
+
+window.deposit=function(){
+
+alert(
+"Deposit system coming in next phase"
+);
+
+}
+
+
+
+window.withdraw=function(){
+
+alert(
+"Withdraw system coming in next phase"
+);
+
+}
+
+function generateCard(){
+
+let card=[];
+
+let ranges=[
+[1,15],
+[16,30],
+[31,45],
+[46,60],
+[61,75]
+];
+
+
+for(let c=0;c<5;c++){
+
+let nums=[];
+
+while(nums.length<5){
+
+let n=Math.floor(
+Math.random()*(ranges[c][1]-ranges[c][0]+1)
+)+ranges[c][0];
+
+
+if(!nums.includes(n)){
+nums.push(n);
+}
+
+}
+
+
+for(let r=0;r<5;r++){
+
+card[r*5+c]=nums[r];
+
+}
+
+}
+
+
+card[12]="*";
+
+return card;
+
+}
+let savedCartelas = JSON.parse(localStorage.getItem("ZA_cartelas"));
+
+if(!savedCartelas){
+
+savedCartelas={};
+
+for(let i=1;i<=150;i++){
+
+savedCartelas[i]=generateCard();
+
+}
+
+localStorage.setItem(
+"ZA_cartelas",
+JSON.stringify(savedCartelas)
+);
+
+}
+
+
+function createPlayerCards(){
+
+let html="";
+
+
+selectedCartela.forEach(id=>{
+
+let card=savedCartelas[id];
+window["playingCard_"+id]=card;
+
+
+html+="<h3>🎴 Cartela "+id+"</h3>";
+
+
+html+="<div style='display:grid;grid-template-columns:repeat(5,30px);gap:2px;justify-content:center;'>";
+
+
+let letters=["B","I","N","G","O"];
+
+for(let i=0;i<30;i++){
+
+if(i<5){
+
+let colors=["blue","red","green","orange","purple"];
+
+html+="<div style='border:2px solid black;padding:2px;font-weight:bold;background:"+colors[i]+";color:white;'>";
+html+=letters[i];
+
+}else{
+
+let value=card[i-5];
+
+html+="<div class='number' onclick='selectNumber(this)' id='num"+id+"_"+value+"' style='border:2px solid black;padding:2px;'>";
+html+=value;
+
+}
+
+html+="</div>";
+
+}
+
+
+
+html+="</div><br>";
+
+});
+
+
+document.getElementById("cards").innerHTML=html;
+
+}
+
+window.joinGame=function(){
+
+if(selectedCartela.length==0){
+
+alert("Choose cartela first");
+return;
+
+}
+
+
+// save player to Firebase
+
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/players/"+playerID),
+{
+
+playerID:playerID,
+
+cartelas:selectedCartela,
+
+ready:true,
+
+joinedAt:Date.now()
+
+});
+
+
+
+lobby.style.display="none";
+
+game.style.display="block";
+
+
+createPlayerCards();
+watchRoom();
+function watchRoom(){
+
+onValue(
+ref(db,"ZA_Bingo_V3/rooms/room1/players"),
+(snapshot)=>{
+
+
+let players=snapshot.val();
+
+if(!players){
+return;
+}
+
+
+let count=Object.keys(players).length;
+
+
+console.log("Players:",count);
+
+
+
+if(count>=1){
+startCountdown();
+}
+
+
+});
+onValue(
+ref(db,"ZA_Bingo_V3/rooms/room1/calledNumbers"),
+(snapshot)=>{
+
+let data=snapshot.val();
+
+if(!data){
+return;
+}
+
+let num=data.number;
+
+
+if(!calledNumbers.includes(num)){
+
+calledNumbers.push(num);
+
+
+document.getElementById("caller").innerHTML =
+"🎱 Called Number: " + num;
+
+
+document.getElementById("calledList").innerHTML +=
+"<span style='display:inline-block;background:#1976d2;color:white;border-radius:8px;padding:5px;margin:3px;font-weight:bold;'>"
++ num +
+"</span>";
+
+}
+
+});
+onValue(
+ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
+(snapshot)=>{
+
+let winner=snapshot.val();
+
+if(winner){
+
+document.getElementById("caller").innerHTML +=
+"<br>🏆 WINNER: "+winner.playerID+
+"<br>🎴 Cartela: "+winner.cartela;
+
+}
+
+});
+
+}
+
+
+
+function startCountdown(){
+
+let seconds=5;
+
+
+let timer=setInterval(()=>{
+
+
+document.getElementById("caller").innerHTML=
+"Game starts in "+seconds;
+
+
+seconds--;
+
+
+if(seconds<0){
+
+clearInterval(timer);
+
+startBingoGame();
+
+}
+
+
+},1000);
+
+
+}
+
+
+
+function startBingoGame(){
+
+document.getElementById("caller").innerHTML=
+"🎱 GAME STARTED";
+startAutoCaller();
+
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/status"),
+{
+
+started:true,
+
+time:Date.now()
+
+}
+
+);
+
+
+}
+
+};
+
+let calledNumbers = [];
+let callerTimer;
+let autoMark = false;
+let gameFinished = false;
+
+function startAutoCaller(){
+
+callerTimer = setInterval(()=>{
+
+if(calledNumbers.length >= 75){
+clearInterval(callerTimer);
+return;
+}
+
+let num;
+
+do{
+num = Math.floor(Math.random()*75)+1;
+}
+while(calledNumbers.includes(num));
+
+calledNumbers.push(num);
+
+
+// send number to Firebase
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/calledNumbers"),
+{
+number:num,
+time:Date.now()
+}
+);
+
+
+if(autoMark){
+markNumber(num);
+}
+
+document.getElementById("caller").innerHTML =
+"🎱 Called Number: " + num;
+document.getElementById("calledList").innerHTML +=
+"<span style='display:inline-block;background:#1976d2;color:white;border-radius:8px;padding:5px;margin:3px;font-weight:bold;'>"
++ num +
+"</span>";
+"<br>" + num;
+
+},3000);
+
+}
+function markNumber(num){
+
+selectedCartela.forEach(id=>{
+
+let cell=document.getElementById("num"+id+"_"+num);
+
+if(cell){
+
+cell.style.background="green";
+cell.style.color="white";
+cell.classList.add("marked");
+
+}
+
+});
+checkAutoWin();
+}
+function checkAutoWin(){
+
+let winCartela = checkWin();
+
+if(winCartela){
+  set(
+ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
+{
+playerID:playerID,
+cartela:winCartela,
+time:Date.now()
+}
+);
+
+document.getElementById("caller").innerHTML +=
+"<br>🏆 BINGO WINNER! Cartela "+winCartela;
+
+
+alert("🎉 BINGO! Cartela "+winCartela+" WON!");
+
+
+clearInterval(callerTimer);
+
+}
+
+}
+window.selectNumber=function(cell){
+
+let idParts = cell.id.split("_");
+let number = idParts[1];
+
+selectedCartela.forEach(id=>{
+
+let sameNumber = document.getElementById("num"+id+"_"+number);
+
+if(sameNumber){
+
+sameNumber.style.background="green";
+sameNumber.style.color="white";
+sameNumber.classList.add("marked");
+
+}
+
+});
+
+checkAutoWin();
+
+}
+window.toggleAutoMark=function(){
+
+autoMark = !autoMark;
+
+document.getElementById("autoBtn").innerHTML =
+autoMark ? "Auto Mark: ON" : "Auto Mark: OFF";
+
+}
+
+function checkWin(){
+
+for(let id of selectedCartela){
+
+let card = window["playingCard_"+id];
+
+if(!card) continue;
+
+
+// check rows
+for(let r=0;r<5;r++){
+
+let winNumbers=[];
+let win=true;
+
+for(let c=0;c<5;c++){
+
+let index=r*5+c;
+let value=card[index];
+
+if(value!="*" && !calledNumbers.includes(value)){
+win=false;
+}
+
+winNumbers.push(value);
+
+}
+
+if(win){
+
+return {
+cartela:id,
+numbers:winNumbers
+};
+
+}
+
+}
+
+
+// check columns
+for(let c=0;c<5;c++){
+
+let winNumbers=[];
+let win=true;
+
+for(let r=0;r<5;r++){
+
+let index=r*5+c;
+let value=card[index];
+
+if(value!="*" && !calledNumbers.includes(value)){
+win=false;
+}
+
+winNumbers.push(value);
+
+}
+
+if(win){
+
+return {
+cartela:id,
+numbers:winNumbers
+};
+
+}
+
+}
+
+
+// diagonals
+
+let diag1=[];
+let diag2=[];
+
+let win1=true;
+let win2=true;
+
+
+for(let i=0;i<5;i++){
+
+let v1=card[i*5+i];
+let v2=card[i*5+(4-i)];
+
+diag1.push(v1);
+diag2.push(v2);
+
+
+if(v1!="*" && !calledNumbers.includes(v1)){
+win1=false;
+}
+
+
+if(v2!="*" && !calledNumbers.includes(v2)){
+win2=false;
+}
+
+}
+
+
+if(win1){
+
+return {
+cartela:id,
+numbers:diag1
+};
+
+}
+
+
+if(win2){
+
+return {
+cartela:id,
+numbers:diag2
+};
+
+}
+
+
+}
+
+return false;
+
+}
+function backToLobby(){
+
+document.getElementById("game").style.display="none";
+
+document.getElementById("lobby").style.display="block";
+
+selectedCartela=[];
+
+document.getElementById("selected").innerHTML="None";
+
+document.getElementById("cards").innerHTML="";
+
+}
+window.claimBingo=function(){
+
+let result = checkWin();
+let winnerName = playerID;
+
+if(result){
+if(gameFinished){
+return;
+}
+
+gameFinished=true; 
+
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
+{
+playerID:winnerName,
+cartela:result.cartela,
+numbers:result.numbers,
+time:Date.now()
+}
+);
+
+document.getElementById("caller").innerHTML +=
+"<br>🏆 WINNER: "+winnerName+
+"<br>🎴 Cartela: "+result.cartela;
+
+alert(
+"🎉 BINGO WINNER!\n"+
+winnerName+
+"\nCartela: "+
+result.cartela+
+"\nNumbers: "+
+result.numbers.join(", ")
+);
+
+
+
+clearInterval(callerTimer);
+
+
+}else{
+
+alert("❌ Not Bingo yet");
+
+}
+
+}
+
+
+
+</script>
+
+
+</body>
+</html>

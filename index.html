@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>  
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -32,16 +33,35 @@ font-size:18px;
 background:#1976d2;
 color:white;
 }
+
 #caller{
-font-size:14px;
+font-size:8px;
 font-weight:bold;
-color:#ff5722;
-background:#fff3e0;
-border:2px solid #ff5722;
-border-radius:8px;
-padding:3px;
-margin:3px;
+color:#1976d2;
+background:#e3f2fd;
+border:1px solid #1976d2;
+border-radius:5px;
+padding:2px;
+margin:2px;
+min-width:30px;
 }
+
+@keyframes callerPulse{
+
+0%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.12);
+}
+
+100%{
+transform:scale(1);
+}
+
+}
+
 
 button:active{
 transform:scale(.95);
@@ -64,6 +84,43 @@ background:#555;
 background:green!important;
 }
 
+#playerCount{
+font-size:22px;
+font-weight:bold;
+color:#1976d2;
+animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+0%{
+transform:scale(1);
+}
+50%{
+transform:scale(1.08);
+}
+100%{
+transform:scale(1);
+}
+}
+
+.waiting{
+animation:waitingPulse 0s infinite;
+}
+
+@keyframes waitingPulse{
+0%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.08);
+}
+
+100%{
+transform:scale(1);
+}
+}
+
 </style>
 
 </head>
@@ -77,11 +134,10 @@ background:green!important;
 <h1>🎱 ZA Bingo V3</h1>
 
 <h3>Welcome Player</h3>
+<input id="playerName" placeholder="Enter your name">
 
-<p>
-Player ID:
-<span id="playerID"></span>
-</p>
+<br><br>
+
 
 
 <h2>
@@ -142,10 +198,9 @@ Join Game
 
 
 <div class="box" id="game">
-
-<h2>
-🎱 Bingo Game
-</h2>
+<h3 id="playerCount">
+👥 Players: 0/100
+</h3>
 
 
 <div style="display:flex;justify-content:center;gap:20px;align-items:flex-start;">
@@ -156,7 +211,7 @@ Join Game
 
 <div>
  
-<h2 id="caller">
+<h2 id="caller" class="waiting">
 Waiting...
 </h2>
 
@@ -164,9 +219,6 @@ Waiting...
 <div id="calledList"></div>
 </div>
 
-</div>
-
-<div id="calledList">
 </div>
 
 </div>
@@ -182,6 +234,7 @@ Auto Mark: OFF
 <button onclick="claimBingo()">
 BINGO
 </button>
+
 
 
 </div>
@@ -227,8 +280,10 @@ appId: "1:766799040123:web:c6f7e93dd30569df375cde"
 const app=initializeApp(firebaseConfig);
 
 const db=getDatabase(app);
+const takenRef = ref(db,"ZA_Bingo_V3/rooms/room1/takenCartelas");
 
-
+let playerName =
+localStorage.getItem("playerName") || "";
 
 let playerID=
 localStorage.getItem("playerID");
@@ -247,15 +302,19 @@ playerID
 }
 
 
-document.getElementById("playerID")
-.innerHTML=playerID;
-
 
 
 let balance=0;
 
 let selectedCartela=[];
 
+let takenCartelas = [];
+
+let calledNumbers = [];
+let callerTimer;
+let autoMark = false;
+let gameFinished = false;
+let gameStarted = false;
 
 window.openLobby=function(){
 
@@ -279,9 +338,21 @@ b.innerHTML=i;
 
 b.className="cartelaBtn";
 
+if(takenCartelas.includes(i)){
+    b.style.background="#999";
+    b.disabled=true;
+}
+
 
 b.onclick=function(){
+  
+if(takenCartelas.includes(i) && !selectedCartela.includes(i)){
 
+alert("❌ Cartela already taken");
+
+return;
+
+}
 if(selectedCartela.includes(i)){
 
 selectedCartela=
@@ -326,7 +397,23 @@ box.appendChild(b);
 
 }
 
+onValue(
+ref(db,"ZA_Bingo_V3/rooms/room1/takenCartelas"),
+(snapshot)=>{
 
+let data=snapshot.val();
+
+if(data){
+    takenCartelas = Object.keys(data).map(Number);
+}else{
+    takenCartelas = [];
+}
+
+document.getElementById("cartelas").innerHTML="";
+
+createCartelas();
+
+});
 createCartelas();
 
 
@@ -467,6 +554,20 @@ document.getElementById("cards").innerHTML=html;
 }
 
 window.joinGame=function(){
+  
+ let nameInput = document.getElementById("playerName").value.trim();
+
+if(nameInput==""){
+alert("Enter your name first");
+return;
+}
+
+playerName = nameInput;
+
+localStorage.setItem(
+"playerName",
+playerName
+); 
 
 if(selectedCartela.length==0){
 
@@ -474,15 +575,30 @@ alert("Choose cartela first");
 return;
 
 }
-
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
+null
+);
 
 // save player to Firebase
+
+selectedCartela.forEach(id=>{
+
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1/takenCartelas/"+id),
+{
+playerID:playerID
+}
+);
+
+});
 
 set(
 ref(db,"ZA_Bingo_V3/rooms/room1/players/"+playerID),
 {
-
 playerID:playerID,
+
+name:playerName,
 
 cartelas:selectedCartela,
 
@@ -491,7 +607,6 @@ ready:true,
 joinedAt:Date.now()
 
 });
-
 
 
 lobby.style.display="none";
@@ -522,8 +637,9 @@ console.log("Players:",count);
 
 
 
-if(count>=1){
-startCountdown();
+if(count>=2 && !gameStarted){
+    gameStarted = true;
+    startCountdown();
 }
 
 
@@ -547,7 +663,9 @@ calledNumbers.push(num);
 
 
 document.getElementById("caller").innerHTML =
-"🎱 Called Number: " + num;
+"<span style='font-size:9px;'>"
++ getBingoLetter(num) + "-" + num +
+"</span>";
 
 
 document.getElementById("calledList").innerHTML +=
@@ -558,19 +676,25 @@ document.getElementById("calledList").innerHTML +=
 }
 
 });
+
 onValue(
 ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
 (snapshot)=>{
 
 let winner=snapshot.val();
 
-if(winner){
-
-document.getElementById("caller").innerHTML +=
-"<br>🏆 WINNER: "+winner.playerID+
-"<br>🎴 Cartela: "+winner.cartela;
-
+if(!winner){
+    document.getElementById("winnerPopup").style.display="none";
+    return;
 }
+
+document.getElementById("winnerName").innerHTML =
+"🏆 " + winner.name;
+
+document.getElementById("winnerCartela").innerHTML =
+"🎴 Cartela: " + winner.cartela;
+
+document.getElementById("winnerPopup").style.display="flex";
 
 });
 
@@ -580,30 +704,7 @@ document.getElementById("caller").innerHTML +=
 
 function startCountdown(){
 
-let seconds=5;
-
-
-let timer=setInterval(()=>{
-
-
-document.getElementById("caller").innerHTML=
-"Game starts in "+seconds;
-
-
-seconds--;
-
-
-if(seconds<0){
-
-clearInterval(timer);
-
 startBingoGame();
-
-}
-
-
-},1000);
-
 
 }
 
@@ -611,8 +712,14 @@ startBingoGame();
 
 function startBingoGame(){
 
-document.getElementById("caller").innerHTML=
-"🎱 GAME STARTED";
+let caller = document.getElementById("caller");
+
+caller.classList.remove("waiting");
+
+caller.innerHTML=
+"Starting...";
+
+document.getElementById("caller").classList.remove("waiting");
 startAutoCaller();
 
 set(
@@ -632,10 +739,29 @@ time:Date.now()
 
 };
 
-let calledNumbers = [];
-let callerTimer;
-let autoMark = false;
-let gameFinished = false;
+
+
+function getBingoLetter(num){
+
+if(num <= 15){
+return "B";
+}
+
+if(num <= 30){
+return "I";
+}
+
+if(num <= 45){
+return "N";
+}
+
+if(num <= 60){
+return "G";
+}
+
+return "O";
+
+}
 
 function startAutoCaller(){
 
@@ -671,7 +797,7 @@ markNumber(num);
 }
 
 document.getElementById("caller").innerHTML =
-"🎱 Called Number: " + num;
+getBingoLetter(num) + "-" + num;
 document.getElementById("calledList").innerHTML +=
 "<span style='display:inline-block;background:#1976d2;color:white;border-radius:8px;padding:5px;margin:3px;font-weight:bold;'>"
 + num +
@@ -720,7 +846,11 @@ alert("🎉 BINGO! Cartela "+winCartela+" WON!");
 
 
 clearInterval(callerTimer);
+setTimeout(()=>{
 
+resetGame();
+
+},8000);
 }
 
 }
@@ -735,9 +865,19 @@ let sameNumber = document.getElementById("num"+id+"_"+number);
 
 if(sameNumber){
 
+if(sameNumber.classList.contains("marked")){
+
+sameNumber.style.background="";
+sameNumber.style.color="black";
+sameNumber.classList.remove("marked");
+
+}else{
+
 sameNumber.style.background="green";
 sameNumber.style.color="white";
 sameNumber.classList.add("marked");
+
+}
 
 }
 
@@ -910,6 +1050,7 @@ set(
 ref(db,"ZA_Bingo_V3/rooms/room1/winner"),
 {
 playerID:winnerName,
+name:playerName,
 cartela:result.cartela,
 numbers:result.numbers,
 time:Date.now()
@@ -942,10 +1083,62 @@ alert("❌ Not Bingo yet");
 
 }
 
+window.resetGame=function(){
 
+set(
+ref(db,"ZA_Bingo_V3/rooms/room1"),
+{
+players:{},
+takenCartelas:{},
+calledNumbers:{},
+winner:null,
+status:{
+started:false
+}
+}
+);
+
+selectedCartela=[];
+
+alert("🔄 New Game Started");
+
+location.reload();
+
+}
 
 </script>
 
+<div id="winnerPopup" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.85);
+z-index:9999;
+justify-content:center;
+align-items:center;
+text-align:center;
+">
+
+<div style="
+background:white;
+padding:30px;
+border-radius:20px;
+width:80%;
+max-width:400px;
+">
+
+<h1 style="color:gold;">🏆 WINNER! 🏆</h1>
+
+<h2 id="winnerName"></h2>
+
+<h3 id="winnerCartela"></h3>
+
+</div>
+
+</div>
 
 </body>
 </html>

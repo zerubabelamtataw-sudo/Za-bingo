@@ -1191,7 +1191,7 @@ alert(playerID);
 if(window.Telegram && Telegram.WebApp){
 
     Telegram.WebApp.ready();
-
+alert(JSON.stringify(Telegram.WebApp.initDataUnsafe));
     let tgUser = Telegram.WebApp.initDataUnsafe.user;
 
 

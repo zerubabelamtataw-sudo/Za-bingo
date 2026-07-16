@@ -375,13 +375,11 @@ font-size:16px;
 ZA BINGO V3
 </div>
 
-<button onclick="shareContact()">
-📱 SHARE CONTACT
-</button>
 
 <p id="contactStatus"></p>
 
-<button onclick="openGameRoom()">
+
+<button id="gameRoomBtn" onclick="openGameRoom()">
 🎮 GAME ROOM
 </button>
 
@@ -709,7 +707,6 @@ firebase.initializeApp(firebaseConfig);
 
 db = firebase.database();  
 watchRoomButtons();
-
 let selectedCartelas = [];
 
 let currentStake = 0;
@@ -1143,9 +1140,34 @@ gameBanned = false;
 
 
 
-if(db){
+let playerID = localStorage.getItem("playerID");
 
-let playerID = "player_" + Date.now();
+
+if(window.Telegram && Telegram.WebApp){
+
+Telegram.WebApp.ready();
+
+let tgUser = Telegram.WebApp.initDataUnsafe.user;
+
+
+if(tgUser){
+
+playerID = "tg_" + tgUser.id;
+
+localStorage.setItem("playerID", playerID);
+
+}
+
+}
+
+
+if(!playerID){
+
+playerID = "player_" + Date.now();
+
+localStorage.setItem("playerID", playerID);
+
+}
 
 // Save player account
 
@@ -1176,7 +1198,6 @@ db.ref("ZA_Bingo_V3/rooms/room" + stake + "/takenCartelas/" + card)
 
 });
 
-}
 
 if(selectedCartelas.length==0){
 
@@ -1190,34 +1211,7 @@ return;
 
 currentStake = stake;
 
-let playerID = localStorage.getItem("playerID");
-alert(playerID);
 
-if(window.Telegram && Telegram.WebApp){
-
-    Telegram.WebApp.ready();
-alert(JSON.stringify(Telegram.WebApp.initDataUnsafe));
-    let tgUser = Telegram.WebApp.initDataUnsafe.user;
-
-
-    if(tgUser){
-
-        playerID = "tg_" + tgUser.id;
-
-        localStorage.setItem("playerID", playerID);
-
-    }
-
-}
-
-
-if(!playerID){
-
-    playerID = "player_" + Date.now();
-
-    localStorage.setItem("playerID", playerID);
-
-}
 
 showScreen("waitingScreen");
 

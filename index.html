@@ -1142,6 +1142,19 @@ if(db){
 
 let playerID = "player_" + Date.now();
 
+// Save player account
+
+db.ref("ZA_Bingo_V3/users/" + playerID).update({
+
+telegramID: playerID,
+
+lastSeen: Date.now(),
+
+balance: 0,
+
+phone: ""
+
+});
 
 db.ref("ZA_Bingo_V3/rooms/room" + stake + "/players/" + playerID).set({
 
@@ -1173,16 +1186,33 @@ return;
 currentStake = stake;
 
 let playerID = localStorage.getItem("playerID");
+alert(playerID);
 
-if(!playerID){
+if(window.Telegram && Telegram.WebApp){
 
-playerID = "player_" + Date.now();
+    Telegram.WebApp.ready();
 
-localStorage.setItem("playerID", playerID);
+    let tgUser = Telegram.WebApp.initDataUnsafe.user;
+
+
+    if(tgUser){
+
+        playerID = "tg_" + tgUser.id;
+
+        localStorage.setItem("playerID", playerID);
+
+    }
 
 }
 
-localStorage.setItem("playerID", playerID);
+
+if(!playerID){
+
+    playerID = "player_" + Date.now();
+
+    localStorage.setItem("playerID", playerID);
+
+}
 
 showScreen("waitingScreen");
 

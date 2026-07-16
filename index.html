@@ -289,6 +289,73 @@ border-radius:20px;
 
 }
 
+.waitingCard{
+
+background:rgba(20,20,20,0.95);
+
+border:1px solid #b8860b;
+
+border-radius:15px;
+
+padding:10px;
+
+margin-top:20px;
+
+box-shadow:0 0 12px #b8860b;
+
+}
+
+
+#countdownCircle{
+
+width:55px;
+
+height:55px;
+
+border-radius:50%;
+
+margin:10px auto;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+background:#111;
+
+border:2px solid #ffd700;
+
+box-shadow:0 0 10px #ffd700;
+
+}
+
+
+#countdown{
+
+font-size:25px;
+
+color:#ffd700;
+
+font-weight:bold;
+
+}
+
+
+.cancelBtn{
+
+background:#8b0000;
+
+color:white;
+
+border:1px solid red;
+
+padding:8px;
+
+font-size:16px;
+
+}
+
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -327,19 +394,19 @@ GAME ROOM
 </div>
 
 
-<button onclick="openRoom('room5')">
+<button id="room5Btn" onclick="openRoom('room5')">
 ባለ 5<br>
 Stake 5 Br
 </button>
 
 
-<button onclick="openRoom('room10')">
+<button id="room10Btn" onclick="openRoom('room10')">
 ባለ 10<br>
 Stake 10 Br
 </button>
 
 
-<button onclick="openRoom('room20')">
+<button id="room20Btn" onclick="openRoom('room20')">
 ባለ 20<br>
 Stake 20 Br
 </button>
@@ -479,17 +546,24 @@ START GAME
 
 <div id="waitingScreen" class="screen">
 
+<div class="waitingCard">
 
-
+<h1>
+🎮 ZA BINGO
+</h1>
 
 <h2>
-GAME STARTING
+GET READY
 </h2>
 
 
-<h1 id="countdown">
+<div id="countdownCircle">
+
+<span id="countdown">
 25
-</h1>
+</span>
+
+</div>
 
 
 <h3>
@@ -509,6 +583,12 @@ Br
 </h2>
 
 
+<button id="cancelBtn" onclick="cancelCountdown()" class="cancelBtn">
+❌ CHANGE CARTELA
+</button>
+
+
+</div>
 
 </div>
 
@@ -622,6 +702,7 @@ var db;
 firebase.initializeApp(firebaseConfig);
 
 db = firebase.database();  
+watchRoomButtons();
 
 let selectedCartelas = [];
 
@@ -723,7 +804,72 @@ fixedCartelas[c]=card;
 
 generateFixedCartelas();
 
+function watchRoomButtons(){
 
+let rooms = [
+{room:"room5", btn:"room5Btn", name:"ባለ 5"},
+{room:"room10", btn:"room10Btn", name:"ባለ 10"},
+{room:"room20", btn:"room20Btn", name:"ባለ 20"}
+];
+
+
+rooms.forEach(function(item){
+
+
+db.ref("ZA_Bingo_V3/rooms/"+item.room).on("value",function(snapshot){
+
+
+let data = snapshot.val();
+
+let button = document.getElementById(item.btn);
+
+
+if(!button || !data){
+return;
+}
+
+
+
+if(data.status=="countdown"){
+
+button.innerHTML =
+"⏳ "+item.name+
+"<br>Starts in: "+
+(data.countdown || 0)+"s";
+
+
+}
+
+
+else if(data.status=="playing"){
+
+
+button.innerHTML =
+"🔒 "+item.name+
+"<br>GAME RUNNING";
+
+
+}
+
+
+else{
+
+
+button.innerHTML =
+item.name+
+"<br>Stake "+item.room.replace("room","")+" Br";
+
+
+}
+
+
+});
+
+
+});
+
+
+}
 
 
 // Screen control
@@ -741,7 +887,11 @@ document.getElementById(id).classList.add("active");
 
 }
 
+function showRoomMessage(){
 
+showScreen("roomMessage");
+
+}
 
 
 function openGameRoom(){
@@ -773,6 +923,19 @@ showScreen("gameRoom");
 // Open room and show 150 cartelas
 
 function openRoom(room){
+
+db.ref("ZA_Bingo_V3/rooms/"+room+"/status").once("value",function(snapshot){
+
+let status = snapshot.val();
+
+
+if(status=="playing"){
+
+showRoomMessage();
+return;
+
+}
+
 
 showScreen(room);
 
@@ -829,6 +992,21 @@ createCartelas("cartela20");
 if(db){
 
 db.ref("ZA_Bingo_V3/rooms/"+room+"/countdown").on("value",function(snapshot){
+  
+  db.ref("ZA_Bingo_V3/rooms/"+room+"/status").on("value",function(snapshot){
+
+let status = snapshot.val();
+
+
+if(status=="playing"){
+
+lockCartelas();
+
+document.getElementById("cancelBtn").style.display="none";
+
+}
+
+});
 
 let time = snapshot.val();
 
@@ -842,6 +1020,7 @@ document.getElementById("countdown").innerHTML = time;
 
 }
 
+});
 }
 
 
@@ -934,17 +1113,7 @@ box.appendChild(btn);
 }
 
 
-function lockCartelas(){
 
-let buttons = document.querySelectorAll(".cartelaGrid button");
-
-buttons.forEach(function(btn){
-
-btn.disabled = true;
-
-});
-
-}
 
 
 
@@ -1028,27 +1197,23 @@ if(count >= 2){
 db.ref("ZA_Bingo_V3/rooms/room"+stake+"/status")
 .once("value",function(statusSnap){
 
-
 if(statusSnap.val()=="countdown" || statusSnap.val()=="playing"){
-
 return;
-
 }
 
 
-db.ref("ZA_Bingo_V3/rooms/room"+stake+"/status")
-.set("countdown");
+db.ref("ZA_Bingo_V3/rooms/room"+stake).update({
+
+status:"countdown",
+countdown:25
+
+});
 
 
 let time = 25;
 
 
-db.ref("ZA_Bingo_V3/rooms/room"+stake+"/countdown")
-.set(time);
-
-
 let timer=setInterval(function(){
-
 
 time--;
 
@@ -1057,23 +1222,22 @@ db.ref("ZA_Bingo_V3/rooms/room"+stake+"/countdown")
 .set(time);
 
 
-
 if(time <= 0){
 
 clearInterval(timer);
 
-lockCartelas();
-
-// LOCK ROOM HERE
 
 db.ref("ZA_Bingo_V3/rooms/room"+stake).update({
 
 status:"playing",
-
-locked:true
+locked:true,
+countdown:0
 
 });
 
+document.getElementById("cancelBtn").style.display="none";
+
+lockCartelas();
 
 openGameScreen();
 
@@ -1083,10 +1247,7 @@ openGameScreen();
 },1000);
 
 
-
 });
-
-
 }
 
 else{
@@ -1097,18 +1258,7 @@ document.getElementById("countdown").innerHTML = "Waiting for player...";
 
 });
 
-let players = 100;
 
-
-let total = stake * players;
-
-
-let prize = total - (total * 0.15);
-
-
-
-document.getElementById("playerCount").innerHTML =
-players+"/150";
 
 if(db){
 
@@ -1116,18 +1266,51 @@ db.ref("ZA_Bingo_V3/rooms/room"+stake+"/players").on("value",function(snapshot){
 
 let count = snapshot.numChildren();
 
+let totalCartelas = 0;
+
+
+snapshot.forEach(function(player){
+
+let data = player.val();
+
+
+if(data.cartelas){
+
+totalCartelas += data.cartelas.length;
+
+}
+
+});
+
+
+let totalMoney = totalCartelas * stake;
+
+
+let prize = totalMoney - (totalMoney * 0.15);
+
+
+
 document.getElementById("playerCount").innerHTML =
 count+"/150";
 
+
 document.getElementById("gamePlayers").innerHTML =
 count+"/150";
+
+
+document.getElementById("prize").innerHTML =
+prize.toFixed(2);
+
+
+document.getElementById("gamePrize").innerHTML =
+prize.toFixed(2);
+
 
 });
 
 }
 
-document.getElementById("prize").innerHTML =
-prize;
+
 
 if(db){
 
@@ -1145,7 +1328,55 @@ db.ref("ZA_Bingo_V3/rooms/room"+stake+"/countdown").set(25);
 
 }
 
+function cancelCountdown(){
 
+if(currentStake==0){
+return;
+}
+
+
+db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/players")
+.once("value",function(snapshot){
+
+
+let players = snapshot.val();
+
+
+for(let id in players){
+
+if(players[id].cartelas.join(",")==selectedCartelas.join(",")){
+
+
+db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/players/"+id)
+.remove();
+
+
+}
+
+}
+
+
+});
+
+
+selectedCartelas.forEach(function(card){
+
+db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/takenCartelas/"+card)
+.remove();
+
+});
+
+
+selectedCartelas=[];
+
+
+showScreen("room"+currentStake);
+
+
+createCartelas("cartela"+currentStake);
+
+
+}
 
 
 
@@ -1659,7 +1890,8 @@ db.ref("ZA_Bingo_V3/rooms/room"+stake).update({
 
 status:"waiting",
 countdown:25,
-lastCall:""
+lastCall:"",
+locked:false
 
 });
 
@@ -1716,6 +1948,18 @@ showScreen("screen1");
 <h2>
 You are banned from this game
 </h2>
+
+</div>
+
+<div id="roomMessage" class="screen" style="background:#111;color:#ffd700;padding:40px;border-radius:20px;">
+
+<h2>
+🔒 ጨዋታው ተጀምሯል
+</h2>
+
+<button onclick="backHome()">
+OK
+</button>
 
 </div>
 

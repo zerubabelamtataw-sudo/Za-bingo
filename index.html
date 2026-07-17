@@ -1685,18 +1685,25 @@ let playerID = localStorage.getItem("playerID");
 
 if(window.Telegram && Telegram.WebApp){
 
-Telegram.WebApp.ready();
+    Telegram.WebApp.ready();
 
-let tgUser = Telegram.WebApp.initDataUnsafe.user;
+    let tgUser = Telegram.WebApp.initDataUnsafe.user;
 
+    if(tgUser){
 
-if(tgUser){
+        db.ref("telegram_lookup/" + tgUser.id).once("value", function(snapshot){
 
-playerID = "tg_" + tgUser.id;
+            if(snapshot.exists()){
 
-localStorage.setItem("playerID", playerID);
+                playerID = snapshot.val().phone;
 
-}
+                localStorage.setItem("playerID", playerID);
+
+            }
+
+        });
+
+    }
 
 }
 
@@ -1711,15 +1718,9 @@ localStorage.setItem("playerID", playerID);
 
 // Save player account
 
-db.ref("ZA_Bingo_V3/users/" + playerID).update({
+db.ref("players/" + playerID).update({
 
-telegramID: playerID,
-
-lastSeen: Date.now(),
-
-
-
-phone: ""
+lastSeen: Date.now()
 
 });
 

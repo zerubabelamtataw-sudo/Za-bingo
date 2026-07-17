@@ -1238,21 +1238,51 @@ item.name+
 
 function loadWalletBalance(){
 
-let playerID = localStorage.getItem("playerID");
+if(window.Telegram && Telegram.WebApp){
+
+Telegram.WebApp.ready();
+
+let tgUser = Telegram.WebApp.initDataUnsafe.user;
 
 
-if(!playerID){
+if(tgUser){
+
+
+let telegramID = tgUser.id;
+
+
+// Find phone using telegram_lookup
+
+db.ref("telegram_lookup/" + telegramID).once("value",function(snapshot){
+
+
+let data = snapshot.val();
+
+
+if(!data){
+
+alert("Account not found. Please register with the bot first.");
 
 return;
 
 }
 
 
-db.ref("ZA_Bingo_V3/users/" + playerID + "/balance")
-.on("value",function(snapshot){
+let phone = data.phone;
 
 
-let balance = snapshot.val();
+// Save player ID for game use
+
+localStorage.setItem("playerID", phone);
+
+
+// Load balance
+
+db.ref("players/" + phone + "/balance")
+.on("value",function(balanceSnap){
+
+
+let balance = balanceSnap.val();
 
 
 if(balance == null){
@@ -1263,11 +1293,18 @@ balance = 0;
 
 
 document.getElementById("balance").innerHTML =
-balance.toFixed(2);
+Number(balance).toFixed(2);
 
 
 });
 
+
+});
+
+
+}
+
+}
 
 }
 

@@ -1,1 +1,188 @@
 
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>ZA Bingo Admin</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<style>
+
+body{
+background:#111;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+
+h1{
+color:#ffd700;
+}
+
+
+.card{
+
+background:#222;
+border:2px solid #b8860b;
+border-radius:15px;
+padding:15px;
+margin:15px;
+
+}
+
+
+button{
+
+padding:12px;
+margin:5px;
+
+background:#006400;
+color:white;
+
+border:none;
+border-radius:10px;
+
+font-weight:bold;
+
+}
+
+
+.reject{
+
+background:#8b0000;
+
+}
+
+
+</style>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+
+</head>
+
+
+<body>
+
+
+<h1>🎮 ZA Bingo Admin</h1>
+
+
+<h2>💳 Pending Deposits</h2>
+
+<div id="depositList"></div>
+
+
+
+<script>
+
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "za-bingo.firebaseapp.com",
+  databaseURL: "https://za-bingo-default-rtdb.firebaseio.com",
+  projectId: "za-bingo",
+  storageBucket: "za-bingo.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+
+firebase.initializeApp(firebaseConfig);
+
+let db=firebase.database();
+
+
+
+loadDeposits();
+
+
+
+function loadDeposits(){
+
+
+db.ref("ZA_Bingo_V3/deposits")
+.on("value",function(snapshot){
+
+
+let box=document.getElementById("depositList");
+
+box.innerHTML="";
+
+
+snapshot.forEach(function(child){
+
+
+let dep=child.val();
+
+let id=child.key;
+
+
+
+if(dep.status=="pending"){
+
+
+box.innerHTML += `
+
+<div class="card">
+
+<h3>Deposit</h3>
+
+<p>Player: ${dep.playerID}</p>
+
+<p>Amount: ${dep.amount} Br</p>
+
+<p>Method: ${dep.method}</p>
+
+
+<button onclick="approve('${id}')">
+APPROVE
+</button>
+
+
+<button class="reject">
+REJECT
+</button>
+
+
+</div>
+
+`;
+
+}
+
+
+});
+
+
+});
+
+
+}
+
+
+
+function approve(id){
+
+
+alert("Approving "+id);
+
+
+// next step: add balance function here
+
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>

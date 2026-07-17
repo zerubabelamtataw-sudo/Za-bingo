@@ -1416,7 +1416,7 @@ status:"approved"
 
 // Add balance
 
-db.ref("ZA_Bingo_V3/users/" + playerID + "/balance")
+db.ref("players/" + playerID + "/balance")
 .transaction(function(balance){
 
 return (balance || 0) + amount;
@@ -1724,13 +1724,77 @@ lastSeen: Date.now()
 
 });
 
+// CHECK BALANCE BEFORE JOINING
+
+db.ref("players/" + playerID + "/balance").once("value", function(balanceSnap){
+
+let balance = balanceSnap.val() || 0;
+
+
+if(balance < stake){
+
+alert("Insufficient balance");
+
+return;
+
+}
+
+
+// Deduct stake safely
+
+db.ref("players/" + playerID + "/balance").transaction(function(balance){
+
+    if(balance === null){
+        return 0;
+    }
+
+    if(balance < stake){
+        return;
+    }
+
+    return balance - stake;
+
+}, function(error, committed){
+
+    if(error){
+        alert("Balance error");
+        return;
+    }
+
+    if(!committed){
+        alert("Insufficient balance");
+        return;
+    }
+
+
+    // Continue joining room
+
+    db.ref("ZA_Bingo_V3/rooms/room" + stake + "/players/" + playerID).set({
+
+        cartelas: selectedCartelas,
+
+        status:"playing"
+
+    });
+
+
+});
+
 db.ref("ZA_Bingo_V3/rooms/room" + stake + "/players/" + playerID).set({
 
 cartelas: selectedCartelas,
 
-status: "playing"
+status:"playing"
 
 });
+
+
+
+
+
+});
+
+
 
 selectedCartelas.forEach(function(card){
 

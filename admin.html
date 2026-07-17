@@ -170,12 +170,44 @@ REJECT
 
 function approve(id){
 
+db.ref("ZA_Bingo_V3/deposits/" + id).once("value", function(snapshot){
 
-alert("Approving "+id);
+let dep = snapshot.val();
 
 
-// next step: add balance function here
+if(!dep){
+alert("Deposit not found");
+return;
+}
 
+
+let playerID = dep.playerID;
+let amount = Number(dep.amount);
+
+
+// change deposit status
+
+db.ref("ZA_Bingo_V3/deposits/" + id).update({
+
+status:"approved"
+
+});
+
+
+// add money to player balance
+
+db.ref("players/" + playerID + "/balance")
+.transaction(function(balance){
+
+return (balance || 0) + amount;
+
+});
+
+
+alert("Deposit Approved: " + amount + " Br");
+
+
+});
 
 }
 

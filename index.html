@@ -12,17 +12,23 @@
 <style>
 
 body{
-margin:0;
-background:
-linear-gradient(rgba(0,0,0,0.75),rgba(0,0,0,0.9)),
-url("YOUR_IMAGE_LINK_HERE");
+    margin:0;
 
-background-size:cover;
-background-position:center;
+    background:
+    linear-gradient(
+        rgba(0,0,0,0.45),
+        rgba(0,0,0,0.55)
+    ),
+    url("images/background.jpg");
 
-color:white;
-font-family:Arial;
-text-align:center;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    min-height:100vh;
+
+    color:white;
+    font-family:Arial;
+    text-align:center;
 }
 
 
@@ -357,6 +363,13 @@ font-size:16px;
 
 }
 
+#gameRoomBtn{
+    position:absolute;
+    bottom:80px;
+    left:50%;
+    transform:translateX(-50%);
+}
+
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -371,9 +384,6 @@ font-size:16px;
 
 <div id="screen1" class="screen active">
 
-<div class="header">
-ZA BINGO V3
-</div>
 
 
 <p id="contactStatus"></p>

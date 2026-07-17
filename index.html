@@ -1489,25 +1489,33 @@ function startRoomCaller(){
 
 let room = "room" + currentStake;
 
+
 db.ref("ZA_Bingo_V3/rooms/" + room + "/caller")
-.once("value", function(snapshot){
+.transaction(function(current){
 
-
-if(snapshot.val() == true){
+if(current === true){
 
 return;
 
 }
 
+return true;
 
-// become the caller
 
-db.ref("ZA_Bingo_V3/rooms/" + room + "/caller")
-.set(true);
+}, function(error, committed){
 
+
+if(committed){
+
+db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
+.once("value",function(snapshot){
+
+if(!snapshot.exists()){
 
 db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
 .set([]);
+
+}
 
 
 startCaller();
@@ -1515,65 +1523,34 @@ startCaller();
 
 });
 
-}
-
-function listenToCalledNumbers(){
-
-if(db){
-
-db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/calledNumbers")
-.on("value",function(snapshot){
-
-let numbers = snapshot.val();
-
-if(numbers){
-
-calledNumbers = numbers;
-
-document.getElementById("calledNumbers").innerHTML =
-calledNumbers.join("<br>");
-
-let number = calledNumbers[calledNumbers.length-1];
-
-document.getElementById("currentCall").innerHTML = number;
-
-
-// mark called number box
-
-let box = document.getElementById("call_"+number);
-
-if(box){
-
-box.classList.add("called");
 
 }
 
-
-autoMark(number);
-
-}
 
 });
 
-}
 
 }
 
 function startCaller(){
 
+let room = "room" + currentStake;
 
-calledNumbers=[];
 
-document.getElementById("calledNumbers").innerHTML="";
+db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
+.once("value",function(snapshot){
 
+
+calledNumbers = snapshot.val() || [];
 
 
 callerTimer=setInterval(function(){
 
 
-if(calledNumbers.length>=75){
+if(calledNumbers.length >= 75){
 
 clearInterval(callerTimer);
+
 return;
 
 }
@@ -1585,7 +1562,8 @@ let number;
 
 do{
 
-number=Math.floor(Math.random()*75)+1;
+number = Math.floor(Math.random()*75)+1;
+
 
 }while(calledNumbers.includes(number));
 
@@ -1593,12 +1571,12 @@ number=Math.floor(Math.random()*75)+1;
 
 calledNumbers.push(number);
 
-if(db){
 
-db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/calledNumbers")
+
+db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
 .set(calledNumbers);
 
-}
+
 
 let letter;
 
@@ -1620,26 +1598,25 @@ letter="O";
 }
 
 
-document.getElementById("currentCall").className=letter;
 
-document.getElementById("currentCall").innerHTML = number;
+document.getElementById("currentCall").className = letter;
 
+document.getElementById("currentCall").innerHTML =
+letter + " " + number;
 
-document.getElementById("calledNumbers").innerHTML +=
-"<div class='calledNumber "+letter+"'>"+letter+" "+number+"</div>";
 
 autoMark(number);
-
-document.getElementById("calledNumbers").innerHTML =
-calledNumbers.join("<br>");
 
 
 
 },3000);
 
 
-}
 
+});
+
+
+}
 
 
 

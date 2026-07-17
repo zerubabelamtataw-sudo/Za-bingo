@@ -995,7 +995,7 @@ Br
 
 <h4>
 Calls:
-<span id="callCount">0</span>/75
+<span id="callCountGame">0</span>/75
 </h4>
 
 <h2 id="currentCall">
@@ -1489,7 +1489,7 @@ db.ref("ZA_Bingo_V3/rooms/"+room).update({
 
 status:"waiting",
 
-stake: currentStake,
+stake: Number(room.replace("room","")),
 
 prizepool:0,
 
@@ -1675,7 +1675,9 @@ btn.disabled = true;
 }
 
 function startGame(stake){
-  
+
+currentStake = stake;
+
 gameBanned = false;
 
 
@@ -1723,6 +1725,14 @@ db.ref("players/" + playerID).update({
 lastSeen: Date.now()
 
 });
+
+if(selectedCartelas.length==0){
+
+alert("Choose Cartela first");
+
+return;
+
+}
 
 // CHECK BALANCE BEFORE JOINING
 
@@ -1776,26 +1786,6 @@ db.ref("players/" + playerID + "/balance").transaction(function(balance){
         status:"playing"
 
     });
-
-
-});
-
-db.ref("ZA_Bingo_V3/rooms/room" + stake + "/players/" + playerID).set({
-
-cartelas: selectedCartelas,
-
-status:"playing"
-
-});
-
-
-
-
-
-});
-
-
-
 selectedCartelas.forEach(function(card){
 
 db.ref("ZA_Bingo_V3/rooms/room" + stake + "/takenCartelas/" + card)
@@ -1803,18 +1793,18 @@ db.ref("ZA_Bingo_V3/rooms/room" + stake + "/takenCartelas/" + card)
 
 });
 
-
-if(selectedCartelas.length==0){
-
-alert("Choose Cartela first");
-
-return;
-
-}
+});
 
 
 
-currentStake = stake;
+
+});
+
+
+
+
+
+
 
 
 
@@ -1981,6 +1971,21 @@ for(let id in players){
 
 if(players[id].cartelas.join(",")==selectedCartelas.join(",")){
 
+
+let refund = currentStake;
+
+
+// give stake back
+
+db.ref("players/"+id+"/balance")
+.transaction(function(balance){
+
+return (balance || 0) + refund;
+
+});
+
+
+// remove player from room
 
 db.ref("ZA_Bingo_V3/rooms/room"+currentStake+"/players/"+id)
 .remove();
@@ -2169,13 +2174,13 @@ db.ref("ZA_Bingo_V3/rooms/" + room + "/caller")
 .transaction(function(current){
 
 if(current){
-
-return;
-
+    return;
 }
 
-return true;
-
+return {
+    player: localStorage.getItem("playerID"),
+    time: Date.now()
+};
 
 }, function(error, committed){
 
@@ -2245,7 +2250,7 @@ number = Math.floor(Math.random()*75)+1;
 
 
 calledNumbers.push(number);
-document.getElementById("callCount").innerHTML = calledNumbers.length;
+document.getElementById("callCountGame").innerHTML = calledNumbers.length;
 
 
 db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")

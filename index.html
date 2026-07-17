@@ -241,13 +241,19 @@ margin-bottom:20px;
 
 .singleCard div{
 
-border:1px solid white;
+background:#222;
+
+border:1px solid #888;
+
+color:white;
 
 padding:6px 1px;
 
 font-weight:bold;
 
 font-size:12px;
+
+border-radius:5px;
 
 }
 
@@ -291,14 +297,19 @@ font-size:25px;
 font-weight:bold;
 }
 
-.marked{
-background:green;
-color:white;
+.singleCard div.marked{
+
+background:green !important;
+
+color:white !important;
+
+box-shadow:0 0 8px #00ff00;
+
 }
 
 #currentCall{
 
-font-size:35px;
+font-size:22px;
 font-weight:bold;
 
 width:60px;
@@ -433,7 +444,226 @@ font-size:16px;
     letter-spacing:1px;
 }
 
+.gameTop{
 
+display:flex;
+
+justify-content:space-around;
+
+align-items:center;
+
+background:rgba(0,0,0,0.7);
+
+border:1px solid #ffd700;
+
+border-radius:10px;
+
+padding:5px;
+
+font-size:14px;
+
+}
+
+.gameTop h3{
+
+margin:5px;
+
+}
+
+.autoBox{
+
+display:flex;
+
+justify-content:center;
+
+margin:10px 0;
+
+}
+
+
+#autoBtn{
+
+width:70%;
+
+padding:8px;
+
+font-size:14px;
+
+}
+
+#winnerPopup .waitingCard{
+
+text-align:center;
+
+background:rgba(20,20,20,0.95);
+
+border:2px solid #ffd700;
+
+border-radius:20px;
+
+padding:20px;
+
+margin-top:80px;
+
+box-shadow:0 0 20px #ffd700;
+
+}
+
+
+#winnerPopup h1{
+
+color:#ffd700;
+
+}
+
+.walletBox{
+
+background:
+linear-gradient(
+145deg,
+#222,
+#000
+);
+
+border:2px solid #b8860b;
+
+border-radius:15px;
+
+padding:15px;
+
+margin:20px auto;
+
+width:80%;
+
+color:#ffd700;
+
+font-size:20px;
+
+font-weight:bold;
+
+text-align:center;
+
+box-shadow:
+0 0 15px #8b0000;
+
+position:relative;
+top:200px;
+
+}
+
+
+.walletBox button{
+
+width:38%;
+
+padding:10px;
+
+margin:8px 5px;
+
+font-size:14px;
+
+font-weight:bold;
+
+border-radius:12px;
+
+background:
+linear-gradient(
+145deg,
+#222,
+#000
+);
+
+color:#ffd700;
+
+border:2px solid #b8860b;
+
+box-shadow:
+0 0 8px #8b0000;
+
+}
+
+.depositScreen,
+.withdrawScreen{
+
+background:
+linear-gradient(
+145deg,
+rgba(30,30,30,0.95),
+rgba(0,0,0,0.95)
+);
+
+border:2px solid #b8860b;
+
+border-radius:15px;
+
+padding:20px;
+
+margin:20px auto;
+
+width:85%;
+
+color:#ffd700;
+
+box-shadow:
+0 0 15px #8b0000;
+
+}
+
+
+.depositScreen input,
+.withdrawScreen input{
+
+width:80%;
+
+padding:12px;
+
+margin:10px;
+
+border-radius:10px;
+
+border:1px solid #b8860b;
+
+background:#111;
+
+color:white;
+
+font-size:18px;
+
+text-align:center;
+
+}
+
+
+.depositScreen button,
+.withdrawScreen button{
+
+width:70%;
+
+padding:12px;
+
+margin:8px;
+
+font-size:18px;
+
+font-weight:bold;
+
+border-radius:12px;
+
+background:
+linear-gradient(
+145deg,
+#222,
+#000
+);
+
+color:#ffd700;
+
+border:2px solid #b8860b;
+
+box-shadow:
+0 0 10px #8b0000;
+
+}
 
 </style>
 
@@ -450,9 +680,27 @@ font-size:16px;
 <div id="screen1" class="screen active">
 
 
-
 <p id="contactStatus"></p>
 
+<div class="walletBox">
+
+💰 BALANCE:
+<span id="balance">
+0
+</span>
+Br
+
+<br><br>
+
+<button onclick="openDeposit()">
+💳 DEPOSIT
+</button>
+
+<button onclick="openWithdraw()">
+💸 WITHDRAW
+</button>
+
+</div>
 
 <button id="gameRoomBtn" onclick="openGameRoom()">
 🎮 GAME ROOM
@@ -462,7 +710,90 @@ font-size:16px;
 </div>
 
 
+<!-- DEPOSIT SCREEN -->
 
+<div id="depositScreen" class="screen">
+
+<div class="depositScreen">
+
+<h1>
+💳 DEPOSIT
+</h1>
+
+<h3>
+Choose payment method
+</h3>
+
+<button onclick="selectDepositMethod('Telebirr')">
+📱 Telebirr
+</button>
+
+<button onclick="selectDepositMethod('CBE Birr')">
+🏦 CBE Birr
+</button>
+
+<br>
+
+<input id="depositAmount" placeholder="Amount">
+
+<br>
+
+<textarea id="depositSMS" 
+placeholder="Paste payment SMS"
+style="width:80%;height:100px;background:#111;color:white;border-radius:10px;padding:10px;">
+</textarea>
+
+<br>
+
+<button onclick="submitDeposit()">
+VERIFY DEPOSIT
+</button>
+
+
+<button class="back" onclick="backHome()">
+⬅ BACK
+</button>
+
+
+</div>
+
+</div>
+
+
+
+<!-- WITHDRAW SCREEN -->
+
+<div id="withdrawScreen" class="screen">
+
+<div class="withdrawScreen">
+
+<h1>
+💸 WITHDRAW
+</h1>
+
+
+<input id="withdrawAmount" placeholder="Amount">
+
+<br>
+
+<input id="withdrawPhone" placeholder="Telebirr phone number">
+
+
+<br>
+
+<button>
+REQUEST WITHDRAW
+</button>
+
+
+<button class="back" onclick="backHome()">
+⬅ BACK
+</button>
+
+
+</div>
+
+</div>
 
 <!-- GAME ROOM -->
 
@@ -579,9 +910,6 @@ START GAME
 
 <div class="waitingCard">
 
-<h1>
-🎮 ZA BINGO
-</h1>
 
 <h2>
 GET READY
@@ -606,7 +934,7 @@ GET READY
 
 
 <h2>
-🏆 Prize:
+🏆 ደራሽ:
 <span id="prize">
 0
 </span>
@@ -615,7 +943,7 @@ Br
 
 
 <button id="cancelBtn" onclick="cancelCountdown()" class="cancelBtn">
-❌ CHANGE CARTELA
+❌  cancel
 </button>
 
 
@@ -633,25 +961,23 @@ Br
 <div id="gameScreen" class="screen">
 
 
-<div>
 
-👥 Players:
+<div class="gameTop">
 
-<span id="gamePlayers">
-0/150
-</span>
+<h3>
+👥 <span id="gamePlayers">0/150</span>
+</h3>
 
-
-&nbsp;&nbsp;
-
-
-🏆 Prize:
-
-<span id="gamePrize">
-0
-</span>
-
+<h3>
+🏆 ደራሽ:
+<span id="gamePrize">0</span>
 Br
+</h3>
+
+<h3>
+📢 Calls:
+<span id="callCount">0/75</span>
+</h3>
 
 </div>
 
@@ -667,33 +993,42 @@ Br
 
 <h3>CALLED</h3>
 
+<h4>
+Calls:
+<span id="callCount">0</span>/75
+</h4>
+
 <h2 id="currentCall">
 -
 </h2>
 
 <div id="callGrid" class="callGrid"></div>
 
+<div class="autoBox">
+
+<button onclick="toggleAutoMark()" id="autoBtn">
+AUTO MARK: ON
+</button>
+
+</div>
+
 </div>
 
 
-
-
-
-
 <div class="cardArea">
+
+
 
 
 <div id="bingoCard">
 
 </div>
 
-<button onclick="toggleAutoMark()" id="autoBtn">
-AUTO MARK: ON
-</button>
-
 <button class="bingoButton" onclick="claimBingo()">
 BINGO
 </button>
+
+
 
 
 
@@ -725,7 +1060,10 @@ var db;
 firebase.initializeApp(firebaseConfig);
 
 db = firebase.database();  
+
 watchRoomButtons();
+
+loadWalletBalance();
 let selectedCartelas = [];
 
 let currentStake = 0;
@@ -733,6 +1071,8 @@ let currentStake = 0;
 let autoMarkEnabled = true;
 
 let gameBanned = false;
+
+let depositMethod = "";
 
 // Fixed Cartelas (we keep these forever)
 
@@ -896,6 +1236,41 @@ item.name+
 
 // Screen control
 
+function loadWalletBalance(){
+
+let playerID = localStorage.getItem("playerID");
+
+
+if(!playerID){
+
+return;
+
+}
+
+
+db.ref("ZA_Bingo_V3/users/" + playerID + "/balance")
+.on("value",function(snapshot){
+
+
+let balance = snapshot.val();
+
+
+if(balance == null){
+
+balance = 0;
+
+}
+
+
+document.getElementById("balance").innerHTML =
+balance.toFixed(2);
+
+
+});
+
+
+}
+
 function showScreen(id){
 
 document.querySelectorAll(".screen").forEach(function(screen){
@@ -915,6 +1290,115 @@ showScreen("roomMessage");
 
 }
 
+function submitDeposit(){
+
+let playerID = localStorage.getItem("playerID");
+
+let amount = Number(
+document.getElementById("depositAmount").value
+);
+
+let sms = document.getElementById("depositSMS").value;
+
+
+if(!amount || !sms){
+
+alert("Enter amount and SMS");
+
+return;
+
+}
+
+
+let depositID = "DEP_" + Date.now();
+
+
+db.ref("ZA_Bingo_V3/deposits/" + depositID).set({
+
+playerID: playerID,
+
+amount: amount,
+
+method: depositMethod,
+
+sms: sms,
+
+status:"pending",
+
+time: Date.now()
+
+});
+
+
+alert("Deposit submitted. Waiting approval");
+
+
+document.getElementById("depositAmount").value="";
+document.getElementById("depositSMS").value="";
+
+
+}
+
+function openDeposit(){
+
+showScreen("depositScreen");
+
+}
+function selectDepositMethod(method){
+
+depositMethod = method;
+
+alert(method + " selected");
+
+}
+
+function approveDeposit(depositID){
+
+db.ref("ZA_Bingo_V3/deposits/" + depositID).once("value",function(snapshot){
+
+let deposit = snapshot.val();
+
+if(!deposit){
+alert("Deposit not found");
+return;
+}
+
+
+let playerID = deposit.playerID;
+let amount = deposit.amount;
+
+
+// Update deposit status
+
+db.ref("ZA_Bingo_V3/deposits/" + depositID).update({
+
+status:"approved"
+
+});
+
+
+// Add balance
+
+db.ref("ZA_Bingo_V3/users/" + playerID + "/balance")
+.transaction(function(balance){
+
+return (balance || 0) + amount;
+
+});
+
+
+alert("Deposit approved");
+
+});
+
+
+}
+
+function openWithdraw(){
+
+showScreen("withdrawScreen");
+
+}
 
 function openGameRoom(){
 
@@ -1196,7 +1680,7 @@ telegramID: playerID,
 
 lastSeen: Date.now(),
 
-balance: 0,
+
 
 phone: ""
 
@@ -1435,17 +1919,51 @@ let grid = document.getElementById("callGrid");
 grid.innerHTML = "";
 
 
-for(let i=1;i<=75;i++){
+let columns = [
+["B",1],
+["I",16],
+["N",31],
+["G",46],
+["O",61]
+];
 
-let box = document.createElement("div");
 
-box.className = "callBox";
+// headers
 
-box.id = "call_" + i;
+columns.forEach(function(col){
 
-box.innerHTML = i;
+let head=document.createElement("div");
+
+head.className="callBox";
+
+head.innerHTML=col[0];
+
+grid.appendChild(head);
+
+});
+
+
+// numbers
+
+for(let row=0; row<15; row++){
+
+columns.forEach(function(col){
+
+let number = col[1] + row;
+
+
+let box=document.createElement("div");
+
+box.className="callBox";
+
+box.id="call_"+number;
+
+box.innerHTML=number;
+
 
 grid.appendChild(box);
+
+});
 
 }
 
@@ -1485,6 +2003,61 @@ let calledNumbers = [];
 
 let callerTimer;
 
+function listenToCalledNumbers(){
+
+let room = "room" + currentStake;
+
+
+db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
+.on("value",function(snapshot){
+
+calledNumbers = snapshot.val() || [];
+
+
+if(calledNumbers.length > 0){
+
+let number = calledNumbers[calledNumbers.length-1];
+
+
+let letter;
+
+
+if(number<=15){
+letter="B";
+}
+else if(number<=30){
+letter="I";
+}
+else if(number<=45){
+letter="N";
+}
+else if(number<=60){
+letter="G";
+}
+else{
+letter="O";
+}
+
+
+document.getElementById("currentCall").className = letter;
+
+document.getElementById("currentCall").innerHTML =
+letter+" "+number;
+
+
+let box=document.getElementById("call_"+number);
+
+if(box){
+box.classList.add("called");
+}
+
+
+}
+
+});
+
+}
+
 function startRoomCaller(){
 
 let room = "room" + currentStake;
@@ -1493,7 +2066,7 @@ let room = "room" + currentStake;
 db.ref("ZA_Bingo_V3/rooms/" + room + "/caller")
 .transaction(function(current){
 
-if(current === true){
+if(current){
 
 return;
 
@@ -1570,7 +2143,7 @@ number = Math.floor(Math.random()*75)+1;
 
 
 calledNumbers.push(number);
-
+document.getElementById("callCount").innerHTML = calledNumbers.length;
 
 
 db.ref("ZA_Bingo_V3/rooms/" + room + "/calledNumbers")
@@ -1727,7 +2300,9 @@ let boxes=document.querySelectorAll(".singleCard div");
 
 boxes.forEach(function(box){
 
-if(box.innerHTML == number){
+let value = box.innerHTML;
+
+if(Number(value) == number){
 
 box.classList.add("marked");
 
@@ -1988,16 +2563,19 @@ showScreen("screen1");
 
 <div id="winnerPopup" class="screen">
 
+<div class="waitingCard">
+
 <h1>🏆 BINGO WINNER</h1>
 
-<h2 id="winnerName">
-</h2>
+<h2 id="winnerName"></h2>
 
-<h2 id="winnerCartela">
-</h2>
+<h2 id="winnerCartela"></h2>
 
-<h2 id="winnerPrize">
-</h2>
+<h2 id="winnerPrize"></h2>
+
+<h3>🎉 Congratulations!</h3>
+
+</div>
 
 </div>
 

@@ -1060,7 +1060,7 @@ var db;
 firebase.initializeApp(firebaseConfig);
 
 db = firebase.database();  
-
+loadFixedCartelas();
 watchRoomButtons();
 
 loadWalletBalance();
@@ -1162,9 +1162,29 @@ fixedCartelas[c]=card;
 }
 
 
-// run once
+// LOAD FIXED CARTELAS FROM FIREBASE
 
-generateFixedCartelas();
+function loadFixedCartelas(){
+
+db.ref("ZA_Bingo_V3/cartelas").once("value",function(snapshot){
+
+if(snapshot.exists()){
+
+fixedCartelas = snapshot.val();
+
+console.log("Cartelas loaded");
+
+}
+
+else{
+
+generateAndSaveCartelas();
+
+}
+
+});
+
+}
 
 function watchRoomButtons(){
 
@@ -2578,28 +2598,91 @@ if(winner){
 clearInterval(callerTimer);
 
 
-document.getElementById("winnerName").innerHTML =
-"Player: You";
+// CHECK WINNER IN FIREBASE
+
+let room = "room" + currentStake;
+
+let playerID = localStorage.getItem("playerID");
 
 
-document.getElementById("winnerCartela").innerHTML =
-"Cartela: " + selectedCartelas.join(", ");
+db.ref("ZA_Bingo_V3/rooms/"+room+"/winner")
+.transaction(function(currentWinner){
+
+if(currentWinner){
+
+return;
+
+}
+
+return playerID;
 
 
-document.getElementById("winnerPrize").innerHTML =
-"Prize: " + document.getElementById("gamePrize").innerHTML + " Br";
+}, function(error, committed){
 
 
-showScreen("winnerPopup");
+if(committed){
 
 
-setTimeout(function(){
+// Calculate prize directly from Firebase
 
-resetRoom(currentStake);
+db.ref("ZA_Bingo_V3/rooms/" + room + "/players").once("value", function(snapshot){
 
-resetGame();
+    let totalCartelas = 0;
 
-},4000);
+    snapshot.forEach(function(player){
+
+        let data = player.val();
+
+        if(data.cartelas){
+            totalCartelas += data.cartelas.length;
+        }
+
+    });
+
+    let totalMoney = totalCartelas * currentStake;
+    let prize = totalMoney - (totalMoney * 0.15);
+
+    db.ref("players/" + playerID + "/balance").transaction(function(balance){
+
+        return (balance || 0) + prize;
+
+    }, function(error, committed){
+
+        if(error || !committed){
+            alert("Failed to pay winner.");
+            return;
+        }
+
+        document.getElementById("winnerName").innerHTML =
+        "Player: You";
+
+        document.getElementById("winnerCartela").innerHTML =
+        "Cartela: " + selectedCartelas.join(", ");
+
+        document.getElementById("winnerPrize").innerHTML =
+        "Prize: " + prize.toFixed(2) + " Br";
+
+        showScreen("winnerPopup");
+
+        setTimeout(function(){
+
+            resetRoom(currentStake);
+            resetGame();
+
+        }, 4000);
+
+    });
+
+});
+
+
+}
+
+
+});
+
+
+
 
 }
 

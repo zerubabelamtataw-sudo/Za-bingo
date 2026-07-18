@@ -2449,30 +2449,53 @@ function listenToWinner(){
 
 let room = "room" + currentStake;
 
-
 db.ref("ZA_Bingo_V3/rooms/" + room + "/winner")
 .on("value", function(snapshot){
 
 let winner = snapshot.val();
 
-
 if(!winner){
     return;
 }
 
-
 clearInterval(callerTimer);
 
+let myID = localStorage.getItem("playerID");
+
+
+if(winner.playerID == myID){
+
+document.getElementById("winnerTitle").innerHTML =
+"🏆 YOU WIN!";
 
 document.getElementById("winnerName").innerHTML =
-"Winner: " + winner;
+"🎉 Congratulations!";
+
+}
+else{
+
+document.getElementById("winnerTitle").innerHTML =
+"❌ GAME OVER";
+
+document.getElementById("winnerName").innerHTML =
+"YOU LOST";
+
+}
 
 
 document.getElementById("winnerPrize").innerHTML =
-"🏆 Prize won";
+"Prize: " + winner.prize + " Br";
 
 
 showScreen("winnerPopup");
+
+
+setTimeout(function(){
+
+resetRoom(currentStake);
+resetGame();
+
+},4000);
 
 
 });
@@ -2654,7 +2677,10 @@ return;
 
 }
 
-return playerID;
+return {
+    playerID: playerID,
+    prize: 0
+};
 
 
 }, function(error, committed){
@@ -2693,16 +2719,12 @@ db.ref("ZA_Bingo_V3/rooms/" + room + "/players").once("value", function(snapshot
             return;
         }
 
-        document.getElementById("winnerName").innerHTML =
-        "Player: You";
+db.ref("ZA_Bingo_V3/rooms/"+room+"/winner").update({
 
-        document.getElementById("winnerCartela").innerHTML =
-        "Cartela: " + selectedCartelas.join(", ");
+    playerID: playerID,
+    prize: prize.toFixed(2)
 
-        document.getElementById("winnerPrize").innerHTML =
-        "Prize: " + prize.toFixed(2) + " Br";
-
-        showScreen("winnerPopup");
+});
 
         setTimeout(function(){
 
@@ -2795,7 +2817,7 @@ showScreen("screen1");
 
 <div class="waitingCard">
 
-<h1>🏆 BINGO WINNER</h1>
+<h1 id="winnerTitle">🏆 BINGO WINNER</h1>
 
 <h2 id="winnerName"></h2>
 

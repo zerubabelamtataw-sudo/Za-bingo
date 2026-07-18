@@ -1178,7 +1178,11 @@ console.log("Cartelas loaded");
 
 else{
 
-generateAndSaveCartelas();
+generateFixedCartelas();
+
+db.ref("ZA_Bingo_V3/cartelas").set(fixedCartelas);
+
+console.log("New cartelas saved");
 
 }
 

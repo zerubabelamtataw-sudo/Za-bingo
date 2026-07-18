@@ -2123,6 +2123,8 @@ createBingoCards();
 
 listenToCalledNumbers();
 
+listenToWinner();
+
 setTimeout(function(){
 startRoomCaller();
 },1000);
@@ -2438,6 +2440,40 @@ if(Number(value) == number){
 box.classList.add("marked");
 
 }
+
+});
+
+}
+
+function listenToWinner(){
+
+let room = "room" + currentStake;
+
+
+db.ref("ZA_Bingo_V3/rooms/" + room + "/winner")
+.on("value", function(snapshot){
+
+let winner = snapshot.val();
+
+
+if(!winner){
+    return;
+}
+
+
+clearInterval(callerTimer);
+
+
+document.getElementById("winnerName").innerHTML =
+"Winner: " + winner;
+
+
+document.getElementById("winnerPrize").innerHTML =
+"🏆 Prize won";
+
+
+showScreen("winnerPopup");
+
 
 });
 

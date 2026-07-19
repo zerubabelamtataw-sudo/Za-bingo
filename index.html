@@ -529,22 +529,22 @@ border:2px solid #b8860b;
 
 border-radius:15px;
 
-padding:15px;
+padding:8px;
 
-margin:20px auto;
+margin:10px auto;
 
-width:80%;
+width:65%;
 
 color:#ffd700;
 
-font-size:20px;
+font-size:16px;
 
 font-weight:bold;
 
 text-align:center;
 
 box-shadow:
-0 0 15px #8b0000;
+0 0 10px #8b0000;
 
 position:relative;
 top:200px;
@@ -556,15 +556,15 @@ top:200px;
 
 width:38%;
 
-padding:10px;
+padding:8px;
 
-margin:8px 5px;
+margin:5px 3px;
 
-font-size:14px;
+font-size:13px;
 
 font-weight:bold;
 
-border-radius:12px;
+border-radius:10px;
 
 background:
 linear-gradient(
@@ -578,7 +578,7 @@ color:#ffd700;
 border:2px solid #b8860b;
 
 box-shadow:
-0 0 8px #8b0000;
+0 0 6px #8b0000;
 
 }
 
@@ -665,6 +665,10 @@ box-shadow:
 
 }
 
+#profileBtn{
+    margin-top:-20px;
+}
+
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -706,6 +710,7 @@ Br
 🎮 GAME ROOM
 </button>
 
+<button id="profileBtn" onclick="openProfile()">👤 PROFILE</button>
 
 </div>
 
@@ -1466,7 +1471,11 @@ function openGameRoom(){
 showScreen("gameRoom");
 
 }
+function openProfile(){
 
+showScreen("profileScreen");
+
+}
 
 
 function backHome(){
@@ -2849,6 +2858,36 @@ You are banned from this game
 
 <button onclick="backHome()">
 OK
+</button>
+
+</div>
+
+<!-- PROFILE SCREEN -->
+
+<div id="profileScreen" class="screen">
+
+<h1>👤 PROFILE</h1>
+
+<p>Player Name: <span id="profileName">Loading...</span></p>
+
+<p>Player ID: <span id="profileID">Loading...</span></p>
+
+<p>Phone: <span id="profilePhone">Loading...</span></p>
+
+<p>Username: <span id="profileUsername">Loading...</span></p>
+
+<h2>💰 Balance: <span id="profileBalance">0</span> Br</h2>
+
+<h2>🎮 Statistics</h2>
+
+<p>• Games Played: <span id="gamesPlayed">0</span></p>
+
+<p>• Games Won: <span id="gamesWon">0</span></p>
+
+<p>• Win Rate: <span id="winRate">0%</span></p>
+
+<button class="back" onclick="backHome()">
+⬅ BACK
 </button>
 
 </div>

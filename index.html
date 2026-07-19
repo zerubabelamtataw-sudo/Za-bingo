@@ -1475,6 +1475,83 @@ function openProfile(){
 
 showScreen("profileScreen");
 
+loadProfile();
+
+}
+
+
+function loadProfile(){
+
+let playerID = localStorage.getItem("playerID");
+
+
+if(!playerID){
+
+alert("Player not found");
+
+return;
+
+}
+
+
+db.ref("players/" + playerID).once("value", function(snapshot){
+
+
+let data = snapshot.val();
+
+
+if(!data){
+
+alert("Profile not found");
+
+return;
+
+}
+
+
+document.getElementById("profileName").innerHTML =
+data.name || "No Name";
+
+
+document.getElementById("profileID").innerHTML =
+playerID;
+
+
+document.getElementById("profilePhone").innerHTML =
+data.phone || playerID;
+
+
+document.getElementById("profileUsername").innerHTML =
+"@" + (data.username || "unknown");
+
+
+document.getElementById("profileBalance").innerHTML =
+Number(data.balance || 0).toFixed(2);
+
+
+let played = data.gamesPlayed || 0;
+
+let won = data.gamesWon || 0;
+
+
+document.getElementById("gamesPlayed").innerHTML =
+played;
+
+
+document.getElementById("gamesWon").innerHTML =
+won;
+
+
+let rate = played > 0 ? (won / played) * 100 : 0;
+
+
+document.getElementById("winRate").innerHTML =
+rate.toFixed(0) + "%";
+
+
+});
+
+
 }
 
 

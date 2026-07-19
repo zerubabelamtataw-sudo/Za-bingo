@@ -1510,7 +1510,7 @@ return;
 
 
 document.getElementById("profileName").innerHTML =
-data.name || "No Name";
+data["user name"] || "No Name";
 
 
 document.getElementById("profileID").innerHTML =
@@ -1522,7 +1522,7 @@ data.phone || playerID;
 
 
 document.getElementById("profileUsername").innerHTML =
-"@" + (data.username || "unknown");
+"@" + (data["user name"] || "unknown");
 
 
 document.getElementById("profileBalance").innerHTML =

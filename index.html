@@ -1451,6 +1451,14 @@ db.ref("players/" + playerID + "/balance")
 return (balance || 0) + amount;
 
 });
+// Add win count
+
+db.ref("players/" + playerID + "/gamesWon")
+.transaction(function(count){
+
+    return (count || 0) + 1;
+
+});
 
 
 alert("Deposit approved");
@@ -1833,6 +1841,16 @@ localStorage.setItem("playerID", playerID);
 db.ref("players/" + playerID).update({
 
 lastSeen: Date.now()
+
+});
+
+
+// Add game played count
+
+db.ref("players/" + playerID + "/gamesPlayed")
+.transaction(function(count){
+
+return (count || 0) + 1;
 
 });
 

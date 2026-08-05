@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 const bot = require('./bot');
 
 const gameManager = new GameManager();
-require('./cartelaGenerator');
+
 bot.setGameManager(gameManager);
 
 

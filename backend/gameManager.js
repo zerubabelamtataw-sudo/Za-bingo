@@ -146,6 +146,14 @@ class GameManager {
     room.markedNumbers[tgId] = new Set();
     cartelaIndices.forEach(idx => room.reservedCartelas.add(idx));
     room.totalCartelas += cartelaIndices.length;
+    
+   await room.roomRef.update({
+  players: room.players,
+  prize: room.prize,
+  playerCartelas: room.playerCartelas,
+  totalCartelas: room.totalCartelas,
+  status: room.status
+}); 
 
     console.log("JOIN DEBUG", roomId, tgId, room.players.length, room.status);
 
@@ -315,11 +323,17 @@ class GameManager {
     if (!room) return;
     room.status = 'countdown';
     room.countdown = 25;
-    
+    room.roomRef.update({
+  status: room.status,
+  countdown: room.countdown
+});
     if (room.countdownInterval) clearInterval(room.countdownInterval);
     
     room.countdownInterval = setInterval(() => {
       room.countdown--;
+     room.roomRef.update({
+  countdown: room.countdown
+}); 
       
       if (room.countdown <= 0) {
         clearInterval(room.countdownInterval);

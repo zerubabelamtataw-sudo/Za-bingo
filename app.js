@@ -169,7 +169,7 @@
         <div class="room-card" data-room="${id}">
           <div class="room-info">
             <h3>${room.name}</h3>
-            <p>Prize: ${room.prize} Br · Players: ${room.players.length} · Stake: ${room.entryFee} Br per cartela</p>
+            <p>Prize: ${room.prize} Br · Players: ${room.players} · Stake: ${room.entryFee} Br per cartela</p>
           </div>
           <div class="room-action">
             <span class="room-status" style="background:${statusColor}30;color:${statusColor}">${room.status.toUpperCase()}</span>
@@ -969,6 +969,7 @@ state.calledNumbers = game.calledNumbers || [];
 
   updateHeader();
   loadRooms();
+setInterval(loadRooms, 1000);
   updateProfileUI();
   updateWalletUI();
   updateHistoryUI();

@@ -142,7 +142,13 @@ class GameManager {
     // Join room
     room.players.push(tgId);
     room.prize += totalFee;
-    room.playerCartelas[tgId] = cartelaIndices;
+    const cartelaSnapshot = await db.ref(`rooms/${roomId}/cartelas`).once('value');
+const allCartelas = cartelaSnapshot.val();
+
+room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
+  id: idx,
+  numbers: allCartelas[idx].numbers
+}));
     room.markedNumbers[tgId] = new Set();
     cartelaIndices.forEach(idx => room.reservedCartelas.add(idx));
     room.totalCartelas += cartelaIndices.length;
@@ -241,9 +247,14 @@ class GameManager {
     const playerCartelas = room.playerCartelas[tgId] || [];
     const markedSet = room.markedNumbers[tgId] || new Set();
     
-    // Check if any cartela is complete (all numbers on cartela are called & marked)
-    // This is a simplified check — in production, validate against actual cartela data
-    const winAmount = (room.prize * 0.85);
+    // Check real cartela bingo
+const hasBingo = this.checkWinner(roomId, tgId);
+
+if (!hasBingo) {
+  return { success: false, error: 'Invalid BINGO claim' };
+}
+
+const winAmount = room.prize * 0.85;
     
     const playerRef = db.ref(`players/${tgId}`);
     const playerSnapshot = await playerRef.once('value');
@@ -395,8 +406,43 @@ class GameManager {
 
     if (!room.calledNumbers.includes(num)) {
       room.calledNumbers.push(num);
+      room.roomRef.update({
+  calledNumbers: room.calledNumbers
+});
     }
   }
+
+checkWinner(roomId, tgId) {
+  const room = this.rooms[roomId];
+
+  if (!room || !room.playerCartelas[tgId]) {
+    return false;
+  }
+
+  const calledNumbers = room.calledNumbers;
+
+  const playerCartelas = room.playerCartelas[tgId];
+
+  for (const cartela of playerCartelas) {
+    const numbers = [
+      ...cartela.numbers.B,
+      ...cartela.numbers.I,
+      ...cartela.numbers.N,
+      ...cartela.numbers.G,
+      ...cartela.numbers.O
+    ];
+
+    const hasBingo = numbers.every(num =>
+      calledNumbers.includes(num)
+    );
+
+    if (hasBingo) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
   // ---- Reset Room ----
   resetRoom(roomId) {

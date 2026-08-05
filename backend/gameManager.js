@@ -212,6 +212,14 @@ room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
     delete room.playerCartelas[tgId];
     delete room.markedNumbers[tgId];
 
+await room.roomRef.update({
+  players: room.players,
+  prize: room.prize,
+  playerCartelas: room.playerCartelas,
+  totalCartelas: room.totalCartelas,
+  status: room.status
+});
+
     // Reset if empty
     if (room.players.length === 0) {
       this.resetRoom(roomId);

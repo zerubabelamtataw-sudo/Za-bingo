@@ -105,7 +105,7 @@
       name: 'Player',
       username: 'player',
       phone: '',
-      balance: 100,
+      balance: 0,
       gamesPlayed: 0,
       gamesWon: 0,
     },
@@ -412,23 +412,40 @@
       }
     }
 
-    state.player.balance -= totalFee;
-    room.prize += totalFee;
-    if (!room.players.includes(state.player.id)) {
-      room.players.push(state.player.id);
-    }
-    room.joined = true;
-    state.currentRoom = state.selectedRoomId;
+fetch(`/api/rooms/${state.selectedRoomId}/join`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-telegram-id': state.player.id
+  },
+  body: JSON.stringify({
+    cartelaIndices: state.selectedCartelaIndices
+  })
+})
+.then(res => res.json())
+.then(data => {
+  if (!data.success) {
+    TelegramApp.showAlert(data.error);
+    return;
+  }
 
-    state.selectedCartelaIndices.forEach(idx => {
-      room.reservedCartelas.add(idx);
-      if (!room.playerCartelas[state.player.id]) {
-        room.playerCartelas[state.player.id] = [];
-      }
-      room.playerCartelas[state.player.id].push(idx);
-    });
+  state.currentRoom = state.selectedRoomId;
+  room.joined = true;
+  
+  showCountdownPopup();
+  document.getElementById('cartela-selection').style.display = 'none';
+  gameActive.style.display = 'block';
 
-    state.cartelas = state.selectedCartelaIndices.map(idx => state.allCartelas[idx]);
+  if (boardEl.children.length === 0) {
+    buildBoard();
+  }
+
+  updateHeader();
+  renderRooms();
+  updateGameUI();
+});
+
+    state.cartelas = data.cartelas || [];
     state.calledNumbers = [];
     state.markedNumbers = new Set();
     state.countdown = 25;
@@ -448,7 +465,7 @@
 
     if (room.players.length >= 2) {
       room.status = 'countdown';
-      startCountdown();
+      
     }
 
     renderRooms();
@@ -466,6 +483,34 @@
     overlay.classList.add('show');
     updateCountdownPopup();
   }
+
+function syncGameState() {
+  if (!state.currentRoom) return;
+
+  fetch(`/api/game/${state.currentRoom}`, {
+    headers: {
+      'x-telegram-id': state.player.id
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success) return;
+
+    const game = data.game;
+
+    state.countdown = game.countdown || 0;
+state.calledNumbers = game.calledNumbers || [];
+    const room = state.rooms[state.currentRoom];
+    if (room) {
+      room.status = game.status;
+      room.players = game.players || room.players;
+    }
+
+    updateCountdownPopup();
+    renderRooms();
+  })
+  .catch(err => console.log(err));
+}
 
   function updateCountdownPopup() {
     const room = state.rooms[state.currentRoom];
@@ -546,37 +591,13 @@
   // ---- Countdown & Game ----
   function startCountdown() {
     if (state.countdownInterval) clearInterval(state.countdownInterval);
-    state.countdown = 25;
+    // state.countdown = 25;
     const room = state.rooms[state.currentRoom];
-    room.status = 'countdown';
+    // room.status = 'countdown';
 
     state.countdownInterval = setInterval(() => {
-      state.countdown -= 1;
-      updateCountdownPopup();
-
-      const room = state.rooms[state.currentRoom];
-      if (room && room.players.length < 2) {
-        clearInterval(state.countdownInterval);
-        state.countdownInterval = null;
-        room.status = 'waiting';
-        hideCountdownPopup();
-        TelegramApp.showAlert('Not enough players. Game cancelled.');
-        return;
-      }
-
-      if (state.countdown <= 0) {
-        clearInterval(state.countdownInterval);
-        state.countdownInterval = null;
-        hideCountdownPopup();
-
-        if (room && room.players.length >= 2) {
-          startGame();
-        } else if (room) {
-          room.status = 'waiting';
-          TelegramApp.showAlert('Not enough players. Game cancelled.');
-        }
-      }
-    }, 1000);
+  syncGameState();
+}, 1000);
   }
 
   function startGame() {
@@ -591,9 +612,7 @@
     room.winners = [];
 
     if (state.drawInterval) clearInterval(state.drawInterval);
-    state.drawInterval = setInterval(() => {
-      drawNumber();
-    }, 3000);
+    // Server controls number drawing
 
     updateGameUI();
   }
@@ -949,11 +968,23 @@
   });
 
   updateHeader();
-  renderRooms();
+  loadRooms();
   updateProfileUI();
   updateWalletUI();
   updateHistoryUI();
   navigateTo('game');
+}
+
+function loadRooms() {
+  fetch('/api/rooms')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        state.rooms = data.rooms;
+        renderRooms();
+      }
+    })
+    .catch(err => console.log(err));
 }
 
   init();

@@ -1,407 +1,879 @@
-// ============================================================
-// ZA BINGO — TELEGRAM BOT
-// ============================================================
 const TelegramBot = require('node-telegram-bot-api');
-const { getDB } = require('./database');
+const database = require('./firebase');
 
-// Replace with your bot token from @BotFather
-const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
+// Initialize the bot with polling
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const bot = new TelegramBot(token, { polling: true });
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+// Reference to Firebase database
+const db = database;
 
-let gameManager = null;
+// Payment methods configuration
+const PAYMENT_METHODS = {
+  telebirr: { name: '📱 Telebirr', number: '0985661720' },
+  cbebirr: { name: '🏦 CBE Birr', number: '0985661720' }
+};
 
-// ============================================================
-// BOT COMMANDS
-// ============================================================
+// Welcome bonus amount
+const WELCOME_BONUS = 30;
 
-// /start - Register user and show main menu
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-  const firstName = msg.from.first_name || 'Player';
-  const username = msg.from.username || '';
+// Minimum transaction amounts
+const MIN_DEPOSIT = 50;
+const MIN_WITHDRAWAL = 50;
 
-  const db = getDB();
-  let player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+// Bot state to track user interactions
+const userStates = {};
 
-  if (!player) {
-    // Register new player
-    db.prepare(
-      'INSERT INTO players (telegram_id, first_name, username, balance, games_played, games_won, registration_date) VALUES (?, ?, ?, 100, 0, 0, datetime("now"))'
-    ).run(tgId, firstName, username);
-    player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
-    
-    bot.sendMessage(chatId, 
-      `🎉 *Welcome to ZA Bingo, ${firstName}!*\n\n` +
-      `You received *100 Br* welcome bonus!\n` +
-      `Play Bingo and win real prizes!\n\n` +
-      `Share your contact to complete registration.`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          keyboard: [[{ text: '📱 Share Contact', request_contact: true }]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        }
-      }
-    );
-  } else {
-    showMainMenu(chatId);
+/**
+ * Helper function to get user state
+ */
+function getUserState(telegramId) {
+  if (!userStates[telegramId]) {
+    userStates[telegramId] = {};
   }
-});
+  return userStates[telegramId];
+}
 
-// Handle contact sharing
-bot.on('contact', (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-  const phone = msg.contact.phone_number;
+/**
+ * Helper function to clear user state
+ */
+function clearUserState(telegramId) {
+  delete userStates[telegramId];
+}
 
-  const db = getDB();
-  db.prepare('UPDATE players SET phone = ? WHERE telegram_id = ?').run(phone, tgId);
+/**
+ * Check if user exists in Firebase
+ */
+async function checkUserExists(telegramId) {
+  try {
+    const snapshot = await db.ref(`players/${telegramId}`).once('value');
+    return snapshot.exists();
+  } catch (error) {
+    console.error('Error checking user existence:', error);
+    throw error;
+  }
+}
 
-  bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
-    reply_markup: { remove_keyboard: true }
-  });
-  showMainMenu(chatId);
-});
+/**
+ * Get player data from Firebase
+ */
+async function getPlayerData(telegramId) {
+  try {
+    const snapshot = await db.ref(`players/${telegramId}`).once('value');
+    return snapshot.val();
+  } catch (error) {
+    console.error('Error getting player data:', error);
+    throw error;
+  }
+}
 
-// ============================================================
-// MAIN MENU
-// ============================================================
+/**
+ * Create new player in Firebase with welcome bonus
+ */
+async function createPlayer(playerData) {
+  try {
+    const playerRef = db.ref(`players/${playerData.telegram_id}`);
+    await playerRef.set({
+      ...playerData,
+      balance: WELCOME_BONUS,
+      gamesPlayed: 0,
+      gamesWon: 0,
+      registrationDate: new Date().toISOString()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error creating player:', error);
+    throw error;
+  }
+}
+
+/**
+ * Save transaction to Firebase
+ */
+async function saveTransaction(transactionData) {
+  try {
+    const transactionRef = db.ref('transactions').push();
+    const transactionId = transactionRef.key;
+    
+    await transactionRef.set({
+      ...transactionData,
+      transactionId,
+      createdAt: new Date().toISOString()
+    });
+    
+    return transactionId;
+  } catch (error) {
+    console.error('Error saving transaction:', error);
+    throw error;
+  }
+}
+
+/**
+ * Show main menu to user
+ */
 function showMainMenu(chatId) {
-  bot.sendMessage(chatId,
-    `🎯 *ZA BINGO*\n\n` +
-    `Choose an option below:`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
-          [{ text: '💰 Deposit', callback_data: 'menu_deposit' }],
-          [{ text: '💸 Withdraw', callback_data: 'menu_withdraw' }],
-          [{ text: '👤 Profile', callback_data: 'menu_profile' }],
-        ]
-      }
+  const keyboard = {
+    reply_markup: {
+      keyboard: [
+        ['🎮 Play Bingo'],
+        ['💰 Deposit', '💸 Withdraw'],
+        ['📖 Instructions', '📞 Contact Support']
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false
     }
-  );
+  };
+  
+  bot.sendMessage(chatId, '🎉 *Welcome to ZA Bingo!*\n\nPlease select an option:', {
+    ...keyboard,
+    parse_mode: 'Markdown'
+  });
 }
 
-// ============================================================
-// CALLBACK HANDLERS
-// ============================================================
-bot.on('callback_query', (query) => {
-  const chatId = query.message.chat.id;
-  const tgId = String(query.from.id);
-  const data = query.data;
-
-  const db = getDB();
-  const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
-  if (!player) {
-    bot.answerCallbackQuery(query.id, { text: 'Please /start first' });
-    return;
-  }
-
-  // Menu handlers
-  if (data === 'menu_deposit') {
-    handleDepositMenu(chatId, player);
-  } else if (data === 'menu_withdraw') {
-    handleWithdrawMenu(chatId, player);
-  } else if (data === 'menu_profile') {
-    handleProfile(chatId, player);
-  }
-  // Deposit method selection
-  else if (data.startsWith('deposit_method_')) {
-    const method = data.replace('deposit_method_', '');
-    bot.sendMessage(chatId, 
-      `📥 *Deposit via ${method.toUpperCase()}*\n\n` +
-      `Enter amount (minimum 10 Br):`,
-      { parse_mode: 'Markdown' }
-    );
-    // Store selection in a simple in-memory cache (production: use a proper session)
-    depositSessions[chatId] = { method, step: 'amount' };
-  }
-  // Withdraw method selection
-  else if (data.startsWith('withdraw_method_')) {
-    const method = data.replace('withdraw_method_', '');
-    bot.sendMessage(chatId,
-      `💸 *Withdraw via ${method.toUpperCase()}*\n\n` +
-      `Enter amount to withdraw:`,
-      { parse_mode: 'Markdown' }
-    );
-    withdrawSessions[chatId] = { method, step: 'amount' };
-  }
-  // Admin: Approve deposit
-  else if (data.startsWith('approve_deposit_')) {
-    const txnId = parseInt(data.replace('approve_deposit_', ''));
-    approveDeposit(query, txnId);
-  }
-  // Admin: Reject deposit
-  else if (data.startsWith('reject_deposit_')) {
-    const txnId = parseInt(data.replace('reject_deposit_', ''));
-    rejectDeposit(query, txnId);
-  }
-  // Admin: Approve withdrawal
-  else if (data.startsWith('approve_withdraw_')) {
-    const txnId = parseInt(data.replace('approve_withdraw_', ''));
-    approveWithdrawal(query, txnId);
-  }
-  // Admin: Reject withdrawal
-  else if (data.startsWith('reject_withdraw_')) {
-    const txnId = parseInt(data.replace('reject_withdraw_', ''));
-    rejectWithdrawal(query, txnId);
-  }
-
-  bot.answerCallbackQuery(query.id);
-});
-
-// ============================================================
-// SESSION STORAGE (In production, use Redis or DB)
-// ============================================================
-const depositSessions = {};
-const withdrawSessions = {};
-
-// ============================================================
-// TEXT MESSAGE HANDLER (for amount input)
-// ============================================================
-bot.on('message', (msg) => {
+/**
+ * Handle /start command
+ */
+bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-  const text = msg.text;
-
-  // Skip commands and contacts
-  if (!text || text.startsWith('/') || msg.contact) return;
-
-  const db = getDB();
-  const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
-
-  // Handle deposit amount
-  if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
-    const amount = parseFloat(text);
-    if (isNaN(amount) || amount < 10) {
-      bot.sendMessage(chatId, '❌ Minimum deposit is 10 Br. Enter amount:');
-      return;
-    }
-
-    const session = depositSessions[chatId];
+  const telegramId = msg.from.id;
+  
+  try {
+    // Check if user already exists
+    const userExists = await checkUserExists(telegramId);
     
-    // Create pending transaction
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, payment_method, description) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(player.id, 'deposit', amount, 'pending', session.method, `Deposit via ${session.method}`);
-
-    // Notify admin (in production, replace with actual admin ID)
-    const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-    bot.sendMessage(ADMIN_ID,
-      `📥 *New Deposit Request*\n\n` +
-      `Player: ${player.first_name} (@${player.username})\n` +
-      `Amount: ${amount} Br\n` +
-      `Method: ${session.method}\n` +
-      `Date: ${new Date().toLocaleString()}`,
-      {
-        parse_mode: 'Markdown',
+    if (userExists) {
+      // Existing user - go directly to main menu
+      showMainMenu(chatId);
+    } else {
+      // New user - request contact sharing
+      const keyboard = {
         reply_markup: {
-          inline_keyboard: [[
-            { text: '✅ Approve', callback_data: `approve_deposit_${chatId}` },
-            { text: '❌ Reject', callback_data: `reject_deposit_${chatId}` }
-          ]]
+          keyboard: [
+            [{
+              text: '📱 Share Your Contact',
+              request_contact: true
+            }]
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true
         }
-      }
-    );
-
-    bot.sendMessage(chatId, `✅ Deposit request submitted!\nAmount: ${amount} Br\nStatus: Pending approval`);
-    delete depositSessions[chatId];
-    return;
-  }
-
-  // Handle withdraw amount
-  if (withdrawSessions[chatId] && withdrawSessions[chatId].step === 'amount') {
-    const amount = parseFloat(text);
-    if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(chatId, '❌ Invalid amount. Enter amount:');
-      return;
-    }
-    if (amount > player.balance) {
-      bot.sendMessage(chatId, `❌ Insufficient balance. You have ${player.balance} Br.`);
-      return;
-    }
-
-    const session = withdrawSessions[chatId];
-    
-    // Create pending transaction
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, payment_method, description) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(player.id, 'withdrawal', amount, 'pending', session.method, `Withdrawal via ${session.method}`);
-
-    const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-    bot.sendMessage(ADMIN_ID,
-      `💸 *New Withdrawal Request*\n\n` +
-      `Player: ${player.first_name} (@${player.username})\n` +
-      `Amount: ${amount} Br\n` +
-      `Method: ${session.method}\n` +
-      `Phone: ${player.phone || 'Not set'}\n` +
-      `Date: ${new Date().toLocaleString()}`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '✅ Approve', callback_data: `approve_withdraw_${chatId}` },
-            { text: '❌ Reject', callback_data: `reject_withdraw_${chatId}` }
-          ]]
+      };
+      
+      bot.sendMessage(
+        chatId,
+        '👋 *Welcome to ZA Bingo!*\n\nPlease share your contact to get started and receive your welcome bonus of 30 Br! 🎁',
+        {
+          ...keyboard,
+          parse_mode: 'Markdown'
         }
-      }
-    );
-
-    bot.sendMessage(chatId, `✅ Withdrawal request submitted!\nAmount: ${amount} Br\nStatus: Pending approval`);
-    delete withdrawSessions[chatId];
-    return;
+      );
+      
+      // Set user state to awaiting contact
+      const state = getUserState(telegramId);
+      state.awaitingContact = true;
+    }
+  } catch (error) {
+    console.error('Error in /start handler:', error);
+    bot.sendMessage(chatId, '❌ An error occurred. Please try again later.');
   }
 });
 
-// ============================================================
-// HANDLERS
-// ============================================================
-function handleDepositMenu(chatId, player) {
-  bot.sendMessage(chatId,
-    `💰 *Deposit*\n\nBalance: ${player.balance} Br\nSelect payment method:`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📱 Telebirr', callback_data: 'deposit_method_telebirr' }],
-          [{ text: '🏦 CBE Birr', callback_data: 'deposit_method_cbe' }],
-          [{ text: '🔙 Back', callback_data: 'back_to_menu' }],
-        ]
-      }
+/**
+ * Handle contact sharing
+ */
+bot.on('contact', async (msg) => {
+  const chatId = msg.chat.id;
+  const telegramId = msg.from.id;
+  
+  try {
+    const state = getUserState(telegramId);
+    
+    if (!state.awaitingContact) {
+      return;
     }
-  );
-}
-
-function handleWithdrawMenu(chatId, player) {
-  bot.sendMessage(chatId,
-    `💸 *Withdraw*\n\nBalance: ${player.balance} Br\nSelect payment method:`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📱 Telebirr', callback_data: 'withdraw_method_telebirr' }],
-          [{ text: '🏦 CBE Birr', callback_data: 'withdraw_method_cbe' }],
-          [{ text: '🔙 Back', callback_data: 'back_to_menu' }],
-        ]
-      }
+    
+    // Extract contact info
+    const contact = msg.contact;
+    
+    // Ensure the contact belongs to the user
+    if (contact.user_id !== telegramId) {
+      bot.sendMessage(chatId, '❌ Please share your own contact number.');
+      return;
     }
-  );
-}
+    
+    // Create player data
+    const playerData = {
+      telegram_id: telegramId,
+      first_name: msg.from.first_name || 'Unknown',
+      username: msg.from.username || 'Unknown',
+      phone: contact.phone_number.replace('+', '') // Remove + prefix if present
+    };
+    
+    // Save player to Firebase
+    await createPlayer(playerData);
+    
+    // Clear state
+    clearUserState(telegramId);
+    
+    // Send welcome message with bonus info
+    await bot.sendMessage(
+      chatId,
+      `✅ *Registration successful!*\n\n🎁 You have received a welcome bonus of *${WELCOME_BONUS} Br*!\n\nYour phone number: *${contact.phone_number}*`,
+      { parse_mode: 'Markdown' }
+    );
+    
+    // Show main menu
+    showMainMenu(chatId);
+    
+  } catch (error) {
+    console.error('Error handling contact:', error);
+    bot.sendMessage(chatId, '❌ An error occurred during registration. Please try again.');
+  }
+});
 
-function handleProfile(chatId, player) {
-  bot.sendMessage(chatId,
-    `👤 *Profile*\n\n` +
-    `Name: ${player.first_name}\n` +
-    `Username: @${player.username || 'N/A'}\n` +
-    `Phone: ${player.phone || 'Not set'}\n` +
-    `Balance: ${player.balance} Br\n` +
-    `Games Played: ${player.games_played}\n` +
-    `Games Won: ${player.games_won}\n` +
-    `Joined: ${player.registration_date}`,
-    { parse_mode: 'Markdown' }
-  );
-}
-
-// ============================================================
-// ADMIN FUNCTIONS
-// ============================================================
-function approveDeposit(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'deposit' AND status = 'pending')"
-  ).get(chatId);
-  
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
+/**
+ * Handle menu button presses
+ */
+bot.on('message', async (msg) => {
+  // Ignore commands and contacts
+  if (msg.text && msg.text.startsWith('/') || msg.contact) {
     return;
   }
+  
+  const chatId = msg.chat.id;
+  const telegramId = msg.from.id;
+  const text = msg.text;
+  
+  if (!text) return;
+  
+  try {
+    switch (text) {
+      case '🎮 Play Bingo':
+        await handlePlayBingo(chatId, telegramId);
+        break;
+        
+      case '💰 Deposit':
+        await handleDeposit(chatId, telegramId);
+        break;
+        
+      case '💸 Withdraw':
+        await handleWithdraw(chatId, telegramId);
+        break;
+        
+      case '📖 Instructions':
+        await handleInstructions(chatId);
+        break;
+        
+      case '📞 Contact Support':
+        await handleContactSupport(chatId);
+        break;
+        
+      case '✅ I Have Paid':
+        await handlePaymentConfirmation(chatId, telegramId);
+        break;
+        
+      case '📱 Telebirr':
+        await handleDepositMethodSelection(chatId, telegramId, 'telebirr');
+        break;
+        
+      case '🏦 CBE Birr':
+        await handleDepositMethodSelection(chatId, telegramId, 'cbebirr');
+        break;
+        
+      case '📱 Telebirr (Withdraw)':
+        await handleWithdrawMethodSelection(chatId, telegramId, 'telebirr');
+        break;
+        
+      case '🏦 CBE Birr (Withdraw)':
+        await handleWithdrawMethodSelection(chatId, telegramId, 'cbebirr');
+        break;
+        
+      default:
+        // Handle state-based text inputs
+        await handleStateBasedInput(chatId, telegramId, text);
+        break;
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    bot.sendMessage(chatId, '❌ An error occurred. Please try again later.');
+  }
+});
 
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('approved', txn.id);
-  db.prepare('UPDATE players SET balance = balance + ? WHERE id = ?').run(txn.amount, txn.player_id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `✅ Deposit of ${txn.amount} Br approved!`);
-  bot.answerCallbackQuery(query.id, { text: 'Approved ✅' });
+/**
+ * Handle Play Bingo button
+ */
+async function handlePlayBingo(chatId, telegramId) {
+  try {
+    // Check if user exists
+    const userExists = await checkUserExists(telegramId);
+    
+    if (!userExists) {
+      bot.sendMessage(chatId, '❌ Please register first by sending /start');
+      return;
+    }
+    
+    const webAppUrl = process.env.WEBAPP_URL;
+    
+    if (!webAppUrl) {
+      bot.sendMessage(chatId, '❌ Web app URL not configured.');
+      return;
+    }
+    
+    const keyboard = {
+      reply_markup: {
+        inline_keyboard: [[
+          {
+            text: '🎮 Open Bingo Game',
+            web_app: { url: webAppUrl }
+          }
+        ]]
+      }
+    };
+    
+    bot.sendMessage(chatId, '🎮 Click below to open the Bingo game:', keyboard);
+    
+  } catch (error) {
+    console.error('Error in Play Bingo:', error);
+    throw error;
+  }
 }
 
-function rejectDeposit(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'deposit' AND status = 'pending')"
-  ).get(chatId);
+/**
+ * Handle Deposit button
+ */
+async function handleDeposit(chatId, telegramId) {
+  try {
+    // Check if user exists
+    const userExists = await checkUserExists(telegramId);
+    
+    if (!userExists) {
+      bot.sendMessage(chatId, '❌ Please register first by sending /start');
+      return;
+    }
+    
+    // Show payment methods
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['📱 Telebirr'],
+          ['🏦 CBE Birr'],
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    bot.sendMessage(
+      chatId,
+      '💰 *Select Payment Method*\n\nChoose your preferred payment method:',
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+    // Set state for deposit flow
+    const state = getUserState(telegramId);
+    state.flow = 'deposit';
+    state.step = 'select_method';
+    
+  } catch (error) {
+    console.error('Error in Deposit handler:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle deposit method selection
+ */
+async function handleDepositMethodSelection(chatId, telegramId, method) {
+  try {
+    const paymentMethod = PAYMENT_METHODS[method];
+    
+    if (!paymentMethod) {
+      bot.sendMessage(chatId, '❌ Invalid payment method.');
+      return;
+    }
+    
+    const state = getUserState(telegramId);
+    state.flow = 'deposit';
+    state.step = 'show_payment_info';
+    state.paymentMethod = method;
+    
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['✅ I Have Paid'],
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    bot.sendMessage(
+      chatId,
+      `💳 *${paymentMethod.name} Payment*\n\n` +
+      `Please send your payment to:\n` +
+      `📞 *${paymentMethod.number}*\n\n` +
+      `*Minimum deposit: ${MIN_DEPOSIT} Br*\n\n` +
+      `After making the payment, click "I Have Paid" to submit your deposit.`,
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+  } catch (error) {
+    console.error('Error in deposit method selection:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle payment confirmation button
+ */
+async function handlePaymentConfirmation(chatId, telegramId) {
+  try {
+    const state = getUserState(telegramId);
+    
+    if (state.flow !== 'deposit' || state.step !== 'show_payment_info') {
+      return;
+    }
+    
+    state.step = 'enter_amount';
+    
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    bot.sendMessage(
+      chatId,
+      `💰 Please enter the deposit amount:\n\n` +
+      `*Minimum deposit: ${MIN_DEPOSIT} Br*`,
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+  } catch (error) {
+    console.error('Error in payment confirmation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle Withdraw button
+ */
+async function handleWithdraw(chatId, telegramId) {
+  try {
+    // Check if user exists and get balance
+    const playerData = await getPlayerData(telegramId);
+    
+    if (!playerData) {
+      bot.sendMessage(chatId, '❌ Please register first by sending /start');
+      return;
+    }
+    
+    const balance = playerData.balance || 0;
+    
+    // Check minimum withdrawal
+    if (balance < MIN_WITHDRAWAL) {
+      bot.sendMessage(
+        chatId,
+        `❌ *Insufficient Balance*\n\n` +
+        `Your current balance: *${balance} Br*\n` +
+        `Minimum withdrawal: *${MIN_WITHDRAWAL} Br*\n\n` +
+        `Please deposit more funds to withdraw.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+    
+    // Show withdrawal payment methods
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['📱 Telebirr (Withdraw)'],
+          ['🏦 CBE Birr (Withdraw)'],
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    bot.sendMessage(
+      chatId,
+      `💸 *Withdraw Funds*\n\n` +
+      `Your balance: *${balance} Br*\n` +
+      `Minimum withdrawal: *${MIN_WITHDRAWAL} Br*\n\n` +
+      `Select withdrawal method:`,
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+    // Set state for withdrawal flow
+    const state = getUserState(telegramId);
+    state.flow = 'withdraw';
+    state.step = 'select_method';
+    
+  } catch (error) {
+    console.error('Error in Withdraw handler:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle withdrawal method selection
+ */
+async function handleWithdrawMethodSelection(chatId, telegramId, method) {
+  try {
+    const state = getUserState(telegramId);
+    state.flow = 'withdraw';
+    state.step = 'enter_phone';
+    state.paymentMethod = method;
+    
+    const paymentMethodName = method === 'telebirr' ? 'Telebirr' : 'CBE Birr';
+    
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    bot.sendMessage(
+      chatId,
+      `📱 Please enter your *${paymentMethodName}* phone number:\n\n` +
+      `Format: 09XXXXXXXX`,
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+  } catch (error) {
+    console.error('Error in withdrawal method selection:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle state-based text inputs
+ */
+async function handleStateBasedInput(chatId, telegramId, text) {
+  const state = getUserState(telegramId);
   
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
+  if (text === '🔙 Back') {
+    clearUserState(telegramId);
+    showMainMenu(chatId);
     return;
   }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('rejected', txn.id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `❌ Deposit of ${txn.amount} Br rejected.`);
-  bot.answerCallbackQuery(query.id, { text: 'Rejected ❌' });
-}
-
-function approveWithdrawal(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'withdrawal' AND status = 'pending')"
-  ).get(chatId);
   
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
+  // Handle deposit amount input
+  if (state.flow === 'deposit' && state.step === 'enter_amount') {
+    await handleDepositAmountInput(chatId, telegramId, text);
     return;
   }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('approved', txn.id);
-  db.prepare('UPDATE players SET balance = balance - ? WHERE id = ?').run(txn.amount, txn.player_id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `✅ Withdrawal of ${txn.amount} Br approved!`);
-  bot.answerCallbackQuery(query.id, { text: 'Approved ✅' });
-}
-
-function rejectWithdrawal(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'withdrawal' AND status = 'pending')"
-  ).get(chatId);
   
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
+  // Handle withdrawal phone input
+  if (state.flow === 'withdraw' && state.step === 'enter_phone') {
+    await handleWithdrawPhoneInput(chatId, telegramId, text);
     return;
   }
+  
+  // Handle withdrawal amount input
+  if (state.flow === 'withdraw' && state.step === 'enter_amount') {
+    await handleWithdrawAmountInput(chatId, telegramId, text);
+    return;
+  }
+}
 
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('rejected', txn.id);
+/**
+ * Handle deposit amount input
+ */
+async function handleDepositAmountInput(chatId, telegramId, text) {
+  try {
+    const amount = parseFloat(text);
+    
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, '❌ Please enter a valid amount.');
+      return;
+    }
+    
+    if (amount < MIN_DEPOSIT) {
+      bot.sendMessage(
+        chatId,
+        `❌ Minimum deposit is *${MIN_DEPOSIT} Br*.\nPlease enter a larger amount.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+    
+    const state = getUserState(telegramId);
+    
+    // Save transaction to Firebase
+    const transactionData = {
+      telegram_id: telegramId,
+      type: 'deposit',
+      paymentMethod: state.paymentMethod,
+      amount: amount,
+      status: 'pending'
+    };
+    
+    const transactionId = await saveTransaction(transactionData);
+    
+    // Clear state
+    clearUserState(telegramId);
+    
+    // Send confirmation
+    await bot.sendMessage(
+      chatId,
+      `✅ *Deposit Request Submitted!*\n\n` +
+      `Amount: *${amount} Br*\n` +
+      `Method: *${PAYMENT_METHODS[state.paymentMethod].name}*\n` +
+      `Transaction ID: *${transactionId}*\n` +
+      `Status: *Pending*\n\n` +
+      `Your deposit will be processed shortly. Thank you! 🎉`,
+      { parse_mode: 'Markdown' }
+    );
+    
+    // Show main menu
+    showMainMenu(chatId);
+    
+  } catch (error) {
+    console.error('Error in deposit amount input:', error);
+    throw error;
+  }
+}
 
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
+/**
+ * Handle withdrawal phone input
+ */
+async function handleWithdrawPhoneInput(chatId, telegramId, text) {
+  try {
+    // Validate phone number format (basic Ethiopian phone format)
+    const phoneRegex = /^09[0-9]{8}$/;
+    
+    if (!phoneRegex.test(text)) {
+      bot.sendMessage(
+        chatId,
+        '❌ Invalid phone number format.\nPlease enter a valid Ethiopian phone number: *09XXXXXXXX*',
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+    
+    const state = getUserState(telegramId);
+    state.phone = text;
+    state.step = 'enter_amount';
+    
+    const keyboard = {
+      reply_markup: {
+        keyboard: [
+          ['🔙 Back']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    };
+    
+    // Get current balance
+    const playerData = await getPlayerData(telegramId);
+    const balance = playerData.balance || 0;
+    
+    bot.sendMessage(
+      chatId,
+      `💰 Please enter the withdrawal amount:\n\n` +
+      `Current balance: *${balance} Br*\n` +
+      `Minimum withdrawal: *${MIN_WITHDRAWAL} Br*`,
+      {
+        ...keyboard,
+        parse_mode: 'Markdown'
+      }
+    );
+    
+  } catch (error) {
+    console.error('Error in withdrawal phone input:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle withdrawal amount input
+ */
+async function handleWithdrawAmountInput(chatId, telegramId, text) {
+  try {
+    const amount = parseFloat(text);
+    const state = getUserState(telegramId);
+    
+    // Get current balance
+    const playerData = await getPlayerData(telegramId);
+    const balance = playerData.balance || 0;
+    
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, '❌ Please enter a valid amount.');
+      return;
+    }
+    
+    if (amount < MIN_WITHDRAWAL) {
+      bot.sendMessage(
+        chatId,
+        `❌ Minimum withdrawal is *${MIN_WITHDRAWAL} Br*.\nPlease enter a larger amount.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+    
+    if (amount > balance) {
+      bot.sendMessage(
+        chatId,
+        `❌ *Insufficient Balance*\n\n` +
+        `Your balance: *${balance} Br*\n` +
+        `Requested amount: *${amount} Br*`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+    
+    // Save transaction to Firebase
+    const transactionData = {
+      telegram_id: telegramId,
+      type: 'withdraw',
+      paymentMethod: state.paymentMethod,
+      phone: state.phone,
+      amount: amount,
+      status: 'pending'
+    };
+    
+    const transactionId = await saveTransaction(transactionData);
+    
+    // Clear state
+    clearUserState(telegramId);
+    
+    // Send confirmation
+    await bot.sendMessage(
+      chatId,
+      `✅ *Withdrawal Request Submitted!*\n\n` +
+      `Amount: *${amount} Br*\n` +
+      `Method: *${state.paymentMethod === 'telebirr' ? 'Telebirr' : 'CBE Birr'}*\n` +
+      `Phone: *${state.phone}*\n` +
+      `Transaction ID: *${transactionId}*\n` +
+      `Status: *Pending*\n\n` +
+      `Your withdrawal will be processed shortly. Thank you! 🎉`,
+      { parse_mode: 'Markdown' }
+    );
+    
+    // Show main menu
+    showMainMenu(chatId);
+    
+  } catch (error) {
+    console.error('Error in withdrawal amount input:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle Instructions button
+ */
+async function handleInstructions(chatId) {
+  const instructions = `📖 *ZA BINGO RULES*\n\n` +
+    `*የጨዋታ ህጎች*\n\n` +
+    `1️⃣ እያንዳንዱ ተጫዋች *የቢንጎ ካርድ* ይቀበላል\n\n` +
+    `2️⃣ ቁጥሮች በዘፈቀደ ይመረጣሉ እና ይጠራሉ\n\n` +
+    `3️⃣ በካርድዎ ላይ ያለውን ተዛማጅ ቁጥር *ምልክት ያድርጉበት*\n\n` +
+    `4️⃣ *አሸናፊ ለመሆን*:\n` +
+    `   • *አግድም* መስመር ይሙሉ\n` +
+    `   • *ቁልቁል* መስመር ይሙሉ\n` +
+    `   • *ሰያፍ* መስመር ይሙሉ\n\n` +
+    `5️⃣ *ሙሉ ካርድ* በመሙላትም ማሸነፍ ይችላሉ\n\n` +
+    `6️⃣ አሸናፊ ሲሆኑ *"BINGO!"* ይጮሁ! 📢\n\n` +
+    `🎯 *ሽልማቶች*\n` +
+    `• በሚያሸንፉበት ጨዋታ መሰረት የተለያዩ ሽልማቶችን ያገኛሉ\n\n` +
+    `*መልካም ጨዋታ!* 🎉`;
+  
+  bot.sendMessage(chatId, instructions, {
+    parse_mode: 'Markdown'
   });
-  bot.sendMessage(chatId, `❌ Withdrawal of ${txn.amount} Br rejected.`);
-  bot.answerCallbackQuery(query.id, { text: 'Rejected ❌' });
 }
 
-// ============================================================
-// GAME MANAGER INTEGRATION
-// ============================================================
-function setGameManager(gm) {
-  gameManager = gm;
+/**
+ * Handle Contact Support button
+ */
+async function handleContactSupport(chatId) {
+  const supportMessage = `📞 *Contact Support*\n\n` +
+    `*የደንበኞች ድጋፍ*\n\n` +
+    `📱 *Phone:* 0985661720\n` +
+    `📧 *Email:* support@zabingo.com\n` +
+    `⏰ *Hours:* Monday - Saturday\n` +
+    `  8:00 AM - 8:00 PM\n\n` +
+    `*ለእርዳታ እና ጥያቄዎች*:\n` +
+    `• የቴሌግራም መልእክት ይላኩ\n` +
+    `• በስልክ ይደውሉ\n` +
+    `• ኢሜል ይላኩ\n\n` +
+    `*እኛ እርስዎን ለመርዳት ዝግጁ ነን!* 🤝`;
+  
+  bot.sendMessage(chatId, supportMessage, {
+    parse_mode: 'Markdown'
+  });
 }
 
-module.exports = { bot, setGameManager };
+/**
+ * Handle callback queries (if needed for inline keyboards)
+ */
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  
+  // Acknowledge the callback query
+  bot.answerCallbackQuery(callbackQuery.id).catch(err => {
+    console.error('Error answering callback query:', err);
+  });
+});
+
+/**
+ * Handle polling errors
+ */
+bot.on('polling_error', (error) => {
+  console.error('Polling error:', error);
+});
+
+/**
+ * Handle webhook errors (if using webhooks instead of polling)
+ */
+bot.on('webhook_error', (error) => {
+  console.error('Webhook error:', error);
+});
+
+/**
+ * Graceful shutdown
+ */
+process.on('SIGINT', () => {
+  console.log('Shutting down bot...');
+  bot.stopPolling();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down bot...');
+  bot.stopPolling();
+  process.exit(0);
+});
+
+// Export the bot instance
+module.exports = bot;

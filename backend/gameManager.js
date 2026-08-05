@@ -11,6 +11,18 @@ class GameManager {
       '20br': this.createRoomData('20br', '20 Br', 20),
     };
     
+   Object.values(this.rooms).forEach(room => {
+  room.roomRef.set({
+    id: room.id,
+    name: room.name,
+    entryFee: room.entryFee,
+    prize: room.prize,
+    status: room.status,
+    players: [],
+    winners: []
+  });
+}); 
+    
     // Start auto-draw timers for all rooms
     Object.keys(this.rooms).forEach(roomId => {
       this.startDrawLoop(roomId);
@@ -21,10 +33,13 @@ class GameManager {
 
   // ---- Room Factory ----
   createRoomData(id, name, entryFee) {
-    return {
-      id,
-      name,
-      entryFee,
+  const roomRef = db.ref(`rooms/${id}`);
+
+  return {
+    id,
+    name,
+    entryFee,
+    roomRef,
       prize: 0,
       players: [],           // Array of telegram_ids
       playerCartelas: {},    // { telegram_id: [cartelaIndex, ...] }

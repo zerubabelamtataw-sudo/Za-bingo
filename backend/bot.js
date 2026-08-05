@@ -875,5 +875,11 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
+let gameManager;
+
+bot.setGameManager = (manager) => {
+  gameManager = manager;
+};
+
 // Export the bot instance
 module.exports = bot;

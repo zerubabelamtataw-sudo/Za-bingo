@@ -389,88 +389,69 @@
   }
 
   // ---- Confirm Selection ----
-  selectConfirm.addEventListener('click', function() {
-    const room = state.rooms[state.selectedRoomId];
-    const count = state.selectedCartelaIndices.length;
-    if (count === 0) {
-      TelegramApp.showAlert('Select at least 1 cartela.');
-      return;
-    }
-    const totalFee = room.entryFee * count;
-    if (state.player.balance < totalFee) {
-      TelegramApp.showAlert('Insufficient balance! Need ' + totalFee + ' Br.');
-      return;
-    }
+  selectConfirm.addEventListener('click', function () {
+  const room = state.rooms[state.selectedRoomId];
+  const count = state.selectedCartelaIndices.length;
 
-    for (const idx of state.selectedCartelaIndices) {
-      if (room.reservedCartelas.has(idx)) {
-        TelegramApp.showAlert('Cartela #' + (idx + 1) + ' was already taken. Please reselect.');
-        state.selectedCartelaIndices = [];
-        renderCartelaSelection();
-        updateSelectInfo();
-        return;
-      }
-    }
-
-fetch(`/api/rooms/${state.selectedRoomId}/join`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-telegram-id': state.player.id
-  },
-  body: JSON.stringify({
-    cartelaIndices: state.selectedCartelaIndices
-  })
-})
-.then(res => res.json())
-.then(data => {
-  if (!data.success) {
-    TelegramApp.showAlert(data.error);
+  if (count === 0) {
+    TelegramApp.showAlert('Select at least 1 cartela.');
     return;
   }
 
-  state.currentRoom = state.selectedRoomId;
-  room.joined = true;
-  
-  showCountdownPopup();
-  document.getElementById('cartela-selection').style.display = 'none';
-  gameActive.style.display = 'block';
+  const totalFee = room.entryFee * count;
 
-  if (boardEl.children.length === 0) {
-    buildBoard();
+  if (state.player.balance < totalFee) {
+    TelegramApp.showAlert('Insufficient balance!');
+    return;
   }
 
-  updateHeader();
-  renderRooms();
-  updateGameUI();
-});
+  fetch(`/api/rooms/${state.selectedRoomId}/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-telegram-id': state.player.id
+    },
+    body: JSON.stringify({
+      cartelaIndices: state.selectedCartelaIndices
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success) {
+      TelegramApp.showAlert(data.error);
+      return;
+    }
 
+    state.currentRoom = state.selectedRoomId;
     state.cartelas = data.cartelas || [];
     state.calledNumbers = [];
     state.markedNumbers = new Set();
-    state.countdown = 25;
+    state.countdown = data.countdown || 25;
     state.isGameActive = false;
     state.isBingoAvailable = false;
     state.winner = null;
     state.winningCartelaIndex = null;
-    room.winners = [];
 
-    updateHeader();
+    room.joined = true;
+
     showCountdownPopup();
+
     document.getElementById('cartela-selection').style.display = 'none';
     gameActive.style.display = 'block';
+
     if (boardEl.children.length === 0) {
       buildBoard();
     }
 
-    if (room.players.length >= 2) {
-      room.status = 'countdown';
-      
-    }
-
+    updateHeader();
     renderRooms();
     updateGameUI();
+  })
+  .catch(err => {
+    console.error(err);
+    TelegramApp.showAlert('Failed to join room.');
   });
+});
 
   selectCancel.addEventListener('click', function() {
     screenGame.style.display = 'none';

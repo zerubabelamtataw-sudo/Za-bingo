@@ -176,7 +176,7 @@ room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
   balance: updatedPlayer.balance,
   cartelas: room.playerCartelas[tgId].map(c => c.numbers)
 };
-
+}
   // ---- Public: Leave room ----
   async leaveRoom(roomId, tgId) {
     const room = this.rooms[roomId];

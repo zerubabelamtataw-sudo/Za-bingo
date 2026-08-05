@@ -87,7 +87,7 @@ class GameManager {
     return {
       roomId: room.id,
       status: room.status,
-      calledNumbers: room.calledNumbers.slice(-10), // Last 10 calls
+      calledNumbers: room.calledNumbers, // Last 10 calls
       calledCount: room.calledNumbers.length,
       countdown: room.countdown,
       prize: room.prize,
@@ -170,8 +170,12 @@ room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
 
     const updatedSnapshot = await playerRef.once('value');
     const updatedPlayer = updatedSnapshot.val();
-    return { success: true, message: 'Joined!', balance: updatedPlayer.balance };
-  }
+    return { 
+  success: true, 
+  message: 'Joined!', 
+  balance: updatedPlayer.balance,
+  cartelas: room.playerCartelas[tgId].map(c => c.numbers)
+};
 
   // ---- Public: Leave room ----
   async leaveRoom(roomId, tgId) {
@@ -377,6 +381,7 @@ const winAmount = room.prize * 0.85;
   winners: room.winners
 });
     console.log(`🎮 Game started in ${room.name}`);
+    this.startDrawLoop(roomId);
   }
 
   startDrawLoop(roomId) {

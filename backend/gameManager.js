@@ -360,6 +360,11 @@ class GameManager {
     room.status = 'playing';
     room.calledNumbers = [];
     room.winners = [];
+    room.roomRef.update({
+  status: room.status,
+  calledNumbers: room.calledNumbers,
+  winners: room.winners
+});
     console.log(`🎮 Game started in ${room.name}`);
   }
 

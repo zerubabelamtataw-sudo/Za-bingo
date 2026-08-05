@@ -1,7 +1,7 @@
 // ============================================================
 // ZA BINGO — GAME MANAGER
 // ============================================================
-const { getDB } = require('./database');
+const db = require('./firebase');
 
 class GameManager {
   constructor() {
@@ -84,7 +84,7 @@ class GameManager {
   }
 
   // ---- Public: Join room ----
-  joinRoom(roomId, tgId, cartelaIndices) {
+  async joinRoom(roomId, tgId, cartelaIndices) {
     const room = this.rooms[roomId];
     if (!room) return { success: false, error: 'Room not found' };
     if (room.status === 'playing') return { success: false, error: 'Game in progress' };
@@ -100,8 +100,10 @@ class GameManager {
       }
     }
 
-    const db = getDB();
-    const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+    const playerRef = db.ref(`players/${tgId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
+    
     if (!player) return { success: false, error: 'Player not registered' };
 
     const totalFee = room.entryFee * cartelaIndices.length;
@@ -110,12 +112,17 @@ class GameManager {
     }
 
     // Deduct balance
-    db.prepare('UPDATE players SET balance = balance - ? WHERE telegram_id = ?').run(totalFee, tgId);
+    await playerRef.update({ balance: player.balance - totalFee });
 
     // Record transaction
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, description) VALUES (?, ?, ?, ?, ?)'
-    ).run(player.id, 'entry_fee', -totalFee, 'approved', `Joined ${room.name}`);
+    const transactionRef = db.ref('transactions').push();
+    await transactionRef.set({
+      player_id: tgId,
+      type: 'entry_fee',
+      amount: -totalFee,
+      status: 'approved',
+      description: `Joined ${room.name}`
+    });
 
     // Join room
     room.players.push(tgId);
@@ -130,12 +137,13 @@ class GameManager {
       this.startCountdown(roomId);
     }
 
-    const updatedPlayer = db.prepare('SELECT balance FROM players WHERE telegram_id = ?').get(tgId);
+    const updatedSnapshot = await playerRef.once('value');
+    const updatedPlayer = updatedSnapshot.val();
     return { success: true, message: 'Joined!', balance: updatedPlayer.balance };
   }
 
   // ---- Public: Leave room ----
-  leaveRoom(roomId, tgId) {
+  async leaveRoom(roomId, tgId) {
     const room = this.rooms[roomId];
     if (!room) return { success: false, error: 'Room not found' };
     if (!room.players.includes(tgId)) return { success: false, error: 'Not in room' };
@@ -144,14 +152,22 @@ class GameManager {
     const cartelas = room.playerCartelas[tgId] || [];
     const refund = room.entryFee * cartelas.length;
 
-    const db = getDB();
-    const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+    const playerRef = db.ref(`players/${tgId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
 
     // Refund
-    db.prepare('UPDATE players SET balance = balance + ? WHERE telegram_id = ?').run(refund, tgId);
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, description) VALUES (?, ?, ?, ?, ?)'
-    ).run(player.id, 'refund', refund, 'approved', `Left ${room.name}`);
+    await playerRef.update({ balance: player.balance + refund });
+
+    // Record transaction
+    const transactionRef = db.ref('transactions').push();
+    await transactionRef.set({
+      player_id: tgId,
+      type: 'refund',
+      amount: refund,
+      status: 'approved',
+      description: `Left ${room.name}`
+    });
 
     // Clean room
     room.players = room.players.filter(id => id !== tgId);
@@ -169,7 +185,8 @@ class GameManager {
       room.status = 'waiting';
     }
 
-    const updatedPlayer = db.prepare('SELECT balance FROM players WHERE telegram_id = ?').get(tgId);
+    const updatedSnapshot = await playerRef.once('value');
+    const updatedPlayer = updatedSnapshot.val();
     return { success: true, message: `Refunded ${refund} Br`, balance: updatedPlayer.balance };
   }
 
@@ -189,7 +206,7 @@ class GameManager {
   }
 
   // ---- Public: Claim BINGO ----
-  claimBingo(roomId, tgId) {
+  async claimBingo(roomId, tgId) {
     const room = this.rooms[roomId];
     if (!room) return { success: false, error: 'Room not found' };
     if (room.status !== 'playing') return { success: false, error: 'Game not active' };
@@ -203,31 +220,59 @@ class GameManager {
     // This is a simplified check — in production, validate against actual cartela data
     const winAmount = (room.prize * 0.85);
     
-    const db = getDB();
-    const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+    const playerRef = db.ref(`players/${tgId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
     
     // Award winner
-    db.prepare('UPDATE players SET balance = balance + ?, games_played = games_played + 1, games_won = games_won + 1 WHERE telegram_id = ?')
-      .run(winAmount, tgId);
+    await playerRef.update({
+      balance: player.balance + winAmount,
+      gamesPlayed: (player.gamesPlayed || 0) + 1,
+      gamesWon: (player.gamesWon || 0) + 1
+    });
     
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, description) VALUES (?, ?, ?, ?, ?)'
-    ).run(player.id, 'winning_prize', winAmount, 'approved', `Won ${room.name}`);
+    // Record winning transaction
+    const winTransactionRef = db.ref('transactions').push();
+    await winTransactionRef.set({
+      player_id: tgId,
+      type: 'winning_prize',
+      amount: winAmount,
+      status: 'approved',
+      description: `Won ${room.name}`
+    });
     
-    db.prepare(
-      'INSERT INTO game_history (player_id, room_id, room_name, result, prize, cartela_indices) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(player.id, roomId, room.name, 'win', winAmount, JSON.stringify(playerCartelas));
+    // Record game history for winner
+    const gameHistoryRef = db.ref('game_history').push();
+    await gameHistoryRef.set({
+      player_id: tgId,
+      room_id: roomId,
+      room_name: room.name,
+      result: 'win',
+      prize: winAmount,
+      cartela_indices: JSON.stringify(playerCartelas)
+    });
 
     // Record losers
-    room.players.filter(id => id !== tgId).forEach(loserId => {
-      const loser = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(loserId);
+    for (const loserId of room.players.filter(id => id !== tgId)) {
+      const loserRef = db.ref(`players/${loserId}`);
+      const loserSnapshot = await loserRef.once('value');
+      const loser = loserSnapshot.val();
+      
       if (loser) {
-        db.prepare('UPDATE players SET games_played = games_played + 1 WHERE telegram_id = ?').run(loserId);
-        db.prepare(
-          'INSERT INTO game_history (player_id, room_id, room_name, result, prize) VALUES (?, ?, ?, ?, ?)'
-        ).run(loser.id, roomId, room.name, 'lose', 0);
+        await loserRef.update({
+          gamesPlayed: (loser.gamesPlayed || 0) + 1
+        });
+        
+        const loserHistoryRef = db.ref('game_history').push();
+        await loserHistoryRef.set({
+          player_id: loserId,
+          room_id: roomId,
+          room_name: room.name,
+          result: 'lose',
+          prize: 0
+        });
       }
-    });
+    }
 
     room.winners = [{ playerId: tgId, playerName: player.first_name, amount: winAmount }];
     room.status = 'winner';
@@ -235,7 +280,8 @@ class GameManager {
     // Reset after 5 seconds
     setTimeout(() => this.resetRoom(roomId), 5000);
 
-    const updatedPlayer = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+    const updatedSnapshot = await playerRef.once('value');
+    const updatedPlayer = updatedSnapshot.val();
     return {
       success: true,
       winner: true,

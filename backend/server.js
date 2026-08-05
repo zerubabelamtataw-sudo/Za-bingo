@@ -1,102 +1,101 @@
 // ============================================================
-// ZA BINGO — SERVER (Express API + Game Manager)
+// ZA BINGO — SERVER (Firebase + Express API)
 // ============================================================
 
 const express = require('express');
 const cors = require('cors');
-const { initDB, getDB } = require('./database');
+const db = require('./firebase');
 const GameManager = require('./gameManager');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// ============================================================
-// Initialize Database FIRST
-// ============================================================
 
-initDB();
-
-// Load bot AFTER database is ready
+// Load bot after Firebase is ready
 const bot = require('./bot');
 
-// Initialize game manager
 const gameManager = new GameManager();
 
-// Share gameManager with bot
 bot.setGameManager(gameManager);
 
 
 // ============================================================
-// PLAYER ENDPOINTS
+// PLAYER
 // ============================================================
 
-app.get('/api/player', (req, res) => {
+app.get('/api/player', async (req,res)=>{
+
   const tgId = req.headers['x-telegram-id'] || req.query.tg_id;
 
-  if (!tgId) {
-    return res.status(400).json({ error: 'Missing telegram_id' });
-  }
-
-  const db = getDB();
-
-  let player = db
-    .prepare('SELECT * FROM players WHERE telegram_id = ?')
-    .get(tgId);
-
-  if (!player) {
-
-    const firstName = req.query.first_name || 'Player';
-    const username = req.query.username || '';
-
-    const result = db.prepare(`
-      INSERT INTO players
-      (telegram_id, first_name, username)
-      VALUES (?, ?, ?)
-    `).run(
-      tgId,
-      firstName,
-      username
-    );
-
-    player = db
-      .prepare('SELECT * FROM players WHERE id = ?')
-      .get(result.lastInsertRowid);
-  }
-
-  res.json({
-    success: true,
-    player
-  });
-});
-
-
-app.put('/api/player/phone', (req,res)=>{
-
-  const tgId = req.headers['x-telegram-id'];
-  const {phone} = req.body;
-
-  if(!tgId || !phone){
+  if(!tgId){
     return res.status(400).json({
-      error:"Missing fields"
+      error:"Missing telegram_id"
     });
   }
 
-  const db=getDB();
 
-  db.prepare(
-    'UPDATE players SET phone=? WHERE telegram_id=?'
-  ).run(phone,tgId);
+  const playerRef = db.ref(`players/${tgId}`);
+
+  const snapshot = await playerRef.once('value');
+
+  let player = snapshot.val();
+
+
+  if(!player){
+
+    player = {
+      telegram_id: tgId,
+      first_name: req.query.first_name || "Player",
+      username: req.query.username || "",
+      phone:"",
+      balance:100,
+      games_played:0,
+      games_won:0,
+      registration_date:new Date().toISOString()
+    };
+
+
+    await playerRef.set(player);
+
+  }
 
 
   res.json({
-    success:true
+    success:true,
+    player
   });
 
 });
+
+
+
+// Update phone
+
+app.put('/api/player/phone', async(req,res)=>{
+
+ const tgId=req.headers['x-telegram-id'];
+ const phone=req.body.phone;
+
+
+ if(!tgId || !phone){
+   return res.status(400).json({
+     error:"Missing fields"
+   });
+ }
+
+
+ await db.ref(`players/${tgId}/phone`).set(phone);
+
+
+ res.json({
+   success:true
+ });
+
+});
+
 
 
 // ============================================================
@@ -105,12 +104,13 @@ app.put('/api/player/phone', (req,res)=>{
 
 app.get('/api/rooms',(req,res)=>{
 
-  res.json({
-    success:true,
-    rooms:gameManager.getAllRooms()
-  });
+ res.json({
+   success:true,
+   rooms:gameManager.getAllRooms()
+ });
 
 });
+
 
 
 app.post('/api/rooms/:roomId/join',(req,res)=>{
@@ -123,9 +123,11 @@ app.post('/api/rooms/:roomId/join',(req,res)=>{
    req.body.cartelaIndices
  );
 
+
  res.json(result);
 
 });
+
 
 
 // ============================================================
@@ -134,60 +136,69 @@ app.post('/api/rooms/:roomId/join',(req,res)=>{
 
 app.get('/api/game/:roomId',(req,res)=>{
 
+
  const game=gameManager.getGameState(
    req.params.roomId,
    req.headers['x-telegram-id']
  );
+
 
  res.json({
    success:true,
    game
  });
 
+
 });
 
 
+
 app.post('/api/game/:roomId/bingo',(req,res)=>{
+
 
  const result=gameManager.claimBingo(
    req.params.roomId,
    req.headers['x-telegram-id']
  );
 
+
  res.json(result);
 
+
 });
+
 
 
 // ============================================================
 // TRANSACTIONS
 // ============================================================
 
-app.get('/api/transactions',(req,res)=>{
-
- const db=getDB();
-
- const player=db.prepare(
- 'SELECT id FROM players WHERE telegram_id=?'
- ).get(req.headers['x-telegram-id']);
+app.get('/api/transactions',async(req,res)=>{
 
 
- if(!player){
-   return res.json([]);
+ const tgId=req.headers['x-telegram-id'];
+
+
+ if(!tgId){
+   return res.status(400).json({
+     error:"Missing telegram_id"
+   });
  }
 
 
- const transactions=db.prepare(
- 'SELECT * FROM transactions WHERE player_id=?'
- ).all(player.id);
+ const snapshot=await db
+ .ref(`transactions/${tgId}`)
+ .once('value');
 
 
  res.json({
    success:true,
-   transactions
+   transactions:snapshot.val() || {}
  });
 
+
 });
+
 
 
 // ============================================================
@@ -201,6 +212,7 @@ app.get('/api/health',(req,res)=>{
  });
 
 });
+
 
 
 // ============================================================

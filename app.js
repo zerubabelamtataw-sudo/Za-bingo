@@ -932,6 +932,21 @@
     state.player.name = 'Guest';
     state.player.username = 'guest';
   }
+  
+  fetch(`/api/player?tg_id=${state.player.id}&first_name=${encodeURIComponent(state.player.name)}&username=${encodeURIComponent(state.player.username)}`)
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      state.player = {
+        ...state.player,
+        ...data.player
+      };
+
+      updateHeader();
+      updateProfileUI();
+      updateWalletUI();
+    }
+  });
 
   updateHeader();
   renderRooms();

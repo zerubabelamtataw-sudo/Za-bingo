@@ -912,19 +912,34 @@
 
   // ---- Init ----
   function init() {
-    const tgUser = TelegramApp.getUser();
-    if (tgUser) {
-      state.player.id = tgUser.id;
-      state.player.name = tgUser.first_name || 'Player';
-      state.player.username = tgUser.username || 'player';
-    }
-    updateHeader();
-    renderRooms();
-    updateProfileUI();
-    updateWalletUI();
-    updateHistoryUI();
-    navigateTo('game');
+  let tgUser = null;
+
+  if (window.Telegram && Telegram.WebApp) {
+    const tg = Telegram.WebApp;
+
+    tg.ready();
+    tg.expand();
+
+    tgUser = tg.initDataUnsafe?.user || null;
   }
+
+  if (tgUser) {
+    state.player.id = tgUser.id;
+    state.player.name = tgUser.first_name || 'Player';
+    state.player.username = tgUser.username || 'player';
+  } else {
+    state.player.id = null;
+    state.player.name = 'Guest';
+    state.player.username = 'guest';
+  }
+
+  updateHeader();
+  renderRooms();
+  updateProfileUI();
+  updateWalletUI();
+  updateHistoryUI();
+  navigateTo('game');
+}
 
   init();
 

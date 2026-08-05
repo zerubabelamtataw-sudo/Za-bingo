@@ -132,6 +132,8 @@ class GameManager {
     cartelaIndices.forEach(idx => room.reservedCartelas.add(idx));
     room.totalCartelas += cartelaIndices.length;
 
+    console.log("JOIN DEBUG", roomId, tgId, room.players.length, room.status);
+
     // Start countdown if we have 2+ players
     if (room.players.length >= 2 && room.status === 'waiting') {
       this.startCountdown(roomId);

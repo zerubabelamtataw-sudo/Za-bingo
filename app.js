@@ -68,7 +68,6 @@
   const pages = {
     game: document.getElementById('page-game'),
     profile: document.getElementById('page-profile'),
-    wallet: document.getElementById('page-wallet'),
     history: document.getElementById('page-history'),
   };
   const screenRooms = document.getElementById('screen-rooms');
@@ -105,7 +104,7 @@
       name: 'Player',
       username: 'player',
       phone: '',
-      balance: 0,
+      balance: 100,
       gamesPlayed: 0,
       gamesWon: 0,
     },
@@ -127,7 +126,6 @@
     winner: null,
     winningCartelaIndex: null,
     history: [],
-    transactions: [],
     countdownInterval: null,
     drawInterval: null,
   };
@@ -154,7 +152,6 @@
       renderRooms();
     }
     if (page === 'profile') updateProfileUI();
-    if (page === 'wallet') updateWalletUI();
     if (page === 'history') updateHistoryUI();
   }
 
@@ -707,12 +704,6 @@ state.calledNumbers = game.calledNumbers || [];
       result: 'win',
       date: new Date().toLocaleString()
     });
-    state.transactions.push({
-      type: 'win',
-      amount: winAmount * winningIndices.length,
-      desc: 'Won ' + room.name,
-      date: new Date().toLocaleString()
-    });
 
     updateHeader();
     updateGameUI();
@@ -809,84 +800,6 @@ state.calledNumbers = game.calledNumbers || [];
     });
   });
 
-  // ---- Wallet ----
-  function updateWalletUI() {
-    document.getElementById('wallet-balance-amount').textContent = state.player.balance + ' Br';
-    const list = document.getElementById('transaction-list');
-    if (state.transactions.length === 0) {
-      list.innerHTML = '<p class="empty-msg">No transactions.</p>';
-    } else {
-      list.innerHTML = state.transactions.map(t => `
-        <div class="transaction-item">
-          <span>${t.desc}</span>
-          <span class="txn-amount ${t.amount >= 0 ? 'positive' : 'negative'}">${t.amount >= 0 ? '+' : ''}${t.amount} Br</span>
-        </div>
-      `).join('');
-    }
-  }
-
-  document.getElementById('deposit-verify-btn').addEventListener('click', function() {
-    const method = document.querySelector('input[name="deposit-method"]:checked');
-    if (!method) { TelegramApp.showAlert('Select a payment method.'); return; }
-    const amount = parseFloat(document.getElementById('deposit-amount').value);
-    if (!amount || amount <= 0) { TelegramApp.showAlert('Enter valid amount.'); return; }
-    const sms = document.getElementById('deposit-sms').value.trim();
-    if (!sms) { TelegramApp.showAlert('Paste SMS confirmation.'); return; }
-
-    const statusEl = document.getElementById('deposit-status');
-    statusEl.textContent = 'Verifying...';
-    statusEl.className = 'status-msg';
-
-    setTimeout(function() {
-      state.player.balance += amount;
-      state.transactions.push({
-        type: 'deposit',
-        amount: amount,
-        desc: 'Deposit via ' + method.value,
-        date: new Date().toLocaleString()
-      });
-      updateHeader();
-      updateWalletUI();
-      statusEl.textContent = '✅ Verified! ' + amount + ' Br added.';
-      statusEl.className = 'status-msg success';
-      document.getElementById('deposit-amount').value = '';
-      document.getElementById('deposit-sms').value = '';
-      document.querySelector('input[name="deposit-method"]:checked').checked = false;
-    }, 1000);
-  });
-
-  document.getElementById('withdraw-btn').addEventListener('click', function() {
-    const method = document.querySelector('input[name="withdraw-method"]:checked');
-    if (!method) { TelegramApp.showAlert('Select a payment method.'); return; }
-    const phone = document.getElementById('withdraw-phone').value.trim();
-    if (!phone) { TelegramApp.showAlert('Enter phone number.'); return; }
-    TelegramApp.showConfirm('Withdraw all balance?', function(ok) {
-      if (ok) {
-        const amount = state.player.balance;
-        if (amount <= 0) { TelegramApp.showAlert('No balance to withdraw.'); return; }
-        const statusEl = document.getElementById('withdraw-status');
-        statusEl.textContent = 'Processing...';
-        statusEl.className = 'status-msg';
-
-        setTimeout(function() {
-          state.player.balance = 0;
-          state.transactions.push({
-            type: 'withdraw',
-            amount: -amount,
-            desc: 'Withdraw via ' + method.value,
-            date: new Date().toLocaleString()
-          });
-          updateHeader();
-          updateWalletUI();
-          statusEl.textContent = '✅ Withdrawal requested for ' + amount + ' Br to ' + phone;
-          statusEl.className = 'status-msg success';
-          document.getElementById('withdraw-phone').value = '';
-          document.querySelector('input[name="withdraw-method"]:checked').checked = false;
-        }, 1000);
-      }
-    });
-  });
-
   // ---- History ----
   function updateHistoryUI() {
     const list = document.getElementById('history-list');
@@ -944,7 +857,6 @@ state.calledNumbers = game.calledNumbers || [];
 
       updateHeader();
       updateProfileUI();
-      updateWalletUI();
     }
   });
 
@@ -952,7 +864,6 @@ state.calledNumbers = game.calledNumbers || [];
   loadRooms();
 setInterval(loadRooms, 1000);
   updateProfileUI();
-  updateWalletUI();
   updateHistoryUI();
   navigateTo('game');
 }

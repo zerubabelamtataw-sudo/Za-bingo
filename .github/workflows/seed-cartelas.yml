@@ -7,6 +7,10 @@ jobs:
   seed:
     runs-on: ubuntu-latest
 
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

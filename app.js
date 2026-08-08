@@ -841,10 +841,12 @@ state.calledNumbers = game.calledNumbers || [];
     state.player.name = tgUser.first_name || 'Player';
     state.player.username = tgUser.username || 'player';
   } else {
-    state.player.id = null;
-    state.player.name = 'Guest';
-    state.player.username = 'guest';
-  }
+  const testUser = TelegramApp.getUser();
+
+  state.player.id = testUser.id;
+  state.player.name = testUser.first_name || 'Player';
+  state.player.username = testUser.username || 'player';
+}
   
   fetch(`/api/player?tg_id=${state.player.id}&first_name=${encodeURIComponent(state.player.name)}&username=${encodeURIComponent(state.player.username)}`)
   .then(res => res.json())

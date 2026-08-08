@@ -904,6 +904,28 @@ function loadRooms() {
     .catch(err => console.log(err));
 }
 
+function listenToPlayer() {
+  if (!state.player.id) return;
+
+  fetch(`/api/player?tg_id=${state.player.id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success || !data.player) return;
+
+      state.player.id = data.player.telegram_id || state.player.id;
+      state.player.name = data.player.first_name || 'Player';
+      state.player.username = data.player.username || 'player';
+      state.player.phone = data.player.phone || '';
+      state.player.balance = Number(data.player.balance ?? 0);
+      state.player.gamesPlayed = Number(data.player.games_played ?? 0);
+      state.player.gamesWon = Number(data.player.games_won ?? 0);
+
+      updateHeader();
+      updateProfileUI();
+    })
+    .catch(err => console.log('Player update error:', err));
+}
+
   init();
 
 })();

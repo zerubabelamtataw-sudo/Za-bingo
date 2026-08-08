@@ -12,7 +12,7 @@ class GameManager {
     };
     
    Object.values(this.rooms).forEach(room => {
-  room.roomRef.set({
+  room.roomRef.update({
     id: room.id,
     name: room.name,
     entryFee: room.entryFee,

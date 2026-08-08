@@ -10,8 +10,10 @@ const db = require("./firebase");
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+
     [array[i], array[j]] = [array[j], array[i]];
   }
+
   return array;
 }
 
@@ -29,26 +31,35 @@ function generateCartela(id) {
 
   const numbers = {};
 
+  // Generate numbers for each column
   for (const letter of Object.keys(ranges)) {
     const [min, max] = ranges[letter];
 
     const pool = [];
 
+    // Fill number pool
     for (let i = min; i <= max; i++) {
       pool.push(i);
     }
 
+    // Randomize numbers
     shuffle(pool);
 
+    // Select 5 numbers
     numbers[letter] = pool.slice(0, 5);
   }
 
-  // Free center space
+  // ------------------------------
+  // Free Center Space
+  // ------------------------------
   numbers.N[2] = 0;
 
+  // ------------------------------
+  // Return Cartela
+  // ------------------------------
   return {
-    id,
-    numbers
+    id: id,
+    numbers: numbers
   };
 }
 
@@ -60,13 +71,16 @@ async function seedRoom(roomId) {
 
   const cartelas = {};
 
-  for (let i = 0; i < 150; i++) {
+  // Create 150 cartelas
+  // Numbering: 1 → 150
+  for (let i = 1; i <= 150; i++) {
     cartelas[i] = generateCartela(i);
   }
 
+  // Upload cartelas to Firebase
   await db.ref(`rooms/${roomId}/cartelas`).set(cartelas);
 
-  console.log(`✅ ${roomId} seeded with 150 cartelas`);
+  console.log(`✅ ${roomId} seeded with 150 cartelas (1–150)`);
 }
 
 // ------------------------------
@@ -75,6 +89,7 @@ async function seedRoom(roomId) {
 async function seed() {
   console.log("🚀 Starting ZA Bingo Cartela Seeder...");
 
+  // Seed the three ZA Bingo rooms
   await seedRoom("5br");
   await seedRoom("10br");
   await seedRoom("20br");
@@ -83,11 +98,12 @@ async function seed() {
 }
 
 // ------------------------------
-// Run
+// Run Seeder
 // ------------------------------
 seed()
   .then(() => {
     console.log("✅ Seeder finished successfully.");
+    process.exit(0);
   })
   .catch((err) => {
     console.error("❌ Seeder failed:");

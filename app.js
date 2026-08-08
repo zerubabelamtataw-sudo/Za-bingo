@@ -104,7 +104,7 @@
       name: 'Player',
       username: 'player',
       phone: '',
-      balance: 100,
+      balance: 0,
       gamesPlayed: 0,
       gamesWon: 0,
     },

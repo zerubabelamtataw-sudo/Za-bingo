@@ -864,7 +864,7 @@ state.calledNumbers = game.calledNumbers || [];
 
   updateHeader();
   loadRooms();
-setInterval(loadRooms, 1000);
+setInterval(loadRooms, 4000);
   updateProfileUI();
   updateHistoryUI();
   navigateTo('game');

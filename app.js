@@ -851,17 +851,33 @@ state.calledNumbers = game.calledNumbers || [];
   fetch(`/api/player?tg_id=${state.player.id}&first_name=${encodeURIComponent(state.player.name)}&username=${encodeURIComponent(state.player.username)}`)
   .then(res => res.json())
   .then(data => {
-    if (data.success) {
-  state.player = {
-    ...state.player,
-    ...data.player,
-    id: data.player.telegram_id || state.player.id,
-    name: data.player.first_name || state.player.name,
-    username: data.player.username || state.player.username,
-    balance: Number(data.player.balance || 0),
-    gamesPlayed: Number(data.player.games_played || 0),
-    gamesWon: Number(data.player.games_won || 0)
-  };
+
+    console.log('PLAYER DATA:', data);
+
+    if (data.success && data.player) {
+
+      state.player.id = data.player.telegram_id || state.player.id;
+      state.player.name = data.player.first_name || 'Player';
+      state.player.username = data.player.username || 'player';
+      state.player.phone = data.player.phone || '';
+
+      state.player.balance = Number(data.player.balance);
+
+      state.player.gamesPlayed =
+        Number(data.player.games_played || 0);
+
+      state.player.gamesWon =
+        Number(data.player.games_won || 0);
+
+      console.log('LOADED BALANCE:', state.player.balance);
+
+      updateHeader();
+      updateProfileUI();
+    }
+  })
+  .catch(err => {
+    console.error('PLAYER API ERROR:', err);
+  });
 
   updateHeader();
   updateProfileUI();

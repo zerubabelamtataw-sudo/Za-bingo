@@ -852,14 +852,20 @@ state.calledNumbers = game.calledNumbers || [];
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      state.player = {
-        ...state.player,
-        ...data.player
-      };
+  state.player = {
+    ...state.player,
+    ...data.player,
+    id: data.player.telegram_id || state.player.id,
+    name: data.player.first_name || state.player.name,
+    username: data.player.username || state.player.username,
+    balance: Number(data.player.balance || 0),
+    gamesPlayed: Number(data.player.games_played || 0),
+    gamesWon: Number(data.player.games_won || 0)
+  };
 
-      updateHeader();
-      updateProfileUI();
-    }
+  updateHeader();
+  updateProfileUI();
+}
   });
 
   updateHeader();

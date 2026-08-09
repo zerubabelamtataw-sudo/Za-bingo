@@ -13,7 +13,7 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 
-const { GamesManager } = require('./gamesManager');
+const { GamesManager } = require('./gameManager');
 
 // ── Firebase init (graceful if credentials missing) ───────────────────────────
 let db = null;

@@ -5,7 +5,7 @@
 
 'use strict';
 
-const API = window.location.origin; // same-origin; change if hosted separately
+const API = 'https://za-bingo-5a7e.onrender.com';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const state = {

@@ -81,11 +81,21 @@ app.get('/api/rooms/:roomId', (req, res) => {
 // body: { playerId, name }
 app.post('/api/player', async (req, res) => {
   const { playerId, name } = req.body || {};
-  if (!playerId || !name) return err(res, 'playerId and name required');
+
+  if (!playerId) {
+    return err(res, 'Telegram player ID required');
+  }
+
   try {
-    const player = await gm.getOrCreatePlayer(playerId, name);
+    const player = await gm.getOrCreatePlayer(
+      String(playerId),
+      name || 'Player'
+    );
+
     ok(res, { player });
-  } catch (e) { err(res, e.message); }
+  } catch (e) {
+    err(res, e.message);
+  }
 });
 
 // GET /api/player/:playerId

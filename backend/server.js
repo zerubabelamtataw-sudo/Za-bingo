@@ -31,7 +31,7 @@ try {
   if (!admin.apps.length) {
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
   }
-  db = admin.firestore();
+  db = admin.database();
   console.log('✅ Firebase connected');
 } catch (e) {
   console.warn('⚠️  Firebase not configured — running in-memory mode:', e.message);

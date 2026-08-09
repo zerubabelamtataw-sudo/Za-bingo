@@ -4,6 +4,9 @@
  */
 
 'use strict';
+const tg = window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
 
 const API = 'https://za-bingo-5a7e.onrender.com';
 
@@ -79,11 +82,15 @@ function showPage(name) {
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 $('startBtn').addEventListener('click', async () => {
-  const name = $('playerNameInput').value.trim();
-  if (!name) { toast('Please enter your name', 'error'); return; }
+  const telegramUser = tg?.initDataUnsafe?.user;
 
-  let playerId = loadLocal('playerId');
-  if (!playerId) { playerId = uid(); saveLocal('playerId', playerId); }
+if (!telegramUser) {
+  toast('Please open the game through Telegram', 'error');
+  return;
+}
+
+const playerId = String(telegramUser.id);
+const name = telegramUser.first_name || telegramUser.username || 'Player';
 
   try {
     const data = await apiFetch('/api/player', {
@@ -641,22 +648,33 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => showPage(tab.dataset.page));
 });
 
-// ── Auto-restore session ───────────────────────────────────────────────────────
+// ── Auto-restore Telegram session ─────────────────────────────────────────────
 (async () => {
-  const savedId   = loadLocal('playerId');
-  const savedName = loadLocal('playerName');
-  if (savedId && savedName) {
-    try {
-      const data = await apiFetch('/api/player', {
-        method: 'POST',
-        body: JSON.stringify({ playerId: savedId, name: savedName }),
-      });
-      state.player = data.player;
-      initApp();
-    } catch {
-      // show setup page
-    }
+  const telegramUser = tg?.initDataUnsafe?.user;
+
+  if (!telegramUser) {
+    toast('Please open the game through Telegram', 'error');
+    return;
   }
-  // Pre-fill name
-  if (savedName) $('playerNameInput').value = savedName;
+
+  const playerId = String(telegramUser.id);
+  const playerName =
+    telegramUser.first_name ||
+    telegramUser.username ||
+    'Player';
+
+  try {
+    const data = await apiFetch('/api/player', {
+      method: 'POST',
+      body: JSON.stringify({
+        playerId,
+        name: playerName
+      }),
+    });
+
+    state.player = data.player;
+    initApp();
+  } catch (e) {
+    toast('Could not load your Telegram account: ' + e.message, 'error');
+  }
 })();

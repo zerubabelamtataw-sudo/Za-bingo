@@ -12,7 +12,7 @@ const ROOMS_CONFIG = [
 ];
 
 const COUNTDOWN_SECONDS = 25;
-const DRAW_INTERVAL_MS  = 2000;
+const DRAW_INTERVAL_MS  = 3000;
 const WINNER_SHARE      = 0.85;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ class Room {
 
 class GamesManager {
   constructor(db) {
-    this.db    = db;   // Firestore instance (or null in mock mode)
+    this.db = db;   // Firebase Realtime Database instance
     this.rooms = {};
     this._cartelaCache = null;
 
@@ -127,49 +127,47 @@ class GamesManager {
   // ── cartelas ──────────────────────────────────────────────────────────────
 
   async getCartelas() {
-    if (this._cartelaCache) return this._cartelaCache;
+  if (this._cartelaCache) return this._cartelaCache;
 
-    if (this.db) {
-      const snap = await this.db.collection('cartelas').get();
-      if (!snap.empty) {
-        this._cartelaCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        return this._cartelaCache;
-      }
-      // seed if empty
-      await this._seedCartelas();
-    } else {
-      // in-memory fallback
-      await this._seedCartelas();
-    }
-    return this._cartelaCache;
+  if (!this.db) {
+    throw new Error('Firebase Realtime Database is not connected');
   }
 
-  async _seedCartelas() {
-    const cartelas = [];
-    for (let i = 1; i <= 150; i++) {
-      cartelas.push({ id: `cartela_${i}`, number: i, grid: generateCartela() });
-    }
-    if (this.db) {
-      const batch = this.db.batch();
-      for (const c of cartelas) {
-        const ref = this.db.collection('cartelas').doc(c.id);
-        batch.set(ref, { number: c.number, grid: c.grid });
-      }
-      await batch.commit();
-    }
-    this._cartelaCache = cartelas;
+  const snap = await this.db.ref('cartelas').once('value');
+  const data = snap.val();
+
+  if (!data) {
+    throw new Error('No cartelas found in Firebase Realtime Database');
   }
+
+  this._cartelaCache = Object.entries(data).map(([id, value]) => ({
+    id,
+    ...value
+  }));
+
+  return this._cartelaCache;
+}
 
   // ── player ────────────────────────────────────────────────────────────────
 
   async getOrCreatePlayer(playerId, name) {
     if (this.db) {
-      const ref  = this.db.collection('players').doc(playerId);
-      const snap = await ref.get();
-      if (snap.exists) return { id: playerId, ...snap.data() };
-      const player = { name, balance: 100, history: [] };
-      await ref.set(player);
-      return { id: playerId, ...player };
+      const ref = this.db.ref(`players/${playerId}`);
+const snap = await ref.once('value');
+
+if (snap.exists()) {
+  return { id: playerId, ...snap.val() };
+}
+
+const player = {
+  name,
+  balance: 100,
+  history: []
+};
+
+await ref.set(player);
+
+return { id: playerId, ...player };
     }
     // memory fallback
     if (!this._players) this._players = {};
@@ -180,24 +178,36 @@ class GamesManager {
   }
 
   async updatePlayerBalance(playerId, delta, historyEntry) {
-    if (this.db) {
-      const ref  = this.db.collection('players').doc(playerId);
-      const snap = await ref.get();
-      if (!snap.exists) return;
-      const data    = snap.data();
-      const balance = (data.balance || 0) + delta;
-      const history = [...(data.history || []), historyEntry];
-      await ref.update({ balance, history });
-      return { id: playerId, ...data, balance, history };
-    }
-    if (this._players && this._players[playerId]) {
-      const p = this._players[playerId];
-      p.balance += delta;
-      p.history.push(historyEntry);
-      return p;
-    }
+  if (this.db) {
+    const ref = this.db.ref(`players/${playerId}`);
+    const snap = await ref.once('value');
+
+    if (!snap.exists()) return;
+
+    const data = snap.val();
+    const balance = (data.balance || 0) + delta;
+    const history = [...(data.history || []), historyEntry];
+
+    await ref.update({
+      balance,
+      history
+    });
+
+    return {
+      id: playerId,
+      ...data,
+      balance,
+      history
+    };
   }
 
+  if (this._players && this._players[playerId]) {
+    const p = this._players[playerId];
+    p.balance += delta;
+    p.history.push(historyEntry);
+    return p;
+  }
+}
   // ── join ──────────────────────────────────────────────────────────────────
 
   async joinRoom(roomId, player, cartelaIds) {
@@ -316,15 +326,20 @@ class GamesManager {
       type: 'win', roomId, amount: winAmt, cartelaId, date: new Date().toISOString(),
     });
 
-    // Store in Firestore
+    // Store in Firebase
     if (this.db) {
-      await this.db.collection('winners').add({
-        ...room.winner, roomId, pot: room.pot, date: new Date().toISOString(),
-      });
-    }
+  const winnerRef = this.db.ref('winners').push();
+
+  await winnerRef.set({
+    ...room.winner,
+    roomId,
+    pot: room.pot,
+    date: new Date().toISOString()
+  });
+}
 
     // Auto-reset after 15s
-    setTimeout(() => this._resetRoom(room), 15000);
+    setTimeout(() => this._resetRoom(room), 5000);
 
     return room.toJSON();
   }

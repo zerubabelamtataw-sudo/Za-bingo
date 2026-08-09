@@ -29,9 +29,14 @@ try {
   }
 
   if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  }
-  db = admin.database();
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: process.env.FIREBASE_DATABASE_URL
+  });
+}
+
+db = admin.database();
+console.log('✅ Firebase Realtime Database connected');
   console.log('✅ Firebase connected');
 } catch (e) {
   console.warn('⚠️  Firebase not configured — running in-memory mode:', e.message);

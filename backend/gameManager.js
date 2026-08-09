@@ -133,7 +133,7 @@ class GamesManager {
     throw new Error('Firebase Realtime Database is not connected');
   }
 
-  const snap = await this.db.ref('cartelas').once('value');
+  const snap = await this.db.ref('rooms/10br/cartelas').once('value');
   const data = snap.val();
 
   if (!data) {
@@ -141,7 +141,7 @@ class GamesManager {
   }
 
   this._cartelaCache = Object.entries(data).map(([id, value]) => ({
-    id,
+    id: String(id),
     ...value
   }));
 

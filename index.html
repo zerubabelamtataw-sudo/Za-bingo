@@ -1,141 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ZA Bingo</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ethiopian Bingo — ቢንጎ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
+<div class="app">
 
-<div id="app">
-  <header id="app-header">
-    <div class="header-left"><span class="logo">ZA Bingo</span></div>
-    <div class="header-right"><span id="header-balance">100 Br</span></div>
-  </header>
-
-  <main id="page-container">
-    <!-- GAME TAB -->
-    <section id="page-game" class="page active">
-      <div id="screen-rooms">
-        <h2>Rooms</h2>
-        <div id="room-cards"></div>
-      </div>
-      <div id="screen-game" style="display:none;">
-        <div id="cartela-selection">
-          <div class="select-header">
-            <h2>Select Cartelas</h2>
-            <p>Choose 1–4 (<span id="select-per-cartela">0</span> Br each · total: <span id="select-fee">0</span> Br)</p>
-          </div>
-          <div id="cartela-grid-container" class="cartela-select-grid"></div>
-          <div class="select-actions">
-            <button class="btn-secondary" id="select-cancel-btn">Cancel</button>
-            <button class="btn-primary" id="select-confirm-btn">Confirm</button>
-          </div>
-        </div>
-        <div id="game-active" style="display:none;">
-          <div class="game-info">
-            <span class="current-call" id="current-call">—</span>
-            <span class="prize-label" id="game-prize-label">ደራሽ: 0 Br</span>
-          </div>
-          <div id="number-board"></div>
-          <hr id="separator" />
-          <div id="game-cartelas-container" class="multi-cartela"></div>
-          <button id="game-bingo-btn" class="btn-bingo" disabled>BINGO</button>
-          <div id="game-winner-announce" style="display:none;" class="winner-announce">
-            Winner: <span id="winner-name">Player</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PROFILE -->
-    <section id="page-profile" class="page">
-      <div class="profile-avatar">👤</div>
-      <h2 id="profile-name">Player</h2>
-      <p id="profile-username">@username</p>
-      <div class="profile-field"><label>Telegram ID</label><div class="readonly-field" id="profile-tgid">-</div></div>
-      <div class="profile-field">
-        <label>Phone Number</label>
-        <input type="tel" id="profile-phone" placeholder="Phone number" class="input-field" />
-        <button class="btn-secondary" id="profile-save-btn">Save</button>
-      </div>
-      <div class="profile-stats">
-        <div><span>Games Played</span> <strong id="profile-played">0</strong></div>
-        <div><span>Games Won</span> <strong id="profile-won">0</strong></div>
-        <div><span>Balance</span> <strong id="profile-balance">100 Br</strong></div>
-      </div>
-      <button class="btn-secondary" id="profile-logout-btn">Logout</button>
-    </section>
-
-    <!-- WALLET -->
-    <section id="page-wallet" class="page">
-      <h2>Wallet</h2>
-      <div class="wallet-balance"><span>Balance</span><strong id="wallet-balance-amount">100 Br</strong></div>
-      <div class="wallet-section card">
-        <h3>Deposit</h3>
-        <div class="payment-methods">
-          <label><input type="radio" name="deposit-method" value="telebirr"> Telebirr</label>
-          <label><input type="radio" name="deposit-method" value="cbe"> CBE Birr</label>
-        </div>
-        <input type="number" id="deposit-amount" placeholder="Amount (Br)" class="input-field" />
-        <textarea id="deposit-sms" placeholder="Paste SMS confirmation..." class="input-field" rows="2"></textarea>
-        <button class="btn-primary" id="deposit-verify-btn">Verify</button>
-        <div id="deposit-status" class="status-msg"></div>
-      </div>
-      <div class="wallet-section card">
-        <h3>Withdraw</h3>
-        <div class="payment-methods">
-          <label><input type="radio" name="withdraw-method" value="telebirr"> Telebirr</label>
-          <label><input type="radio" name="withdraw-method" value="cbe"> CBE Birr</label>
-        </div>
-        <input type="tel" id="withdraw-phone" placeholder="Phone number" class="input-field" />
-        <button class="btn-primary" id="withdraw-btn">Request Withdraw</button>
-        <div id="withdraw-status" class="status-msg"></div>
-      </div>
-      <h3>Transactions</h3>
-      <div id="transaction-list"><p class="empty-msg">No transactions.</p></div>
-    </section>
-
-    <!-- HISTORY -->
-    <section id="page-history" class="page">
-      <h2>History</h2>
-      <div id="history-list"><p class="empty-msg">No games played.</p></div>
-    </section>
-  </main>
-
-  <nav id="bottom-nav">
-    <button class="nav-item active" data-page="game"><span class="nav-label">Game</span></button>
-    <button class="nav-item" data-page="profile"><span class="nav-label">Profile</span></button>
-    <button class="nav-item" data-page="history"><span class="nav-label">History</span></button>
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    BINGO
+    <span>ቢንጎ — ETHIOPIA</span>
+  </div>
+  <nav class="nav-tabs" id="navTabs" style="display:none">
+    <button class="nav-tab active" data-page="lobby">🎮 Lobby</button>
+    <button class="nav-tab" data-page="game" id="gameTab">🎯 Game</button>
+    <button class="nav-tab" data-page="profile">👤 Profile</button>
   </nav>
-
-  <!-- COUNTDOWN POPUP -->
-  <div id="countdown-overlay">
-    <div class="countdown-popup">
-      <div class="countdown-timer" id="popup-countdown">25</div>
-      <div class="countdown-info">
-        <p>ተጫዋች: <span id="popup-players">0</span></p>
-        <p>ደራሽ: <span id="popup-win-amount">0</span> Br</p>
-      </div>
-      <button class="btn-secondary" id="popup-cancel-btn">Cancel</button>
-    </div>
+  <div class="player-hud" id="playerHud" style="display:none">
+    <span class="player-name-badge" id="hudName"></span>
+    <div class="balance-badge" id="hudBalance">0 Br</div>
   </div>
+</header>
 
-  <!-- WINNER POPUP -->
-  <div id="winner-overlay">
-    <div class="winner-popup">
-      <div class="winner-title">🎉 አሸናፊ!</div>
-      <div class="winner-detail">Cartela: <span id="winner-cartela">#1</span></div>
-      <div class="winner-detail">Player: <span id="winner-player-name">Player</span></div>
-      <div class="winner-amount" id="winner-amount-display">0.00 Br</div>
-      <button class="winner-btn" id="winner-close-btn">OK</button>
-    </div>
+<!-- ── SETUP PAGE ── -->
+<div class="page active" id="page-setup">
+  <div class="setup-card">
+    <div style="font-size:3.5rem;margin-bottom:16px">🎱</div>
+    <h1>BINGO</h1>
+    <p>Enter your name to start playing</p>
+    <input type="text" class="input-field" id="playerNameInput" placeholder="Your name…" maxlength="24"/>
+    <button class="btn btn-gold" id="startBtn">Start Playing →</button>
   </div>
-
 </div>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- ── LOBBY PAGE ── -->
+<div class="page" id="page-lobby">
+  <div class="lobby-grid">
+
+    <!-- Left: Rooms -->
+    <div>
+      <div class="section-title">SELECT ROOM</div>
+      <div class="room-cards" id="roomCards">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- Right: Cartela picker -->
+    <div>
+      <div class="cartela-picker-header">
+        <div class="section-title">SELECT CARTELAS</div>
+        <span id="cartelaCountLabel" style="color:var(--muted);font-size:.85rem">Max 4</span>
+      </div>
+      <div class="cartela-grid" id="cartelaGrid">
+        <div class="spinner"></div>
+      </div>
+      <div class="join-bar">
+        <span class="selected-count" id="selectedCount">0 cartelas selected</span>
+        <button class="btn btn-gold" id="joinBtn" disabled>Join Room →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── GAME PAGE ── -->
+<div class="page" id="page-game">
+  <div class="game-layout">
+
+    <!-- Left: called numbers board -->
+    <div>
+      <div class="called-board">
+        <div class="section-title" style="margin-bottom:12px">CALLED NUMBERS</div>
+        <div class="called-board-letters">
+          <div class="board-letter letter-B">B</div>
+          <div class="board-letter letter-I">I</div>
+          <div class="board-letter letter-N">N</div>
+          <div class="board-letter letter-G">G</div>
+          <div class="board-letter letter-O">O</div>
+        </div>
+        <div class="called-numbers-grid" id="calledGrid">
+          <!-- 75 cells injected by JS -->
+        </div>
+        <div class="last-called" id="lastCalledWrap" style="display:none">
+          <div class="last-called-label">Last Called</div>
+          <div class="last-called-number" id="lastCalledNum">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: status + my cartelas -->
+    <div class="game-right">
+
+      <div class="game-status-bar" id="gameStatusBar">
+        <div class="game-info-chip">
+          <div class="game-info-label">Room</div>
+          <div class="game-info-value" id="infoRoomName">—</div>
+        </div>
+        <div class="game-info-chip">
+          <div class="game-info-label">Status</div>
+          <div class="game-info-value" id="infoStatus">—</div>
+        </div>
+        <div class="game-info-chip">
+          <div class="game-info-label">Pot</div>
+          <div class="game-info-value" id="infoPot">0 Br</div>
+        </div>
+        <div class="game-info-chip">
+          <div class="game-info-label">Players</div>
+          <div class="game-info-value" id="infoPlayers">0</div>
+        </div>
+        <div class="game-info-chip">
+          <div class="game-info-label">Numbers</div>
+          <div class="game-info-value" id="infoCalled">0/75</div>
+        </div>
+        <div style="width:100%">
+          <div class="countdown-bar-wrap" id="countdownWrap" style="display:none">
+            <div class="countdown-bar" id="countdownBar" style="width:100%"></div>
+          </div>
+          <div id="countdownLabel" style="font-size:.8rem;color:var(--muted);margin-top:6px;display:none"></div>
+        </div>
+      </div>
+
+      <div class="players-list" id="gamePlayersList"></div>
+
+      <div>
+        <div class="section-title">MY CARTELAS</div>
+        <div class="my-cartelas" id="myCartelas">
+          <div class="empty-state"><div class="icon">🎴</div><div>Join a room to see your cartelas</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PROFILE PAGE ── -->
+<div class="page" id="page-profile">
+  <div class="profile-grid">
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar">😀</div>
+      <div class="profile-username" id="profileName">—</div>
+      <div class="profile-balance-label">Balance</div>
+      <div class="profile-balance" id="profileBalance">0 Br</div>
+    </div>
+    <div class="history-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Room</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No history yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<!-- ── WINNER OVERLAY ── -->
+<div class="overlay" id="winnerOverlay">
+  <div class="winner-popup">
+    <div class="winner-crown">👑</div>
+    <div class="winner-title">BINGO!</div>
+    <div class="winner-name" id="popupWinnerName">Player</div>
+    <div class="winner-detail" id="popupCartelaDetail">Cartela #1</div>
+    <div class="winner-amount" id="popupAmount">+0 Br</div>
+    <div class="winner-sub" id="popupSub">Winners take 85% of the pot</div>
+    <button class="btn btn-gold" id="winnerCloseBtn">Back to Lobby</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script src="app.js"></script>
 </body>
 </html>

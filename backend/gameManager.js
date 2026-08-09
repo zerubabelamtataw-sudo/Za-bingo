@@ -1,494 +1,344 @@
-// ============================================================
-// ZA BINGO — GAME MANAGER
-// ============================================================
-const db = require('./firebase');
+'use strict';
 
-class GameManager {
-  constructor() {
-    this.rooms = {
-      '5br': this.createRoomData('5br', '5 Br', 5),
-      '10br': this.createRoomData('10br', '10 Br', 10),
-      '20br': this.createRoomData('20br', '20 Br', 20),
-    };
-    
-   Object.values(this.rooms).forEach(room => {
-  room.roomRef.set({
-    id: room.id,
-    name: room.name,
-    entryFee: room.entryFee,
-    prize: room.prize,
-    status: room.status,
-    players: [],
-    winners: []
-  });
-}); 
-    
-    // Start auto-draw timers for all rooms
-    Object.keys(this.rooms).forEach(roomId => {
-      this.startDrawLoop(roomId);
-    });
-    
-    console.log('✅ Game Manager initialized');
+/**
+ * gamesManager.js
+ * Manages all 3 Bingo room states: waiting → countdown → playing → winner
+ */
+
+const ROOMS_CONFIG = [
+  { id: 'room_5',  name: '5 Br Room',  entryFee: 5  },
+  { id: 'room_10', name: '10 Br Room', entryFee: 10 },
+  { id: 'room_20', name: '20 Br Room', entryFee: 20 },
+];
+
+const COUNTDOWN_SECONDS = 25;
+const DRAW_INTERVAL_MS  = 2000;
+const WINNER_SHARE      = 0.85;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function generateCartela() {
+  const cols = [
+    { letter: 'B', min: 1,  max: 15 },
+    { letter: 'I', min: 16, max: 30 },
+    { letter: 'N', min: 31, max: 45 },
+    { letter: 'G', min: 46, max: 60 },
+    { letter: 'O', min: 61, max: 75 },
+  ];
+
+  const grid = [];
+  for (let col = 0; col < 5; col++) {
+    const { min, max } = cols[col];
+    const pool = [];
+    for (let n = min; n <= max; n++) pool.push(n);
+    pool.sort(() => Math.random() - 0.5);
+    grid.push(pool.slice(0, 5));
   }
 
-  // ---- Room Factory ----
-  createRoomData(id, name, entryFee) {
-  const roomRef = db.ref(`rooms/${id}`);
-
-  return {
-    id,
-    name,
-    entryFee,
-    roomRef,
-      prize: 0,
-      players: [],           // Array of telegram_ids
-      playerCartelas: {},    // { telegram_id: [cartelaIndex, ...] }
-      reservedCartelas: new Set(),
-      status: 'waiting',     // waiting | countdown | playing | winner
-      joined: {},
-      winners: [],
-      calledNumbers: [],
-      markedNumbers: {},     // { telegram_id: Set of numbers }
-      countdown: 25,
-      countdownInterval: null,
-      drawInterval: null,
-      totalCartelas: 0,
-    };
+  // Transpose to row-major [[row0], [row1], …] then set FREE center
+  const rows = [];
+  for (let r = 0; r < 5; r++) {
+    rows.push([grid[0][r], grid[1][r], grid[2][r], grid[3][r], grid[4][r]]);
   }
-
-  // ---- Public: Get room data for API ----
-  getRoom(roomId) {
-    const room = this.rooms[roomId];
-    if (!room) return null;
-    return {
-      id: room.id,
-      name: room.name,
-      entryFee: room.entryFee,
-      prize: room.prize,
-      players: room.players.length,
-      status: room.status,
-      winners: room.winners,
-    };
-  }
-
-  // ---- Public: Get all rooms ----
-  getAllRooms() {
-    const result = {};
-    for (const [id, room] of Object.entries(this.rooms)) {
-      result[id] = this.getRoom(id);
-    }
-    return result;
-  }
-
-  // ---- Public: Get game state for a player ----
-  getGameState(roomId, tgId) {
-    const room = this.rooms[roomId];
-    if (!room) return null;
-    return {
-      roomId: room.id,
-      status: room.status,
-      calledNumbers: room.calledNumbers, // Last 10 calls
-      calledCount: room.calledNumbers.length,
-      countdown: room.countdown,
-      prize: room.prize,
-      players: room.players.length,
-      myMarkedNumbers: room.markedNumbers[tgId] ? Array.from(room.markedNumbers[tgId]) : [],
-      myCartelas: room.playerCartelas[tgId] || [],
-      winners: room.winners,
-    };
-  }
-
-  // ---- Public: Join room ----
-  async joinRoom(roomId, tgId, cartelaIndices) {
-    const room = this.rooms[roomId];
-    if (!room) return { success: false, error: 'Room not found' };
-    if (room.status === 'playing') return { success: false, error: 'Game in progress' };
-    if (room.players.includes(tgId)) return { success: false, error: 'Already joined' };
-    if (cartelaIndices.length < 1 || cartelaIndices.length > 4) {
-      return { success: false, error: 'Select 1-4 cartelas' };
-    }
-
-    // Check for duplicate cartelas
-    for (const idx of cartelaIndices) {
-      if (room.reservedCartelas.has(idx)) {
-        return { success: false, error: `Cartela #${idx + 1} already taken` };
-      }
-    }
-
-    const playerRef = db.ref(`players/${tgId}`);
-    const playerSnapshot = await playerRef.once('value');
-    const player = playerSnapshot.val();
-    
-    if (!player) return { success: false, error: 'Player not registered' };
-
-    const totalFee = room.entryFee * cartelaIndices.length;
-    if (player.balance < totalFee) {
-      return { success: false, error: `Insufficient balance. Need ${totalFee} Br` };
-    }
-
-    // Deduct balance
-    await playerRef.update({ balance: player.balance - totalFee });
-
-    // Record transaction
-    const transactionRef = db.ref('transactions').push();
-    await transactionRef.set({
-      player_id: tgId,
-      type: 'entry_fee',
-      amount: -totalFee,
-      status: 'approved',
-      description: `Joined ${room.name}`
-    });
-
-    // Join room
-    room.players.push(tgId);
-    room.prize += totalFee;
-    const cartelaSnapshot = await db.ref(`rooms/${roomId}/cartelas`).once('value');
-const allCartelas = cartelaSnapshot.val();
-
-room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
-  id: idx,
-  numbers: allCartelas[idx].numbers
-}));
-    room.markedNumbers[tgId] = new Set();
-    cartelaIndices.forEach(idx => room.reservedCartelas.add(idx));
-    room.totalCartelas += cartelaIndices.length;
-    
-   await room.roomRef.update({
-  players: room.players,
-  prize: room.prize,
-  playerCartelas: room.playerCartelas,
-  totalCartelas: room.totalCartelas,
-  status: room.status
-}); 
-
-    console.log("JOIN DEBUG", roomId, tgId, room.players.length, room.status);
-
-    // Start countdown if we have 2+ players
-    if (room.players.length >= 2 && room.status === 'waiting') {
-      this.startCountdown(roomId);
-    }
-
-    const updatedSnapshot = await playerRef.once('value');
-    const updatedPlayer = updatedSnapshot.val();
-    return { 
-  success: true, 
-  message: 'Joined!', 
-  balance: updatedPlayer.balance,
-  countdown: room.countdown,
-  cartelas: room.playerCartelas[tgId].map(c => {
-    const nums = c.numbers;
-    // If already a 5x5 grid, return as-is
-    if (Array.isArray(nums) && Array.isArray(nums[0])) return nums;
-    // If stored as {B:[], I:[], N:[], G:[], O:[]}, convert to grid
-    return [nums.B, nums.I, nums.N, nums.G, nums.O];
-  })
-};
-}
-  // ---- Public: Leave room ----
-  async leaveRoom(roomId, tgId) {
-    const room = this.rooms[roomId];
-    if (!room) return { success: false, error: 'Room not found' };
-    if (!room.players.includes(tgId)) return { success: false, error: 'Not in room' };
-    if (room.status === 'playing') return { success: false, error: 'Game in progress' };
-
-    const cartelas = room.playerCartelas[tgId] || [];
-    const refund = room.entryFee * cartelas.length;
-
-    const playerRef = db.ref(`players/${tgId}`);
-    const playerSnapshot = await playerRef.once('value');
-    const player = playerSnapshot.val();
-
-    // Refund
-    await playerRef.update({ balance: player.balance + refund });
-
-    // Record transaction
-    const transactionRef = db.ref('transactions').push();
-    await transactionRef.set({
-      player_id: tgId,
-      type: 'refund',
-      amount: refund,
-      status: 'approved',
-      description: `Left ${room.name}`
-    });
-
-    // Clean room
-    room.players = room.players.filter(id => id !== tgId);
-    room.prize -= refund;
-    cartelas.forEach(idx => room.reservedCartelas.delete(idx));
-    room.totalCartelas -= cartelas.length;
-    delete room.playerCartelas[tgId];
-    delete room.markedNumbers[tgId];
-
-await room.roomRef.update({
-  players: room.players,
-  prize: room.prize,
-  playerCartelas: room.playerCartelas,
-  totalCartelas: room.totalCartelas,
-  status: room.status
-});
-
-    // Reset if empty
-    if (room.players.length === 0) {
-      this.resetRoom(roomId);
-    } else if (room.players.length < 2 && room.status === 'countdown') {
-      this.stopCountdown(roomId);
-      room.status = 'waiting';
-    }
-
-    const updatedSnapshot = await playerRef.once('value');
-    const updatedPlayer = updatedSnapshot.val();
-    return { success: true, message: `Refunded ${refund} Br`, balance: updatedPlayer.balance };
-  }
-
-  // ---- Public: Mark/unmark a number ----
-  markNumber(roomId, tgId, number, marked) {
-    const room = this.rooms[roomId];
-    if (!room) return { markedNumbers: [] };
-    if (!room.markedNumbers[tgId]) room.markedNumbers[tgId] = new Set();
-    
-    if (marked) {
-      room.markedNumbers[tgId].add(number);
-    } else {
-      room.markedNumbers[tgId].delete(number);
-    }
-    
-    return { markedNumbers: Array.from(room.markedNumbers[tgId]) };
-  }
-
-  // ---- Public: Claim BINGO ----
-  async claimBingo(roomId, tgId) {
-    const room = this.rooms[roomId];
-    if (!room) return { success: false, error: 'Room not found' };
-    if (room.status !== 'playing') return { success: false, error: 'Game not active' };
-    if (room.winners.length > 0) return { success: false, error: 'Winner already declared' };
-    if (room.calledNumbers.length < 5) return { success: false, error: 'Not enough numbers called' };
-
-    const playerCartelas = room.playerCartelas[tgId] || [];
-    const markedSet = room.markedNumbers[tgId] || new Set();
-    
-    // Check real cartela bingo
-const hasBingo = this.checkWinner(roomId, tgId);
-
-if (!hasBingo) {
-  return { success: false, error: 'Invalid BINGO claim' };
+  rows[2][2] = 'FREE';
+  return rows;
 }
 
-const winAmount = room.prize * 0.85;
-    
-    const playerRef = db.ref(`players/${tgId}`);
-    const playerSnapshot = await playerRef.once('value');
-    const player = playerSnapshot.val();
-    
-    // Award winner
-    await playerRef.update({
-      balance: player.balance + winAmount,
-      gamesPlayed: (player.gamesPlayed || 0) + 1,
-      gamesWon: (player.gamesWon || 0) + 1
-    });
-    
-    // Record winning transaction
-    const winTransactionRef = db.ref('transactions').push();
-    await winTransactionRef.set({
-      player_id: tgId,
-      type: 'winning_prize',
-      amount: winAmount,
-      status: 'approved',
-      description: `Won ${room.name}`
-    });
-    
-    // Record game history for winner
-    const gameHistoryRef = db.ref('game_history').push();
-    await gameHistoryRef.set({
-      player_id: tgId,
-      room_id: roomId,
-      room_name: room.name,
-      result: 'win',
-      prize: winAmount,
-      cartela_indices: JSON.stringify(playerCartelas)
-    });
+function checkBingo(cartela, calledNumbers) {
+  const called = new Set(calledNumbers);
 
-    // Record losers
-    for (const loserId of room.players.filter(id => id !== tgId)) {
-      const loserRef = db.ref(`players/${loserId}`);
-      const loserSnapshot = await loserRef.once('value');
-      const loser = loserSnapshot.val();
-      
-      if (loser) {
-        await loserRef.update({
-          gamesPlayed: (loser.gamesPlayed || 0) + 1
-        });
-        
-        const loserHistoryRef = db.ref('game_history').push();
-        await loserHistoryRef.set({
-          player_id: loserId,
-          room_id: roomId,
-          room_name: room.name,
-          result: 'lose',
-          prize: 0
-        });
-      }
-    }
+  const marked = (r, c) => {
+    const v = cartela[r][c];
+    return v === 'FREE' || called.has(v);
+  };
 
-    room.winners = [{ playerId: tgId, playerName: player.first_name, amount: winAmount }];
-    room.status = 'winner';
-
-    // Reset after 5 seconds
-    setTimeout(() => this.resetRoom(roomId), 5000);
-
-    const updatedSnapshot = await playerRef.once('value');
-    const updatedPlayer = updatedSnapshot.val();
-    return {
-      success: true,
-      winner: true,
-      winnerName: player.first_name,
-      amount: winAmount,
-      balance: updatedPlayer.balance,
-      cartelaNumber: playerCartelas[0] + 1,
-    };
+  // rows
+  for (let r = 0; r < 5; r++) {
+    if ([0,1,2,3,4].every(c => marked(r, c))) return true;
   }
-
-  // ---- Countdown Management ----
-  startCountdown(roomId) {
-    const room = this.rooms[roomId];
-    if (!room) return;
-    room.status = 'countdown';
-    room.countdown = 25;
-    room.roomRef.update({
-  status: room.status,
-  countdown: room.countdown
-});
-    if (room.countdownInterval) clearInterval(room.countdownInterval);
-    
-    room.countdownInterval = setInterval(() => {
-      room.countdown--;
-     room.roomRef.update({
-  countdown: room.countdown
-}); 
-      
-      if (room.countdown <= 0) {
-        clearInterval(room.countdownInterval);
-        room.countdownInterval = null;
-        this.startGame(roomId);
-      }
-    }, 1000);
+  // columns
+  for (let c = 0; c < 5; c++) {
+    if ([0,1,2,3,4].every(r => marked(r, c))) return true;
   }
-
-  stopCountdown(roomId) {
-    const room = this.rooms[roomId];
-    if (!room) return;
-    if (room.countdownInterval) {
-      clearInterval(room.countdownInterval);
-      room.countdownInterval = null;
-    }
-    room.countdown = 25;
-  }
-
-  // ---- Game Management ----
-  startGame(roomId) {
-    const room = this.rooms[roomId];
-    if (!room) return;
-    room.status = 'playing';
-    room.calledNumbers = [];
-    room.winners = [];
-    room.roomRef.update({
-  status: room.status,
-  calledNumbers: room.calledNumbers,
-  winners: room.winners
-});
-    console.log(`🎮 Game started in ${room.name}`);
-    this.startDrawLoop(roomId);
-  }
-
-  startDrawLoop(roomId) {
-    // Draw loop runs every 3 seconds but only draws when game is 'playing'
-    setInterval(() => {
-      const room = this.rooms[roomId];
-      if (!room || room.status !== 'playing') return;
-      if (room.calledNumbers.length >= 75) {
-        this.resetRoom(roomId);
-        return;
-      }
-      this.drawNumber(roomId);
-    }, 3000);
-  }
-
-  drawNumber(roomId) {
-    const room = this.rooms[roomId];
-    if (!room || room.status !== 'playing') return;
-    if (room.winners.length > 0) return;
-
-    let num;
-    let attempts = 0;
-    do {
-      num = Math.floor(Math.random() * 75) + 1;
-      attempts++;
-    } while (room.calledNumbers.includes(num) && attempts < 100);
-
-    if (!room.calledNumbers.includes(num)) {
-      room.calledNumbers.push(num);
-      room.roomRef.update({
-  calledNumbers: room.calledNumbers
-});
-    }
-  }
-
-checkWinner(roomId, tgId) {
-  const room = this.rooms[roomId];
-
-  if (!room || !room.playerCartelas[tgId]) {
-    return false;
-  }
-
-  const calledNumbers = room.calledNumbers;
-
-  const playerCartelas = room.playerCartelas[tgId];
-
-  for (const cartela of playerCartelas) {
-    const numbers = [
-      ...cartela.numbers.B,
-      ...cartela.numbers.I,
-      ...cartela.numbers.N,
-      ...cartela.numbers.G,
-      ...cartela.numbers.O
-    ];
-
-    const hasBingo = numbers.every(num =>
-      calledNumbers.includes(num)
-    );
-
-    if (hasBingo) {
-      return true;
-    }
-  }
+  // diagonals
+  if ([0,1,2,3,4].every(i => marked(i, i))) return true;
+  if ([0,1,2,3,4].every(i => marked(i, 4-i))) return true;
+  // 4 corners
+  if (marked(0,0) && marked(0,4) && marked(4,0) && marked(4,4)) return true;
 
   return false;
 }
 
-  // ---- Reset Room ----
-  resetRoom(roomId) {
-    const room = this.rooms[roomId];
-    if (!room) return;
-    
-    // Clear intervals
-    if (room.countdownInterval) {
-      clearInterval(room.countdownInterval);
-      room.countdownInterval = null;
-    }
+// ── Room class ────────────────────────────────────────────────────────────────
 
-    // Reset state
-    room.players = [];
-    room.prize = 0;
-    room.status = 'waiting';
-    room.playerCartelas = {};
-    room.reservedCartelas = new Set();
-    room.markedNumbers = {};
-    room.winners = [];
-    room.calledNumbers = [];
-    room.countdown = 25;
-    room.totalCartelas = 0;
-    
-    console.log(`🔄 Room ${room.name} reset`);
+class Room {
+  constructor(config) {
+    this.id       = config.id;
+    this.name     = config.name;
+    this.entryFee = config.entryFee;
+    this.reset();
+  }
+
+  reset() {
+    this.status          = 'waiting';   // waiting | countdown | playing | winner
+    this.players         = [];          // [{ id, name, balance }]
+    this.playerCartelas  = {};          // { playerId: [cartelaObj, …] }
+    this.reservedCartelas = new Set();  // cartelaIds reserved for this room
+    this.calledNumbers   = [];
+    this.pot             = 0;
+    this.winner          = null;        // { playerId, playerName, cartelaId, amount }
+    this.countdownStart  = null;
+    this._countdownTimer = null;
+    this._drawTimer      = null;
+    this._gameStartTime  = null;
+  }
+
+  // Public snapshot for API
+  toJSON() {
+    return {
+      id:             this.id,
+      name:           this.name,
+      entryFee:       this.entryFee,
+      status:         this.status,
+      playerCount:    this.players.length,
+      players:        this.players.map(p => ({ id: p.id, name: p.name })),
+      calledNumbers:  this.calledNumbers,
+      pot:            this.pot,
+      winner:         this.winner,
+      countdownStart: this.countdownStart,
+      countdownSeconds: COUNTDOWN_SECONDS,
+    };
   }
 }
 
-module.exports = GameManager;
+// ── GamesManager ─────────────────────────────────────────────────────────────
+
+class GamesManager {
+  constructor(db) {
+    this.db    = db;   // Firestore instance (or null in mock mode)
+    this.rooms = {};
+    this._cartelaCache = null;
+
+    for (const cfg of ROOMS_CONFIG) {
+      this.rooms[cfg.id] = new Room(cfg);
+    }
+  }
+
+  // ── cartelas ──────────────────────────────────────────────────────────────
+
+  async getCartelas() {
+    if (this._cartelaCache) return this._cartelaCache;
+
+    if (this.db) {
+      const snap = await this.db.collection('cartelas').get();
+      if (!snap.empty) {
+        this._cartelaCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        return this._cartelaCache;
+      }
+      // seed if empty
+      await this._seedCartelas();
+    } else {
+      // in-memory fallback
+      await this._seedCartelas();
+    }
+    return this._cartelaCache;
+  }
+
+  async _seedCartelas() {
+    const cartelas = [];
+    for (let i = 1; i <= 150; i++) {
+      cartelas.push({ id: `cartela_${i}`, number: i, grid: generateCartela() });
+    }
+    if (this.db) {
+      const batch = this.db.batch();
+      for (const c of cartelas) {
+        const ref = this.db.collection('cartelas').doc(c.id);
+        batch.set(ref, { number: c.number, grid: c.grid });
+      }
+      await batch.commit();
+    }
+    this._cartelaCache = cartelas;
+  }
+
+  // ── player ────────────────────────────────────────────────────────────────
+
+  async getOrCreatePlayer(playerId, name) {
+    if (this.db) {
+      const ref  = this.db.collection('players').doc(playerId);
+      const snap = await ref.get();
+      if (snap.exists) return { id: playerId, ...snap.data() };
+      const player = { name, balance: 100, history: [] };
+      await ref.set(player);
+      return { id: playerId, ...player };
+    }
+    // memory fallback
+    if (!this._players) this._players = {};
+    if (!this._players[playerId]) {
+      this._players[playerId] = { id: playerId, name, balance: 100, history: [] };
+    }
+    return this._players[playerId];
+  }
+
+  async updatePlayerBalance(playerId, delta, historyEntry) {
+    if (this.db) {
+      const ref  = this.db.collection('players').doc(playerId);
+      const snap = await ref.get();
+      if (!snap.exists) return;
+      const data    = snap.data();
+      const balance = (data.balance || 0) + delta;
+      const history = [...(data.history || []), historyEntry];
+      await ref.update({ balance, history });
+      return { id: playerId, ...data, balance, history };
+    }
+    if (this._players && this._players[playerId]) {
+      const p = this._players[playerId];
+      p.balance += delta;
+      p.history.push(historyEntry);
+      return p;
+    }
+  }
+
+  // ── join ──────────────────────────────────────────────────────────────────
+
+  async joinRoom(roomId, player, cartelaIds) {
+    const room = this.rooms[roomId];
+    if (!room) throw new Error('Room not found');
+    if (room.status !== 'waiting' && room.status !== 'countdown') {
+      throw new Error('Room is not accepting players right now');
+    }
+    if (room.players.find(p => p.id === player.id)) {
+      throw new Error('Already in this room');
+    }
+    if (cartelaIds.length === 0 || cartelaIds.length > 4) {
+      throw new Error('Select 1–4 cartelas');
+    }
+
+    // Reserve cartelas
+    const cartelas = await this.getCartelas();
+    const selected = [];
+    for (const cid of cartelaIds) {
+      if (room.reservedCartelas.has(cid)) throw new Error(`Cartela ${cid} already taken`);
+      const c = cartelas.find(x => x.id === cid);
+      if (!c) throw new Error(`Cartela ${cid} not found`);
+      selected.push(c);
+    }
+    for (const c of selected) room.reservedCartelas.add(c.id);
+
+    // Deduct fee (per cartela)
+    const totalFee = room.entryFee * cartelaIds.length;
+    if (player.balance < totalFee) throw new Error('Insufficient balance');
+
+    await this.updatePlayerBalance(player.id, -totalFee, {
+      type: 'join', roomId, amount: -totalFee, date: new Date().toISOString(),
+    });
+
+    room.players.push({ id: player.id, name: player.name, balance: player.balance - totalFee });
+    room.playerCartelas[player.id] = selected;
+    room.pot += totalFee;
+
+    // Auto-start countdown when 2+ players
+    if (room.players.length >= 2 && room.status === 'waiting') {
+      this._startCountdown(room);
+    }
+
+    return room.toJSON();
+  }
+
+  // ── countdown → game ──────────────────────────────────────────────────────
+
+  _startCountdown(room) {
+    room.status         = 'countdown';
+    room.countdownStart = Date.now();
+
+    room._countdownTimer = setTimeout(() => {
+      this._startGame(room);
+    }, COUNTDOWN_SECONDS * 1000);
+  }
+
+  _startGame(room) {
+    room.status         = 'playing';
+    room.calledNumbers  = [];
+    room._gameStartTime = Date.now();
+
+    const numbers = [];
+    for (let n = 1; n <= 75; n++) numbers.push(n);
+    numbers.sort(() => Math.random() - 0.5);
+    let idx = 0;
+
+    room._drawTimer = setInterval(() => {
+      if (room.status !== 'playing') {
+        clearInterval(room._drawTimer);
+        return;
+      }
+      if (idx >= numbers.length) {
+        clearInterval(room._drawTimer);
+        return;
+      }
+      room.calledNumbers.push(numbers[idx++]);
+    }, DRAW_INTERVAL_MS);
+  }
+
+  // ── bingo claim ───────────────────────────────────────────────────────────
+
+  async claimBingo(roomId, playerId, cartelaId) {
+    const room = this.rooms[roomId];
+    if (!room) throw new Error('Room not found');
+    if (room.status !== 'playing') throw new Error('Game not in progress');
+    if (room.winner) throw new Error('Winner already declared');
+
+    const playerCartelas = room.playerCartelas[playerId];
+    if (!playerCartelas) throw new Error('You are not in this room');
+
+    const cartela = playerCartelas.find(c => c.id === cartelaId);
+    if (!cartela) throw new Error('Cartela not yours');
+
+    const valid = checkBingo(cartela.grid, room.calledNumbers);
+    if (!valid) throw new Error('No valid BINGO pattern');
+
+    // Stop drawing
+    clearInterval(room._drawTimer);
+
+    const player  = room.players.find(p => p.id === playerId);
+    const winAmt  = Math.floor(room.pot * WINNER_SHARE);
+
+    room.winner = {
+      playerId,
+      playerName: player.name,
+      cartelaId,
+      cartelaNumber: cartela.number,
+      amount: winAmt,
+      calledCount: room.calledNumbers.length,
+    };
+    room.status = 'winner';
+
+    // Credit winner
+    await this.updatePlayerBalance(playerId, winAmt, {
+      type: 'win', roomId, amount: winAmt, cartelaId, date: new Date().toISOString(),
+    });
+
+    // Store in Firestore
+    if (this.db) {
+      await this.db.collection('winners').add({
+        ...room.winner, roomId, pot: room.pot, date: new Date().toISOString(),
+      });
+    }
+
+    // Auto-reset after 15s
+    setTimeout(() => this._resetRoom(room), 15000);
+
+    return room.toJSON();
+  }
+
+  _resetRoom(room) {
+    clearInterval(room._drawTimer);
+    clearTimeout(room._countdownTimer);
+    room.reset();
+  }
+
+  // ── getters ───────────────────────────────────────────────────────────────
+
+  getRoom(roomId)  { return this.rooms[roomId] || null; }
+  getAllRooms()     { return Object.values(this.rooms).map(r => r.toJSON()); }
+}
+
+module.exports = { GamesManager, ROOMS_CONFIG };

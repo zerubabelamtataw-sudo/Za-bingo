@@ -104,7 +104,7 @@
       name: 'Player',
       username: 'player',
       phone: '',
-      balance: 0,
+      balance: 100,
       gamesPlayed: 0,
       gamesWon: 0,
     },
@@ -841,53 +841,28 @@ state.calledNumbers = game.calledNumbers || [];
     state.player.name = tgUser.first_name || 'Player';
     state.player.username = tgUser.username || 'player';
   } else {
-  const testUser = TelegramApp.getUser();
-
-  state.player.id = testUser.id;
-  state.player.name = testUser.first_name || 'Player';
-  state.player.username = testUser.username || 'player';
-}
+    state.player.id = null;
+    state.player.name = 'Guest';
+    state.player.username = 'guest';
+  }
   
   fetch(`/api/player?tg_id=${state.player.id}&first_name=${encodeURIComponent(state.player.name)}&username=${encodeURIComponent(state.player.username)}`)
   .then(res => res.json())
   .then(data => {
-
-    console.log('PLAYER DATA:', data);
-
-    if (data.success && data.player) {
-
-      state.player.id = data.player.telegram_id || state.player.id;
-      state.player.name = data.player.first_name || 'Player';
-      state.player.username = data.player.username || 'player';
-      state.player.phone = data.player.phone || '';
-
-      state.player.balance = Number(data.player.balance);
-
-      state.player.gamesPlayed =
-        Number(data.player.games_played || 0);
-
-      state.player.gamesWon =
-        Number(data.player.games_won || 0);
-
-      console.log('LOADED BALANCE:', state.player.balance);
+    if (data.success) {
+      state.player = {
+        ...state.player,
+        ...data.player
+      };
 
       updateHeader();
       updateProfileUI();
     }
-  })
-  .catch(err => {
-    console.error('PLAYER API ERROR:', err);
-  });
-
-  updateHeader();
-  updateProfileUI();
-}
   });
 
   updateHeader();
   loadRooms();
-listenToPlayer();
-setInterval(loadRooms, 4000);
+setInterval(loadRooms, 1000);
   updateProfileUI();
   updateHistoryUI();
   navigateTo('game');
@@ -904,7 +879,6 @@ function loadRooms() {
     })
     .catch(err => console.log(err));
 }
-
 
   init();
 

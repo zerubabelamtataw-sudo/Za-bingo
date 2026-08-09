@@ -12,7 +12,7 @@ class GameManager {
     };
     
    Object.values(this.rooms).forEach(room => {
-  room.roomRef.update({
+  room.roomRef.set({
     id: room.id,
     name: room.name,
     entryFee: room.entryFee,
@@ -174,7 +174,14 @@ room.playerCartelas[tgId] = cartelaIndices.map(idx => ({
   success: true, 
   message: 'Joined!', 
   balance: updatedPlayer.balance,
-  cartelas: room.playerCartelas[tgId].map(c => c.numbers)
+  countdown: room.countdown,
+  cartelas: room.playerCartelas[tgId].map(c => {
+    const nums = c.numbers;
+    // If already a 5x5 grid, return as-is
+    if (Array.isArray(nums) && Array.isArray(nums[0])) return nums;
+    // If stored as {B:[], I:[], N:[], G:[], O:[]}, convert to grid
+    return [nums.B, nums.I, nums.N, nums.G, nums.O];
+  })
 };
 }
   // ---- Public: Leave room ----

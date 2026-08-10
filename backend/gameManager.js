@@ -6,9 +6,9 @@
  */
 
 const ROOMS_CONFIG = [
-  { id: 'room_5',  name: '5 Br Room',  entryFee: 5  },
-  { id: 'room_10', name: '10 Br Room', entryFee: 10 },
-  { id: 'room_20', name: '20 Br Room', entryFee: 20 },
+  { id: '5br',  name: '5 Br Room',  entryFee: 5  },
+  { id: '10br', name: '10 Br Room', entryFee: 10 },
+  { id: '20br', name: '20 Br Room', entryFee: 20 },
 ];
 
 const COUNTDOWN_SECONDS = 25;
@@ -140,10 +140,27 @@ class GamesManager {
     throw new Error('No cartelas found in Firebase Realtime Database');
   }
 
-  this._cartelaCache = Object.entries(data).map(([id, value]) => ({
-    id: String(id),
-    ...value
-  }));
+  this._cartelaCache = Object.entries(data).map(([id, value]) => {
+    const numbers = value.numbers;
+
+    const grid = [];
+
+    for (let r = 0; r < 5; r++) {
+      grid.push([
+        numbers.B[r],
+        numbers.I[r],
+        numbers.N[r] === 0 ? 'FREE' : numbers.N[r],
+        numbers.G[r],
+        numbers.O[r]
+      ]);
+    }
+
+    return {
+      id: String(id),
+      number: Number(id),
+      grid
+    };
+  });
 
   return this._cartelaCache;
 }

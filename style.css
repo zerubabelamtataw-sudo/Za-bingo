@@ -252,6 +252,7 @@ header {
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: flex-start;
   margin-top: 20px;
   flex-wrap: wrap;
 }

@@ -286,6 +286,40 @@ header {
   flex-direction: column;
   gap: 5px;
 }
+.called-row {
+  display: grid;
+  grid-template-columns: 24px repeat(15, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  align-items: center;
+}
+
+.called-row-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: .75rem;
+}
+
+.called-row-letter.B { color: var(--B); }
+.called-row-letter.I { color: var(--I); }
+.called-row-letter.N { color: var(--N); }
+.called-row-letter.G { color: var(--G); }
+.called-row-letter.O { color: var(--O); }
+
+.cn-cell {
+  min-width: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: .55rem;
+  font-weight: 700;
+}
 
 /* Each B/I/N/G/O row */
 .called-row {

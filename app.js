@@ -84,31 +84,7 @@ function showPage(name) {
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
-$('startBtn').addEventListener('click', async () => {
-  const telegramUser = tg?.initDataUnsafe?.user;
 
-if (!telegramUser) {
-  toast('Please open the game through Telegram', 'error');
-  return;
-}
-
-const playerId = String(telegramUser.id);
-const name = telegramUser.first_name || telegramUser.username || 'Player';
-
-  try {
-    const data = await apiFetch('/api/player', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, name }),
-    });
-    state.player = data.player;
-    saveLocal('playerName', name);
-    initApp();
-  } catch (e) { toast(e.message, 'error'); }
-});
-
-$('playerNameInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') $('startBtn').click();
-});
 
 async function initApp() {
   updateHUD();

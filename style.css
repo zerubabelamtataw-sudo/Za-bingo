@@ -816,32 +816,23 @@ transform: scale(1);
 opacity: 1;
 }
 }
-/* ── Profile Information ─────────────────────────────────────────────────── */
 .profile-info-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  font-family: inherit;
-}
-
-.profile-info-row:last-child {
-  border-bottom: none;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .profile-info-row span {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
-  letter-spacing: 0.3px;
 }
 
 .profile-info-row strong {
-  font-size: 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text);
-  text-align: right;
-  word-break: break-word;
 }

@@ -441,78 +441,120 @@ header {
   transition: width 1s linear;
 }
 
-/* ── My Cartelas ── */
-.my-cartelas { display: flex; flex-direction: column; gap: 16px; }
+/* ── My Cartelas — compact 4-card layout ── */
+.my-cartelas {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 8px;
+width: 100%;
+}
+
 .cartela-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 8px;
+overflow: hidden;
+min-width: 0;
 }
+
 .cartela-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 6px 8px;
+background: var(--surface2);
+border-bottom: 1px solid var(--border);
 }
-.cartela-card-title { font-weight: 700; font-size: .9rem; }
+
+.cartela-card-title {
+font-weight: 700;
+font-size: .68rem;
+}
 
 .bingo-grid {
-  display: grid;
-  grid-template-columns: repeat(5,1fr);
-  padding: 12px;
-  gap: 4px;
+display: grid;
+grid-template-columns: repeat(5, 1fr);
+padding: 5px;
+gap: 2px;
 }
+
 .bingo-header-row {
-  display: contents;
+display: contents;
 }
+
 .bingo-header-cell {
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: .85rem;
-  padding: 6px 0;
-  border-radius: 4px;
+text-align: center;
+font-family: var(--font-display);
+font-size: .6rem;
+padding: 3px 0;
+border-radius: 3px;
 }
+
 .bingo-cell {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .75rem;
-  font-weight: 600;
-  border-radius: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all .15s;
-  user-select: none;
-  position: relative;
+aspect-ratio: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: .55rem;
+font-weight: 600;
+border-radius: 3px;
+background: var(--surface2);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: all .15s;
+user-select: none;
+position: relative;
 }
-.bingo-cell:hover { border-color: var(--gold-dim); }
+
+.bingo-cell:hover {
+border-color: var(--gold-dim);
+}
+
 .bingo-cell.marked {
-  background: rgba(245,200,66,.15);
-  border-color: var(--gold);
-  color: var(--gold);
+background: rgba(245,200,66,.15);
+border-color: var(--gold);
+color: var(--gold);
 }
+
 .bingo-cell.free {
-  background: rgba(245,200,66,.2);
-  border-color: var(--gold);
-  color: var(--gold);
-  font-size: .55rem;
-  font-weight: 700;
+background: rgba(245,200,66,.2);
+border-color: var(--gold);
+color: var(--gold);
+font-size: .45rem;
+font-weight: 700;
 }
+
 .bingo-cell.auto-marked {
-  background: rgba(34,197,94,.2);
-  border-color: var(--green);
-  color: var(--green);
+background: rgba(34,197,94,.2);
+border-color: var(--green);
+color: var(--green);
 }
+
 .bingo-cell.bingo-hit {
-  background: rgba(245,200,66,.4) !important;
-  border-color: var(--gold) !important;
-  color: var(--gold) !important;
-  animation: bingoCell .5s ease infinite alternate;
+background: rgba(245,200,66,.4) !important;
+border-color: var(--gold) !important;
+color: var(--gold) !important;
+animation: bingoCell .5s ease infinite alternate;
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+.my-cartelas {
+gap: 5px;
+}
+
+.bingo-grid {
+padding: 4px;
+gap: 1px;
+}
+
+.bingo-cell {
+font-size: .48rem;
+}
+
+.bingo-header-cell {
+font-size: .55rem;
+}
 }
 @keyframes bingoCell {
   from { box-shadow: 0 0 8px rgba(245,200,66,.3); }

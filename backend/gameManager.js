@@ -263,10 +263,19 @@ return { id: playerId, ...player };
     room.playerCartelas[player.id] = selected;
     room.pot += totalFee;
 
-    // Start 25-second countdown when the FIRST player joins
+    // First player joins: stay waiting
+// Do NOT start the timer yet.
+
 if (room.players.length === 1 && room.status === 'waiting') {
+  room.countdownStart = null;
+}
+
+// Second player joins: start the real 25-second countdown
+if (room.players.length >= 2 && room.status === 'waiting') {
   this._startCountdown(room);
 }
+
+return room.toJSON();
 
     return room.toJSON();
   }

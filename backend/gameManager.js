@@ -259,7 +259,11 @@ return { id: playerId, ...player };
       type: 'join', roomId, amount: -totalFee, date: new Date().toISOString(),
     });
 
-    room.players.push({ id: player.id, name: player.name, balance: player.balance - totalFee });
+    room.players.push({
+  id: String(player.id),
+  name: player.name || `Player ${player.id}`,
+  balance: player.balance - totalFee
+});
     room.playerCartelas[player.id] = selected;
     room.pot += totalFee;
 
@@ -331,13 +335,22 @@ return room.toJSON();
     // Stop drawing
     clearInterval(room._drawTimer);
 
-    const player  = room.players.find(p => p.id === playerId);
-    const winAmt  = Math.floor(room.pot * WINNER_SHARE);
+    const player = room.players.find(
+  p => String(p.id) === String(playerId)
+);
 
-    room.winner = {
-      playerId,
-      playerName: player.name,
-      cartelaId,
+if (!player) {
+  throw new Error('Player not found in room');
+}
+
+const playerName = player.name || `Player ${playerId}`;
+
+const winAmt = Math.floor(room.pot * WINNER_SHARE);
+
+room.winner = {
+  playerId,
+  playerName,
+  cartelaId,
       cartelaNumber: cartela.number,
       amount: winAmt,
       calledCount: room.calledNumbers.length,

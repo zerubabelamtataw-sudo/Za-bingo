@@ -527,15 +527,22 @@ function applyGameState(game) {
 const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
 
-if (game.status === 'countdown' && game.countdownStart) {
+if (
+  (game.status === 'waiting' && game.playerCount === 1) ||
+  (game.status === 'countdown' && game.countdownStart)
+) {
 
   const COUNTDOWN_SECONDS = 25;
 
+let remaining = 25;
+
+if (game.status === 'countdown' && game.countdownStart) {
   const elapsed = (Date.now() - game.countdownStart) / 1000;
-  const remaining = Math.max(
+  remaining = Math.max(
     0,
     COUNTDOWN_SECONDS - elapsed
   );
+}
 
   if (countdownOverlay) {
     countdownOverlay.classList.add('visible');

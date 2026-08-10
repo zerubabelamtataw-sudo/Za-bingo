@@ -523,29 +523,34 @@ function applyGameState(game) {
   state.gameStatus  = game.status;
   state.calledNumbers = game.calledNumbers || [];
   
-  // 25-second game-start popup
+  // ── 25 SECOND POPUP COUNTDOWN ───────────────────────────────
 const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
 
 if (game.status === 'countdown' && game.countdownStart) {
-const elapsed = (Date.now() - game.countdownStart) / 1000;
-const remaining = Math.max(
-0,
-game.countdownSeconds - elapsed
-);
 
-if (countdownOverlay) {
-  countdownOverlay.classList.add('visible');
-}
+  const COUNTDOWN_SECONDS = 25;
 
-if (popupCountdown) {
-  popupCountdown.textContent = Math.ceil(remaining);
-}
+  const elapsed = (Date.now() - game.countdownStart) / 1000;
+  const remaining = Math.max(
+    0,
+    COUNTDOWN_SECONDS - elapsed
+  );
+
+  if (countdownOverlay) {
+    countdownOverlay.classList.add('visible');
+  }
+
+  if (popupCountdown) {
+    popupCountdown.textContent = Math.ceil(remaining);
+  }
 
 } else {
-if (countdownOverlay) {
-countdownOverlay.classList.remove('visible');
-}
+
+  if (countdownOverlay) {
+    countdownOverlay.classList.remove('visible');
+  }
+
 }
 
   // Status bar
@@ -567,19 +572,6 @@ countdownOverlay.classList.remove('visible');
     list.appendChild(chip);
   }
 
-  // Countdown
-  if (game.status === 'countdown' && game.countdownStart) {
-    const elapsed = (Date.now() - game.countdownStart) / 1000;
-    const remaining = Math.max(0, game.countdownSeconds - elapsed);
-    const pct = (remaining / game.countdownSeconds) * 100;
-    $('countdownWrap').style.display = 'block';
-    $('countdownBar').style.width = `${pct}%`;
-    $('countdownLabel').style.display = 'block';
-    $('countdownLabel').textContent = `Game starts in ${Math.ceil(remaining)}s — waiting for players…`;
-  } else {
-    $('countdownWrap').style.display = 'none';
-    $('countdownLabel').style.display = 'none';
-  }
 
   // Called numbers grid
   updateCalledGrid(game.calledNumbers);

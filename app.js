@@ -259,7 +259,6 @@ $('joinBtn').addEventListener('click', async () => {
     buildCalledGrid();
     renderMyCartelas();
     showPage('game');
-    $('gameTab').style.color = 'var(--gold)';
     startGamePoll();
   } catch (e) {
     toast(e.message, 'error');
@@ -596,7 +595,6 @@ $('winnerCloseBtn').addEventListener('click', () => {
   state.selectedRoom     = null;
   state.lastCalledCount  = 0;
   clearInterval(state.pollTimer);
-  $('gameTab').style.color = '';
   // Refresh player balance from server
   refreshPlayer();
   showPage('lobby');

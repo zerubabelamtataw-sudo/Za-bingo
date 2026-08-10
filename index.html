@@ -295,7 +295,40 @@
     </div>
 
 
-    
+    <!-- History -->
+    <div class="history-table">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Room</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+
+        <tbody id="historyBody">
+
+          <tr>
+            <td
+              colspan="4"
+              style="text-align:center;padding:32px;color:var(--muted)"
+            >
+              No history yet
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
 <!-- END PROFILE PAGE --><!-- ── HISTORY PAGE ── --><div class="page" id="page-history">  <div class="history-table"><table>
 
   <thead>
@@ -326,56 +359,51 @@
 
   </div></div>
 <!-- END HISTORY PAGE --></div>
-<!-- END .app --><!-- ── WINNER OVERLAY ── --><div
-  class="overlay"
-  id="winnerOverlay"
->  <div class="winner-popup"><div class="winner-crown">
-  👑
-</div>
+<!-- END .app --><!-- ── WINNER OVERLAY ── -->
+<div class="overlay" id="winnerOverlay">
 
-<div class="winner-title">
-  BINGO!
-</div>
+  <div class="winner-popup">
 
-<div
-  class="winner-name"
-  id="popupWinnerName"
->
-  Player
-</div>
+    <div class="winner-crown">
+      👑
+    </div>
 
-<div
-  class="winner-detail"
-  id="popupCartelaDetail"
->
-  Cartela #1
-</div>
+    <div class="winner-title">
+      BINGO!
+    </div>
 
-<div
-  class="winner-amount"
-  id="popupAmount"
->
-  +0 Br
-</div>
+    <div class="winner-name" id="popupWinnerName">
+      Player
+    </div>
 
-<div
-  class="winner-sub"
-  id="popupSub"
->
-  Winners take 85% of the pot
-</div>
+    <div class="winner-detail" id="popupCartelaDetail">
+      Cartela #1
+    </div>
 
-<button
-  class="btn btn-gold"
-  id="winnerCloseBtn"
->
-  Back to Lobby
-</button>
+    <div class="winner-amount" id="popupAmount">
+      +0 Br
+    </div>
+
+    <div class="winner-sub" id="popupSub">
+      Winners take 85% of the pot
+    </div>
+
+    <button class="btn btn-gold" id="winnerCloseBtn">
+      Back to Lobby
+    </button>
+
+  </div>
+
+</div>
 
 <!-- ── COUNTDOWN POPUP ── -->
 <div class="overlay" id="countdownOverlay">
+
   <div class="countdown-popup">
-    <div class="countdown-icon">🎯</div>
+
+    <div class="countdown-icon">
+      🎯
+    </div>
 
     <div class="countdown-title">
       GAME STARTING
@@ -388,7 +416,9 @@
     <div class="countdown-sub">
       Waiting for another player...
     </div>
+
   </div>
+
 </div>
 
 <!-- ── TOAST ── -->

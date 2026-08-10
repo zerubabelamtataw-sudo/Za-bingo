@@ -71,7 +71,9 @@ function loadLocal(key) {
 // ── Navigation ────────────────────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
   $(`page-${name}`).classList.add('active');
+  $(`page-${name}`).style.display = 'block';
   document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.page === name);
   });
@@ -223,19 +225,27 @@ function renderRoomCards(rooms) {
 function selectRoom(room, el) {
   state.selectedRoom = room.id;
 
+  // Highlight selected room
   document.querySelectorAll('.room-card')
     .forEach(c => c.classList.remove('selected'));
 
   el.classList.add('selected');
 
-  const cartelaSection = $('cartelaSection');
+  // Hide Rooms page
+  $('page-lobby').classList.remove('active');
 
-  if (cartelaSection) {
-    cartelaSection.style.display = 'block';
-  }
+  // Show Cartela page
+  $('page-cartelas').style.display = 'block';
+  $('page-cartelas').classList.add('active');
 
-  $('joinBtn').disabled =
-    state.selectedCartelas.length === 0;
+  // Make sure cartelas are displayed
+  renderCartelaGrid();
+
+  // Reset selection counter
+  $('selectedCount').textContent = '0 cartelas selected';
+
+  // Disable join button until cartela is selected
+  $('joinBtn').disabled = true;
 }
 
 // ── Join ──────────────────────────────────────────────────────────────────────
@@ -699,7 +709,22 @@ function renderHistory() {
 }
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
+$('backToRoomsBtn').addEventListener('click', () => {
+  $('page-cartelas').classList.remove('active');
+  $('page-cartelas').style.display = 'none';
+
+  $('page-lobby').classList.add('active');
+
+  state.selectedRoom = null;
+  state.selectedCartelas = [];
+
+  renderCartelaGrid();
+
+  $('selectedCount').textContent = '0 cartelas selected';
+  $('joinBtn').disabled = true;
+});
 document.querySelectorAll('.nav-tab').forEach(tab => {
+  
   tab.addEventListener('click', () => showPage(tab.dataset.page));
 });
 

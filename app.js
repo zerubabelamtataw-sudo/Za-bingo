@@ -233,6 +233,7 @@ function selectRoom(room, el) {
 
   // Hide Rooms page
   $('page-lobby').classList.remove('active');
+$('page-lobby').style.display = 'none';
 
   // Show Cartela page
   $('page-cartelas').style.display = 'block';

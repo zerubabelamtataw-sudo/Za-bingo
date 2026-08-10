@@ -227,67 +227,108 @@
 </div>
 
   </div></div>
-<!-- END GAME PAGE --><!-- ── PROFILE PAGE ── --><div class="page" id="page-profile">  <div class="profile-grid"><div class="profile-card">
+<!-- END GAME PAGE --><!-- ── PROFILE PAGE ── -->
+<div class="page" id="page-profile">
 
-  <div
-    class="profile-avatar"
-    id="profileAvatar"
-  >
-    😀
-  </div>
+  <div class="profile-grid">
 
-  <div
-    class="profile-username"
-    id="profileName"
-  >
-    —
-  </div>
+    <!-- Profile Header -->
+    <div class="profile-card">
 
-  <div class="profile-balance-label">
-    Balance
-  </div>
+      <div class="profile-avatar" id="profileAvatar">
+        😀
+      </div>
 
-  <div
-    class="profile-balance"
-    id="profileBalance"
-  >
-    0 Br
+      <div class="profile-username" id="profileName">
+        —
+      </div>
+
+      <div class="profile-balance-label">
+        Balance
+      </div>
+
+      <div class="profile-balance" id="profileBalance">
+        0 Br
+      </div>
+
+    </div>
+
+
+    <!-- Player Information -->
+    <div class="profile-card">
+
+      <div class="profile-info-row">
+        <span>Player Name</span>
+        <strong id="playerName">—</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Player ID</span>
+        <strong id="playerId">—</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Phone Number</span>
+        <strong id="playerPhone">—</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Username</span>
+        <strong id="playerUsername">—</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Balance</span>
+        <strong id="playerBalance">0 Br</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Games Played</span>
+        <strong id="gamesPlayed">0</strong>
+      </div>
+
+      <div class="profile-info-row">
+        <span>Games Won</span>
+        <strong id="gamesWon">0</strong>
+      </div>
+
+    </div>
+
+
+    <!-- History -->
+    <div class="history-table">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Room</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+
+        <tbody id="historyBody">
+
+          <tr>
+            <td
+              colspan="4"
+              style="text-align:center;padding:32px;color:var(--muted)"
+            >
+              No history yet
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
   </div>
 
 </div>
-
-
-<div class="history-table">
-
-  <table>
-
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Room</th>
-        <th>Amount</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-
-    <tbody id="historyBody">
-
-      <tr>
-        <td
-          colspan="4"
-          style="text-align:center;padding:32px;color:var(--muted)"
-        >
-          No history yet
-        </td>
-      </tr>
-
-    </tbody>
-
-  </table>
-
-</div>
-
-  </div></div>
 <!-- END PROFILE PAGE --><!-- ── HISTORY PAGE ── --><div class="page" id="page-history">  <div class="history-table"><table>
 
   <thead>

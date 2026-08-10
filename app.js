@@ -642,27 +642,78 @@ async function refreshPlayer() {
 // ── Profile ───────────────────────────────────────────────────────────────────
 function renderProfile() {
   if (!state.player) return;
-  $('profileAvatar').textContent = state.player.name[0]?.toUpperCase() || '😀';
-  $('profileName').textContent = state.player.name;
-  $('profileBalance').textContent = `${state.player.balance} Br`;
 
-  const history = state.player.history || [];
+  const player = state.player;
+
+  // Profile header
+  const playerName = player.first_name || 'Player';
+
+  $('profileAvatar').textContent =
+    playerName[0]?.toUpperCase() || '😀';
+
+  $('profileName').textContent =
+    playerName;
+
+  $('profileBalance').textContent =
+    `${player.balance ?? 0} Br`;
+
+  // Player information
+  $('playerName').textContent =
+    player.first_name || 'N/A';
+
+  $('playerId').textContent =
+    player.telegram_id || 'N/A';
+
+  $('playerPhone').textContent =
+    player.phone || 'N/A';
+
+  $('playerUsername').textContent =
+    player.username ? `@${String(player.username).replace(/^@/, '')}` : 'N/A';
+
+  $('playerBalance').textContent =
+    `${player.balance ?? 0} Br`;
+
+  $('gamesPlayed').textContent =
+    player.gamesPlayed ?? 0;
+
+  $('gamesWon').textContent =
+    player.gamesWon ?? 0;
+
+  // History
+  const history = player.history || [];
   const tbody = $('historyBody');
+
   if (!history.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No history yet</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No history yet</td></tr>';
     return;
   }
+
   tbody.innerHTML = '';
+
   for (const entry of [...history].reverse()) {
     const tr = document.createElement('tr');
-    const isWin = entry.amount > 0;
-    const date  = new Date(entry.date).toLocaleDateString('en-ET', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const isWin = Number(entry.amount) > 0;
+
+    const date = entry.date
+      ? new Date(entry.date).toLocaleDateString('en-ET', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : '—';
+
     tr.innerHTML = `
       <td>${entry.type === 'win' ? '🏆 Win' : '🎮 Join'}</td>
       <td>${entry.roomId || '—'}</td>
-      <td class="${isWin ? 'amount-win' : 'amount-loss'}">${isWin ? '+' : ''}${entry.amount} Br</td>
+      <td class="${isWin ? 'amount-win' : 'amount-loss'}">
+        ${isWin ? '+' : ''}${entry.amount ?? 0} Br
+      </td>
       <td style="color:var(--muted);font-size:.8rem">${date}</td>
     `;
+
     tbody.appendChild(tr);
   }
 }

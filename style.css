@@ -239,9 +239,10 @@ header {
 }
 
 .cartela-item {
-  padding: 6px 3px;
-  font-size: 12px;
-  min-height: 30px;
+  padding: 2px;
+  font-size: 10px;
+  min-height: 22px;
+  height: 22px;
 }
 .cartela-item:hover { border-color: var(--gold-dim); }
 .cartela-item.selected { background: rgba(245,200,66,.15); border-color: var(--gold); color: var(--gold); font-weight: 700; }

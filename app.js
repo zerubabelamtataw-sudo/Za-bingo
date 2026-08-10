@@ -247,7 +247,12 @@ $('joinBtn').addEventListener('click', async () => {
     updateHUD();
 
     state.activeRoomId = state.selectedRoom;
-    state.myCartelas   = state.allCartelas.filter(c => state.selectedCartelas.includes(c.id));
+
+applyGameState(data.room);
+
+state.myCartelas = state.allCartelas.filter(
+  c => state.selectedCartelas.includes(c.id)
+);
     state.markedCells  = {};
     state.bingoDetected= {};
     for (const c of state.myCartelas) {

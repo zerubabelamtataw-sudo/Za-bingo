@@ -522,6 +522,31 @@ async function pollGame() {
 function applyGameState(game) {
   state.gameStatus  = game.status;
   state.calledNumbers = game.calledNumbers || [];
+  
+  // 25-second game-start popup
+const countdownOverlay = $('countdownOverlay');
+const popupCountdown = $('popupCountdown');
+
+if (game.status === 'countdown' && game.countdownStart) {
+const elapsed = (Date.now() - game.countdownStart) / 1000;
+const remaining = Math.max(
+0,
+game.countdownSeconds - elapsed
+);
+
+if (countdownOverlay) {
+  countdownOverlay.classList.add('visible');
+}
+
+if (popupCountdown) {
+  popupCountdown.textContent = Math.ceil(remaining);
+}
+
+} else {
+if (countdownOverlay) {
+countdownOverlay.classList.remove('visible');
+}
+}
 
   // Status bar
   $('infoRoomName').textContent = game.name;

@@ -678,4 +678,54 @@ header {
   header { padding: 0 12px; }
   .logo { font-size: 1rem; }
   .nav-tab { padding: 5px 10px; font-size: .75rem; }
+/* ──────────────── BOTTOM NAVIGATION ──────────────── */
+
+@media (max-width: 768px) {
+
+  .nav-tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 64px;
+    z-index: 150;
+
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    flex: 1;
+    height: 52px;
+    padding: 6px 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 10px;
+
+    font-size: .75rem;
+    color: var(--muted);
+  }
+
+  .nav-tab.active {
+    background: var(--surface2);
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+  }
+
+  .page {
+    padding-bottom: 90px;
+  }
+}  
 }

@@ -75,7 +75,8 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.page === name);
   });
-  if (name === 'profile') renderProfile();
+    if (name === 'profile') renderProfile();
+  if (name === 'history') renderHistory();
   if (name === 'lobby')   refreshRooms();
   if (name === 'game')    renderMyCartelas();
 }
@@ -639,6 +640,49 @@ function renderProfile() {
       <td class="${isWin ? 'amount-win' : 'amount-loss'}">${isWin ? '+' : ''}${entry.amount} Br</td>
       <td style="color:var(--muted);font-size:.8rem">${date}</td>
     `;
+    tbody.appendChild(tr);
+  }
+}
+
+function renderHistory() {
+  if (!state.player) return;
+
+  const history = state.player.history || [];
+  const tbody = $('historyPageBody');
+
+  if (!history.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">
+          No history yet
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = '';
+
+  for (const entry of [...history].reverse()) {
+    const tr = document.createElement('tr');
+    const isWin = entry.amount > 0;
+
+    const date = new Date(entry.date).toLocaleDateString('en-ET', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    tr.innerHTML = `
+      <td>${entry.type === 'win' ? 'Win' : 'Join'}</td>
+      <td>${entry.roomId || '—'}</td>
+      <td class="${isWin ? 'amount-win' : 'amount-loss'}">
+        ${isWin ? '+' : ''}${entry.amount} Br
+      </td>
+      <td style="color:var(--muted);font-size:.8rem">${date}</td>
+    `;
+
     tbody.appendChild(tr);
   }
 }

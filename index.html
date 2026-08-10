@@ -19,10 +19,10 @@
     <span>ቢንጎ — ETHIOPIA</span>
   </div>
   <nav class="nav-tabs" id="navTabs" style="display:none">
-    <button class="nav-tab active" data-page="lobby">🎮 Lobby</button>
-    <button class="nav-tab" data-page="game" id="gameTab">🎯 Game</button>
-    <button class="nav-tab" data-page="profile">👤 Profile</button>
-  </nav>
+  <button class="nav-tab active" data-page="lobby">Rooms</button>
+  <button class="nav-tab" data-page="profile">Profile</button>
+  <button class="nav-tab" data-page="history">History</button>
+</nav>
   <div class="player-hud" id="playerHud" style="display:none">
     <span class="player-name-badge" id="hudName"></span>
     <div class="balance-badge" id="hudBalance">0 Br</div>
@@ -164,6 +164,29 @@
         </tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<!-- ── HISTORY PAGE ── -->
+<div class="page" id="page-history">
+  <div class="history-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Room</th>
+          <th>Amount</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="historyPageBody">
+        <tr>
+          <td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">
+            No history yet
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 

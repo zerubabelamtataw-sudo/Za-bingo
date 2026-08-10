@@ -272,16 +272,37 @@ state.myCartelas = state.allCartelas.filter(
   }
 });
 
-// ── Called-numbers grid (75 cells) ────────────────────────────────────────────
+// ── Called-numbers grid (BINGO rows) ─────────────────────────────────────────
 function buildCalledGrid() {
   const grid = $('calledGrid');
   grid.innerHTML = '';
-  for (let n = 1; n <= 75; n++) {
-    const el = document.createElement('div');
-    el.className = 'cn-cell';
-    el.id = `cn-${n}`;
-    el.textContent = n;
-    grid.appendChild(el);
+
+  const letters = [
+    { letter: 'B', start: 1,  end: 15 },
+    { letter: 'I', start: 16, end: 30 },
+    { letter: 'N', start: 31, end: 45 },
+    { letter: 'G', start: 46, end: 60 },
+    { letter: 'O', start: 61, end: 75 }
+  ];
+
+  for (const group of letters) {
+    const row = document.createElement('div');
+    row.className = 'called-row';
+
+    const letter = document.createElement('div');
+    letter.className = `called-row-letter ${group.letter}`;
+    letter.textContent = group.letter;
+    row.appendChild(letter);
+
+    for (let n = group.start; n <= group.end; n++) {
+      const el = document.createElement('div');
+      el.className = 'cn-cell';
+      el.id = `cn-${n}`;
+      el.textContent = n;
+      row.appendChild(el);
+    }
+
+    grid.appendChild(row);
   }
 }
 

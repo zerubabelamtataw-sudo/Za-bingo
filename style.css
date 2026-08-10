@@ -266,56 +266,76 @@ header {
 }
 @media(max-width:900px){ .game-layout { grid-template-columns: 1fr; } }
 
-/* ── Called board ── */
+/* ──────────────── 75 NUMBER BOARD ──────────────── */
+
 .called-board {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 20px;
-  height: fit-content;
+  padding: 10px;
+  width: 100%;
+  overflow: hidden;
 }
+
 .called-board-letters {
-  display: grid;
-  grid-template-columns: repeat(5,1fr);
-  gap: 2px;
-  margin-bottom: 8px;
+  display: none;
 }
-.board-letter {
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  padding: 6px 0;
-  border-radius: 4px;
-}
-.letter-B { color: var(--B); }
-.letter-I { color: var(--I); }
-.letter-N { color: var(--N); }
-.letter-G { color: var(--G); }
-.letter-O { color: var(--O); }
 
 .called-numbers-grid {
-  display: grid;
-  grid-template-columns: repeat(5,1fr);
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
+
+/* Each B/I/N/G/O row */
+.called-row {
+  display: grid;
+  grid-template-columns: 24px repeat(15, 1fr);
+  gap: 3px;
+  width: 100%;
+  align-items: center;
+}
+
+.called-row-letter {
+  font-family: var(--font-display);
+  font-size: .75rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.called-row-letter.B { color: var(--B); }
+.called-row-letter.I { color: var(--I); }
+.called-row-letter.N { color: var(--N); }
+.called-row-letter.G { color: var(--G); }
+.called-row-letter.O { color: var(--O); }
+
 .cn-cell {
-  aspect-ratio: 1;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .7rem;
+
+  padding: 0;
+  font-size: clamp(.48rem, 2.4vw, .7rem);
   font-weight: 700;
+
   border-radius: 4px;
   background: var(--surface2);
   color: var(--muted);
   border: 1px solid var(--border);
-  transition: all .3s;
+
+  transition: all .2s;
 }
+
 .cn-cell.called {
   color: #fff;
   border-color: transparent;
   animation: popIn .3s ease;
 }
+
 .cn-cell.called.B { background: var(--B); }
 .cn-cell.called.I { background: var(--I); }
 .cn-cell.called.N { background: var(--N); }
@@ -815,24 +835,4 @@ to {
 transform: scale(1);
 opacity: 1;
 }
-}
-.profile-info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.profile-info-row span {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.profile-info-row strong {
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
 }

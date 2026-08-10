@@ -739,7 +739,7 @@ header {
 }
 
 .cartela-section .cartela-grid {
-  max-height: 360px;
+  max-height: none;
 }
 
 @media (max-width: 600px) {
@@ -753,7 +753,6 @@ header {
   }
 
   .cartela-section .cartela-grid {
-  grid-template-columns: repeat(6, 1fr);
-}
+    grid-template-columns: repeat(6, 1fr);
   }
 }

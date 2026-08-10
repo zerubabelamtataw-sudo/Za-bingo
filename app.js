@@ -231,21 +231,19 @@ function selectRoom(room, el) {
 
   el.classList.add('selected');
 
-  // Hide Rooms page
+  // Hide Rooms
+  $('page-lobby').style.display = 'none';
   $('page-lobby').classList.remove('active');
-$('page-lobby').style.display = 'none';
 
-  // Show Cartela page
+  // Show Cartelas
   $('page-cartelas').style.display = 'block';
   $('page-cartelas').classList.add('active');
 
-  // Make sure cartelas are displayed
+  // Reset cartela selection
+  state.selectedCartelas = [];
   renderCartelaGrid();
 
-  // Reset selection counter
   $('selectedCount').textContent = '0 cartelas selected';
-
-  // Disable join button until cartela is selected
   $('joinBtn').disabled = true;
 }
 

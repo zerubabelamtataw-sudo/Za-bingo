@@ -117,7 +117,7 @@ function renderCartelaGrid(reservedIds = []) {
   for (const c of state.allCartelas) {
     const el = document.createElement('div');
     el.className = 'cartela-item';
-    el.textContent = `#${c.number}`;
+    el.textContent = c.number;
     el.dataset.id  = c.id;
     if (reserved.has(c.id)) el.classList.add('reserved');
     if (state.selectedCartelas.includes(c.id)) el.classList.add('selected');

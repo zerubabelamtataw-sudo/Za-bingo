@@ -729,3 +729,36 @@ header {
   }
 }  
 }
+/* ── ROOM TO CARTELA LAYOUT ── */
+
+.rooms-section {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 24px;
+}
+
+.cartela-section {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+.cartela-section .cartela-grid {
+  max-height: 360px;
+}
+
+@media (max-width: 600px) {
+  .rooms-section,
+  .cartela-section {
+    max-width: 100%;
+  }
+
+  .room-card {
+    padding: 16px;
+  }
+
+  .cartela-section .cartela-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

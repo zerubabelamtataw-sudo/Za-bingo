@@ -42,32 +42,43 @@
 
 <!-- ── LOBBY PAGE ── -->
 <div class="page" id="page-lobby">
-  <div class="lobby-grid">
 
-    <!-- Left: Rooms -->
-    <div>
-      <div class="section-title">SELECT ROOM</div>
-      <div class="room-cards" id="roomCards">
-        <div class="spinner"></div>
-      </div>
+  <!-- Rooms -->
+  <div class="rooms-section">
+    <div class="section-title">SELECT ROOM</div>
+
+    <div class="room-cards" id="roomCards">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Cartela picker -->
+  <div class="cartela-section" id="cartelaSection" style="display:none">
+
+    <div class="cartela-picker-header">
+      <div class="section-title">SELECT CARTELAS</div>
+      <span id="cartelaCountLabel"
+            style="color:var(--muted);font-size:.85rem">
+        Max 4
+      </span>
     </div>
 
-    <!-- Right: Cartela picker -->
-    <div>
-      <div class="cartela-picker-header">
-        <div class="section-title">SELECT CARTELAS</div>
-        <span id="cartelaCountLabel" style="color:var(--muted);font-size:.85rem">Max 4</span>
-      </div>
-      <div class="cartela-grid" id="cartelaGrid">
-        <div class="spinner"></div>
-      </div>
-      <div class="join-bar">
-        <span class="selected-count" id="selectedCount">0 cartelas selected</span>
-        <button class="btn btn-gold" id="joinBtn" disabled>Join Room →</button>
-      </div>
+    <div class="cartela-grid" id="cartelaGrid">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="join-bar">
+      <span class="selected-count" id="selectedCount">
+        0 cartelas selected
+      </span>
+
+      <button class="btn btn-gold" id="joinBtn" disabled>
+        Join Room →
+      </button>
     </div>
 
   </div>
+
 </div>
 
 <!-- ── GAME PAGE ── -->

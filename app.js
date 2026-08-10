@@ -222,9 +222,20 @@ function renderRoomCards(rooms) {
 
 function selectRoom(room, el) {
   state.selectedRoom = room.id;
-  document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+
+  document.querySelectorAll('.room-card')
+    .forEach(c => c.classList.remove('selected'));
+
   el.classList.add('selected');
-  $('joinBtn').disabled = state.selectedCartelas.length === 0;
+
+  const cartelaSection = $('cartelaSection');
+
+  if (cartelaSection) {
+    cartelaSection.style.display = 'block';
+  }
+
+  $('joinBtn').disabled =
+    state.selectedCartelas.length === 0;
 }
 
 // ── Join ──────────────────────────────────────────────────────────────────────

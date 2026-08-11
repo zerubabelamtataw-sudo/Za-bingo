@@ -65,7 +65,58 @@
 </div>
 
   </div></div>
-<!-- END CARTELA PAGE --><!-- ── GAME PAGE ── --><div class="page" id="page-game">  <div class="game-layout"><!-- Left: called numbers board -->
+<!-- END CARTELA PAGE --><!-- ── GAME PAGE ── --><div class="page" id="page-game">  <div class="game-layout">
+  <!-- GAME INFO -->
+<div class="game-status-bar" id="gameStatusBar">
+
+  <div class="game-info-chip">
+    <div class="game-info-label">Room</div>
+    <div class="game-info-value" id="infoRoomName">—</div>
+  </div>
+
+  <div class="game-info-chip">
+    <div class="game-info-label">Status</div>
+    <div class="game-info-value" id="infoStatus">—</div>
+  </div>
+
+  <div class="game-info-chip">
+    <div class="game-info-label">Pot</div>
+    <div class="game-info-value" id="infoPot">0 Br</div>
+  </div>
+
+  <div class="game-info-chip">
+    <div class="game-info-label">Players</div>
+    <div class="game-info-value" id="infoPlayers">0</div>
+  </div>
+
+  <div class="game-info-chip">
+    <div class="game-info-label">Numbers</div>
+    <div class="game-info-value" id="infoCalled">0/75</div>
+  </div>
+
+  <div style="width:100%;grid-column:1/-1">
+
+    <div
+      class="countdown-bar-wrap"
+      id="countdownWrap"
+      style="display:none"
+    >
+      <div
+        class="countdown-bar"
+        id="countdownBar"
+        style="width:100%"
+      ></div>
+    </div>
+
+    <div
+      id="countdownLabel"
+      style="font-size:.8rem;color:var(--muted);margin-top:6px;display:none"
+    ></div>
+
+  </div>
+
+</div>
+  <!-- Left: called numbers board -->
 <div>
 
   <div class="called-board">
@@ -117,86 +168,6 @@
 <!-- Right: status + my cartelas -->
 <div class="game-right">
 
-  <div
-    class="game-status-bar"
-    id="gameStatusBar"
-  >
-
-    <div class="game-info-chip">
-      <div class="game-info-label">Room</div>
-      <div
-        class="game-info-value"
-        id="infoRoomName"
-      >
-        —
-      </div>
-    </div>
-
-    <div class="game-info-chip">
-      <div class="game-info-label">Status</div>
-      <div
-        class="game-info-value"
-        id="infoStatus"
-      >
-        —
-      </div>
-    </div>
-
-    <div class="game-info-chip">
-      <div class="game-info-label">Pot</div>
-      <div
-        class="game-info-value"
-        id="infoPot"
-      >
-        0 Br
-      </div>
-    </div>
-
-    <div class="game-info-chip">
-      <div class="game-info-label">Players</div>
-      <div
-        class="game-info-value"
-        id="infoPlayers"
-      >
-        0
-      </div>
-    </div>
-
-    <div class="game-info-chip">
-      <div class="game-info-label">Numbers</div>
-      <div
-        class="game-info-value"
-        id="infoCalled"
-      >
-        0/75
-      </div>
-    </div>
-
-    <div style="width:100%">
-
-      <div
-        class="countdown-bar-wrap"
-        id="countdownWrap"
-        style="display:none"
-      >
-        <div
-          class="countdown-bar"
-          id="countdownBar"
-          style="width:100%"
-        ></div>
-      </div>
-
-      <div
-        id="countdownLabel"
-        style="font-size:.8rem;color:var(--muted);margin-top:6px;display:none"
-      ></div>
-
-    </div>
-
-  </div>
-
-
-  <div
     class="players-list"
     id="gamePlayersList"
   ></div>

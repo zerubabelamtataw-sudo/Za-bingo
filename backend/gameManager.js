@@ -396,7 +396,6 @@ async addSimulatedPlayers(roomId = '5br') {
         return;
       }
       room.calledNumbers.push(numbers[idx++]);
-      room.calledNumbers.push(numbers[idx++]);
 
 // Check simulated players for automatic Bingo
 this._checkSimulatedBingo(room);

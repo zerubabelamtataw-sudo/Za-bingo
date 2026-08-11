@@ -633,10 +633,43 @@ function handleWinner(winner) {
   const isMe = winner.playerId === state.player?.id;
 
   $('popupWinnerName').textContent = winner.playerName;
-  $('popupCartelaDetail').textContent = `Cartela #${winner.cartelaNumber} · ${winner.calledCount} numbers called`;
-  $('popupAmount').textContent = isMe ? `+${winner.amount} Br 🎉` : `${winner.playerName} won ${winner.amount} Br`;
-  $('popupAmount').style.color = isMe ? 'var(--green)' : 'var(--muted)';
+  $('popupCartelaDetail').textContent =
+    `Cartela #${winner.cartelaNumber} · ${winner.calledCount} numbers called`;
+  $('popupAmount').textContent =
+    isMe
+      ? `+${winner.amount} Br 🎉`
+      : `${winner.playerName} won ${winner.amount} Br`;
+
+  $('popupAmount').style.color =
+    isMe ? 'var(--green)' : 'var(--muted)';
+
   $('winnerOverlay').classList.add('visible');
+
+  // Return to Rooms after 2 seconds
+  setTimeout(() => {
+    $('winnerOverlay').classList.remove('visible');
+
+    // Reset game state
+    state.activeRoomId     = null;
+    state.myCartelas       = [];
+    state.calledNumbers    = [];
+    state.markedCells      = {};
+    state.bingoDetected    = {};
+    state.selectedCartelas = [];
+    state.selectedRoom     = null;
+    state.lastCalledCount  = 0;
+
+    clearInterval(state.pollTimer);
+
+    // Refresh player balance from server
+    refreshPlayer();
+
+    // Return to Rooms
+    showPage('lobby');
+    startLobbyPoll();
+    renderCartelaGrid();
+
+  }, 2000);
 
   if (isMe) {
     state.player.balance += winner.amount;
@@ -644,31 +677,6 @@ function handleWinner(winner) {
     toast(`You won ${winner.amount} Br! 🏆`, 'success');
   }
 }
-
-setTimeout(() => {
-  $('winnerOverlay').classList.remove('visible');
-
-  // Reset game state
-  state.activeRoomId     = null;
-  state.myCartelas       = [];
-  state.calledNumbers    = [];
-  state.markedCells      = {};
-  state.bingoDetected    = {};
-  state.selectedCartelas = [];
-  state.selectedRoom     = null;
-  state.lastCalledCount  = 0;
-
-  clearInterval(state.pollTimer);
-
-  // Refresh player balance from server
-  refreshPlayer();
-
-  // Return to Rooms
-  showPage('lobby');
-  startLobbyPoll();
-  renderCartelaGrid();
-
-}, 2000);
 
 async function refreshPlayer() {
   try {

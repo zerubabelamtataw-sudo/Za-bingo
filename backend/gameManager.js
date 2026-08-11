@@ -367,13 +367,18 @@ async addSimulatedPlayers(roomId = '5br') {
   // ── countdown → game ──────────────────────────────────────────────────────
 
   _startCountdown(room) {
-    room.status         = 'countdown';
-    room.countdownStart = Date.now();
+  room.status = 'countdown';
 
-    room._countdownTimer = setTimeout(() => {
+  // Store the exact time the 25-second countdown begins
+  room.countdownStart = Date.now();
+
+  room._countdownTimer = setTimeout(() => {
+    // Make sure the room is still counting down
+    if (room.status === 'countdown') {
       this._startGame(room);
-    }, COUNTDOWN_SECONDS * 1000);
-  }
+    }
+  }, COUNTDOWN_SECONDS * 1000);
+}
 
   _startGame(room) {
     room.status         = 'playing';

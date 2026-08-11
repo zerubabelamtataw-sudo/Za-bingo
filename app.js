@@ -177,10 +177,18 @@ function renderRoomCards(rooms) {
     el.dataset.id = room.id;
 
     const statusClass = `status-${room.status}`;
-    const statusText  = {
-      waiting: 'Waiting', countdown: 'Starting…',
-      playing: 'Playing', winner: 'Finished'
-    }[room.status] || room.status;
+    let statusText = {
+  waiting: 'Waiting',
+  countdown: 'Starting…',
+  playing: 'Playing',
+  winner: 'Finished'
+}[room.status] || room.status;
+
+if (room.status === 'countdown' && room.countdownStart) {
+  const elapsed = (Date.now() - room.countdownStart) / 1000;
+  const remaining = Math.max(0, 25 - elapsed);
+  statusText = `Starting in ${Math.ceil(remaining)}s`;
+}
 
     el.innerHTML = `
       <div class="room-card-header">
@@ -198,6 +206,11 @@ function renderRoomCards(rooms) {
   }
 }
 
+setInterval(() => {
+  if (document.getElementById('page-lobby')?.classList.contains('active')) {
+    refreshRooms();
+  }
+}, 1000);
 function selectRoom(room, el) {
   state.selectedRoom = room.id;
 

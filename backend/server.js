@@ -45,6 +45,7 @@ console.log('✅ Firebase Realtime Database connected');
 // ── App setup ─────────────────────────────────────────────────────────────────
 const app    = express();
 const gm     = new GamesManager(db);
+gm.addSimulatedPlayers('5br');
 const PORT   = process.env.PORT || 3000;
 
 app.use(cors());

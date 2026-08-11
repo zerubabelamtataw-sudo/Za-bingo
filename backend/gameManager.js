@@ -15,6 +15,24 @@ const COUNTDOWN_SECONDS = 25;
 const DRAW_INTERVAL_MS  = 3000;
 const WINNER_SHARE      = 0.85;
 
+const SIMULATED_PLAYERS = [
+  'በሌ',
+  'yoni',
+  'Maje',
+  'Yaaa',
+  'Debela',
+  'Taye',
+  'Ggz',
+  'Dave',
+  'መካሽ',
+  'cr7',
+  'Dangote',
+  'Tafe',
+  'Messi',
+  'Runner',
+  'Here we go'
+];
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function generateCartela() {
@@ -280,6 +298,62 @@ if (room.players.length === 2) {
 
 return room.toJSON();
   }
+
+async addSimulatedPlayers(roomId = '5br') {
+  const room = this.rooms[roomId];
+  if (!room) throw new Error('Room not found');
+
+  if (room.status !== 'waiting') return;
+
+  const cartelas = await this.getCartelas();
+
+  // 2 cartelas for every player = 30 total
+  const cartelaCounts = SIMULATED_PLAYERS.map(() => 2);
+
+  // Randomly add up to 15 extra cartelas
+  let extra = Math.floor(Math.random() * 16);
+
+  while (extra > 0) {
+    const index = Math.floor(Math.random() * SIMULATED_PLAYERS.length);
+
+    if (cartelaCounts[index] < 4) {
+      cartelaCounts[index]++;
+      extra--;
+    }
+  }
+
+  for (let i = 0; i < SIMULATED_PLAYERS.length; i++) {
+    const name = SIMULATED_PLAYERS[i];
+    const playerId = `sim_${i + 1}`;
+    const count = cartelaCounts[i];
+
+    if (room.players.some(p => p.id === playerId)) continue;
+
+    const available = cartelas.filter(
+      c => !room.reservedCartelas.has(c.id)
+    );
+
+    const selected = available.slice(0, count);
+
+    if (selected.length < count) break;
+
+    selected.forEach(c => room.reservedCartelas.add(c.id));
+
+    room.players.push({
+      id: playerId,
+      name,
+      balance: 999999
+    });
+
+    room.playerCartelas[playerId] = selected;
+
+    room.pot += room.entryFee * count;
+  }
+
+  if (room.players.length >= 2) {
+    this._startCountdown(room);
+  }
+}
 
   // ── countdown → game ──────────────────────────────────────────────────────
 

@@ -2,8 +2,7 @@
 // ZA BINGO — TELEGRAM BOT
 // ============================================================
 const TelegramBot = require('node-telegram-bot-api');
-const { getDB } = require('./database');
-
+const db = require('./firebase');
 // Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';

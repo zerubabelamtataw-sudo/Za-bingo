@@ -278,11 +278,8 @@ header {
   align-items: center;
   gap: 4px;
 
-  flex-wrap: nowrap;
-}
-
-.game-status-bar > div:last-child {
-  grid-column: 1 / -1;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .game-info-chip {
@@ -292,6 +289,7 @@ header {
   justify-content: center;
   gap: 1px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .game-info-label {
@@ -315,6 +313,21 @@ header {
 @media(max-width:900px) {
   .game-layout {
     grid-template-columns: 1fr;
+  }
+
+  .game-status-bar {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 5px 4px;
+  }
+
+  .game-info-label {
+    font-size: .42rem;
+    letter-spacing: .3px;
+  }
+
+  .game-info-value {
+    font-size: .58rem;
   }
 }
 

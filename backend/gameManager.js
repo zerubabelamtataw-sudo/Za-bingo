@@ -111,22 +111,24 @@ class Room {
     this._gameStartTime  = null;
   }
 
-  // Public snapshot for API
-  toJSON() {
-    return {
-      id:             this.id,
-      name:           this.name,
-      entryFee:       this.entryFee,
-      status:         this.status,
-      playerCount:    this.players.length,
-      players:        this.players.map(p => ({ id: p.id, name: p.name })),
-      calledNumbers:  this.calledNumbers,
-      pot:            this.pot,
-      winner:         this.winner,
-      countdownStart: this.countdownStart,
-      countdownSeconds: COUNTDOWN_SECONDS,
-    };
-  }
+// Public snapshot for API
+toJSON() {
+  return {
+    id: this.id,
+    name: this.name,
+    entryFee: this.entryFee,
+    status: this.status,
+    playerCount: this.players.length,
+    players: this.players.map(p => ({
+      id: p.id,
+      name: p.name
+    })),
+    calledNumbers: this.calledNumbers,
+    pot: this.pot,
+    winner: this.winner,
+    countdownStart: this.countdownStart,
+    countdownSeconds: COUNTDOWN_SECONDS,
+  };
 }
 
 // ── GamesManager ─────────────────────────────────────────────────────────────

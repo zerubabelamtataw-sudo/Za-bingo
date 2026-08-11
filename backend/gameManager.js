@@ -359,10 +359,6 @@ async addSimulatedPlayers(roomId = '5br') {
     room.pot += room.entryFee * count;
   }
 
-  // Start the countdown after simulated players have joined
-  if (room.players.length >= 2 && room.status === 'waiting') {
-    this._startCountdown(room);
-  }
 }
 
   // ── countdown → game ──────────────────────────────────────────────────────

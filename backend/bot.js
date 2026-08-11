@@ -4,7 +4,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const db = require('./firebase');
 // Replace with your bot token from @BotFather
-const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });

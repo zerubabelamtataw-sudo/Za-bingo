@@ -476,26 +476,6 @@ font-size: 8px;
 /* ── Game right panel ── */
 .game-right { display: flex; flex-direction: column; gap: 20px; }
 
-.game-status-bar {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.game-info-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.game-info-label { font-size: .65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-.game-info-value { font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); }
-
 .countdown-bar-wrap {
   width: 100%;
   height: 4px;

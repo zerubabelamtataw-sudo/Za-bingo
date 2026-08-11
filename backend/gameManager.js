@@ -285,14 +285,8 @@ return { id: playerId, ...player };
     room.playerCartelas[player.id] = selected;
     room.pot += totalFee;
 
-    // First player: wait for another player
-if (room.players.length === 1) {
-  room.status = 'waiting';
-  room.countdownStart = null;
-}
-
-// Second player: start the real 25-second countdown
-if (room.players.length === 2) {
+    // Start the 25-second countdown when the second player joins
+if (room.players.length === 2 && room.status === 'waiting') {
   this._startCountdown(room);
 }
 
@@ -506,10 +500,16 @@ room.winner = {
   }
 
   _resetRoom(room) {
-    clearInterval(room._drawTimer);
-    clearTimeout(room._countdownTimer);
-    room.reset();
-  }
+  clearInterval(room._drawTimer);
+  clearTimeout(room._countdownTimer);
+
+  room.reset();
+
+  // Automatically bring the 15 simulated players back
+  this.addSimulatedPlayers(room.id).catch(err => {
+    console.error('❌ Failed to restart simulated players:', err);
+  });
+}
 
   // ── getters ───────────────────────────────────────────────────────────────
 

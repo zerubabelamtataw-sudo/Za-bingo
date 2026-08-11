@@ -584,7 +584,7 @@ popupCountdown.textContent = Math.ceil(remaining);
 if (popupPlayerCount) {
 popupPlayerCount.textContent = game.playerCount || 0;
 }
-
+console.log("GAME DATA:", game);
 // Live prize
 if (popupPrize) {
 popupPrize.textContent = game.prize || 0;
@@ -645,8 +645,9 @@ function handleWinner(winner) {
   }
 }
 
-$('winnerCloseBtn').addEventListener('click', () => {
+setTimeout(() => {
   $('winnerOverlay').classList.remove('visible');
+
   // Reset game state
   state.activeRoomId     = null;
   state.myCartelas       = [];
@@ -656,13 +657,18 @@ $('winnerCloseBtn').addEventListener('click', () => {
   state.selectedCartelas = [];
   state.selectedRoom     = null;
   state.lastCalledCount  = 0;
+
   clearInterval(state.pollTimer);
+
   // Refresh player balance from server
   refreshPlayer();
+
+  // Return to Rooms
   showPage('lobby');
   startLobbyPoll();
   renderCartelaGrid();
-});
+
+}, 2000);
 
 async function refreshPlayer() {
   try {

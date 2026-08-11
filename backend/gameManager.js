@@ -353,6 +353,9 @@ async addSimulatedPlayers(roomId = '5br') {
       name,
       balance: 999999
     });
+    if (room.players.length === 2 && room.status === 'waiting') {
+  this._startCountdown(room);
+}
 
     room.playerCartelas[playerId] = selected;
 

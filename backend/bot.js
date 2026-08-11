@@ -3,6 +3,7 @@
 // ============================================================
 const TelegramBot = require('node-telegram-bot-api');
 const db = require('./firebase');
+
 // Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
@@ -16,54 +17,90 @@ let gameManager = null;
 // ============================================================
 
 // /start - Register user and show main menu
-bot.onText(/\/start/, (msg) => {
+bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const tgId = String(msg.from.id);
   const firstName = msg.from.first_name || 'Player';
   const username = msg.from.username || '';
 
-  const db = getDB();
-  let player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+  try {
+    const playerRef = db.ref(`players/${tgId}`);
+    const snapshot = await playerRef.once('value');
+    let player = snapshot.val();
 
-  if (!player) {
-    // Register new player
-    db.prepare(
-      'INSERT INTO players (telegram_id, first_name, username, balance, games_played, games_won, registration_date) VALUES (?, ?, ?, 30, 0, 0, datetime("now"))'
-    ).run(tgId, firstName, username);
-    player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
-    
-    bot.sendMessage(chatId, 
-      `🎉 *Welcome to ZA Bingo, ${firstName}!*\n\n` +
-      `You received *30 Br* welcome bonus!\n` +
-      `Play Bingo and win real prizes!\n\n` +
-      `Share your contact to complete registration.`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          keyboard: [[{ text: '📱 Share Contact', request_contact: true }]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
+    if (!player) {
+      // Register new player
+      player = {
+        telegram_id: tgId,
+        first_name: firstName,
+        username: username,
+        phone: '',
+        balance: 30,
+        games_played: 0,
+        games_won: 0,
+        registration_date: new Date().toISOString()
+      };
+
+      await playerRef.set(player);
+
+      bot.sendMessage(
+        chatId,
+        `🎉 *Welcome to ZA Bingo, ${firstName}!*\n\n` +
+        `You received *30 Br* welcome bonus!\n` +
+        `Play Bingo and win real prizes!\n\n` +
+        `Share your contact to complete registration.`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            keyboard: [[
+              {
+                text: '📱 Share Contact',
+                request_contact: true
+              }
+            ]],
+            resize_keyboard: true,
+            one_time_keyboard: true
+          }
         }
-      }
+      );
+    } else {
+      showMainMenu(chatId);
+    }
+
+  } catch (error) {
+    console.error('❌ /start error:', error);
+    bot.sendMessage(
+      chatId,
+      '❌ Something went wrong. Please try again.'
     );
-  } else {
-    showMainMenu(chatId);
   }
 });
 
 // Handle contact sharing
-bot.on('contact', (msg) => {
+bot.on('contact', async (msg) => {
   const chatId = msg.chat.id;
   const tgId = String(msg.from.id);
   const phone = msg.contact.phone_number;
 
-  const db = getDB();
-  db.prepare('UPDATE players SET phone = ? WHERE telegram_id = ?').run(phone, tgId);
+  try {
+    await db.ref(`players/${tgId}/phone`).set(phone);
 
-  bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
-    reply_markup: { remove_keyboard: true }
-  });
-  showMainMenu(chatId);
+    bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
+      reply_markup: {
+        remove_keyboard: true
+      }
+    });
+
+    showMainMenu(chatId);
+
+  } catch (error) {
+    console.error('❌ Contact save error:', error);
+
+    bot.sendMessage(
+      chatId,
+      '❌ Could not save your phone number. Please try again.'
+    );
+  }
 });
 
 // ============================================================
@@ -478,4 +515,4 @@ function setGameManager(gm) {
   gameManager = gm;
 }
 
-module.exports = { bot, setGameManager };
+module.exports = { bot, setGameManager }

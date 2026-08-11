@@ -329,7 +329,7 @@ async addSimulatedPlayers(roomId = '5br') {
     await new Promise(resolve => setTimeout(resolve, delay));
 
     // Stop if the room has already started
-    if (room.status !== 'waiting') break;
+    if (room.status === 'playing' || room.status === 'winner') break;
 
     const name = players[i];
     const originalIndex = SIMULATED_PLAYERS.indexOf(name);

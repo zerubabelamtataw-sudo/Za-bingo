@@ -324,7 +324,7 @@ async addSimulatedPlayers(roomId = '5br') {
   for (let i = 0; i < players.length; i++) {
 
     // Different waiting time between players
-    const delay = 1000 + Math.floor(Math.random() * 19000);
+    const delay = 500 + Math.floor(Math.random() * 1000);
 
     await new Promise(resolve => setTimeout(resolve, delay));
 

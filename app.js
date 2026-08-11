@@ -552,37 +552,49 @@ function applyGameState(game) {
   // ── 25 SECOND POPUP COUNTDOWN ───────────────────────────────
 const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
+const popupPlayerCount = $('popupPlayerCount');
+const popupPrize = $('popupPrize');
 
 if (
-  (game.status === 'waiting' && game.playerCount === 1) ||
-  (game.status === 'countdown' && game.countdownStart)
+(game.status === 'waiting' && game.playerCount === 1) ||
+(game.status === 'countdown' && game.countdownStart)
 ) {
 
-  const COUNTDOWN_SECONDS = 25;
+const COUNTDOWN_SECONDS = 25;
 
 let remaining = 25;
 
 if (game.status === 'countdown' && game.countdownStart) {
-  const elapsed = (Date.now() - game.countdownStart) / 1000;
-  remaining = Math.max(
-    0,
-    COUNTDOWN_SECONDS - elapsed
-  );
+const elapsed = (Date.now() - game.countdownStart) / 1000;
+remaining = Math.max(
+0,
+COUNTDOWN_SECONDS - elapsed
+);
 }
 
-  if (countdownOverlay) {
-    countdownOverlay.classList.add('visible');
-  }
+if (countdownOverlay) {
+countdownOverlay.classList.add('visible');
+}
 
-  if (popupCountdown) {
-    popupCountdown.textContent = Math.ceil(remaining);
-  }
+if (popupCountdown) {
+popupCountdown.textContent = Math.ceil(remaining);
+}
+
+// Live player count
+if (popupPlayerCount) {
+popupPlayerCount.textContent = game.playerCount || 0;
+}
+
+// Live prize
+if (popupPrize) {
+popupPrize.textContent = game.prize || 0;
+}
 
 } else {
 
-  if (countdownOverlay) {
-    countdownOverlay.classList.remove('visible');
-  }
+if (countdownOverlay) {
+countdownOverlay.classList.remove('visible');
+}
 
 }
 

@@ -962,3 +962,106 @@ transform: scale(1);
 opacity: 1;
 }
 }
+/* ───────── CURRENT NUMBER INSIDE 75-NUMBER BOARD ───────── */
+
+.called-board-content {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+/* Current called number — small left column */
+.called-board-content .last-called {
+  margin: 0;
+  padding: 5px 2px;
+  width: 42px;
+  min-width: 42px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* CURRENT text */
+.called-board-content .last-called-label {
+  font-size: .42rem;
+  letter-spacing: .3px;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+/* B-12 */
+.called-board-content .last-called-number {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin: 0;
+  font-weight: 900;
+}
+
+/* 75-number grid */
+.called-board-content .called-numbers-grid {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Keep the 75 numbers compact */
+.called-board-content .called-row {
+  grid-template-columns: 20px repeat(15, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.called-board-content .called-row-letter {
+  font-size: .6rem;
+}
+
+.called-board-content .cn-cell {
+  font-size: clamp(.42rem, 1.8vw, .58rem);
+  border-radius: 3px;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+
+  .called-board {
+    padding: 7px;
+  }
+
+  .called-board-content {
+    grid-template-columns: 36px 1fr;
+    gap: 4px;
+  }
+
+  .called-board-content .last-called {
+    width: 36px;
+    min-width: 36px;
+    padding: 4px 1px;
+  }
+
+  .called-board-content .last-called-label {
+    font-size: .35rem;
+  }
+
+  .called-board-content .last-called-number {
+    font-size: 1.05rem;
+  }
+
+  .called-board-content .called-row {
+    grid-template-columns: 17px repeat(15, minmax(0, 1fr));
+    gap: 1px;
+  }
+
+  .called-board-content .called-row-letter {
+    font-size: .5rem;
+  }
+
+  .called-board-content .cn-cell {
+    font-size: .42rem;
+    border-radius: 2px;
+  }
+}

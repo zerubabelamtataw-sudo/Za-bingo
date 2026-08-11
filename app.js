@@ -319,7 +319,7 @@ function updateCalledGrid(calledNumbers) {
     const latest = calledNumbers[calledNumbers.length - 1];
     $('lastCalledWrap').style.display = 'block';
     const numEl = $('lastCalledNum');
-    numEl.textContent  = `${letterFor(latest)}-${latest}`;
+    numEl.textContent  = `${letterFor(latest)} ${latest}`;
     numEl.style.color  = `var(--${letterFor(latest)})`;
     numEl.style.animation = 'none';
     numEl.offsetHeight;

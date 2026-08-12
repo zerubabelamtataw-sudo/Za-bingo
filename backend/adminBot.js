@@ -69,22 +69,19 @@ function parseWithdrawalSMS(text) {
 // FIND PENDING TRANSACTION
 // ============================================================
 
-async function findPendingTransaction(type, amount, transactionId) {
+async function findPendingTransaction(type, amount) {
   const snapshot = await db.ref('transactions').once('value');
   const transactions = snapshot.val();
 
   if (!transactions) return null;
 
   for (const [key, transaction] of Object.entries(transactions)) {
-
     if (!transaction) continue;
 
     if (
       transaction.type === type &&
       transaction.status === 'pending' &&
-      Number(transaction.amount) === Number(amount) &&
-      String(transaction.transactionId || '').toUpperCase() ===
-        String(transactionId).toUpperCase()
+      Number(transaction.amount) === Number(amount)
     ) {
       return {
         key,
@@ -101,11 +98,7 @@ async function findPendingTransaction(type, amount, transactionId) {
 // ============================================================
 
 async function processDeposit(text, smsData) {
-  const transaction = await findPendingTransaction(
-    'deposit',
-    smsData.amount,
-    smsData.transactionId
-  );
+  const transaction = await findPendingTransaction('deposit', smsData.amount)
 
   if (!transaction) {
     console.log(
@@ -171,11 +164,7 @@ async function processDeposit(text, smsData) {
 // ============================================================
 
 async function processWithdrawal(text, smsData) {
-  const transaction = await findPendingTransaction(
-    'withdrawal',
-    smsData.amount,
-    smsData.transactionId
-  );
+  const transaction = await findPendingTransaction('withdrawal', smsData.amount)
 
   if (!transaction) {
     console.log(

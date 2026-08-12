@@ -589,17 +589,28 @@ if (transferSessions[chatId]) {
     for (const [id, p] of Object.entries(players)) {
       if (!p) continue;
 
-      const savedPhone = String(p.phone || '').replace(/\s+/g, '');
-      const enteredPhone = phone.replace(/\s+/g, '');
+      const normalizePhone = (number) => {
+  let phone = String(number || '').replace(/\D/g, '');
 
-      if (
-        savedPhone === enteredPhone ||
-        savedPhone.replace(/^0/, '+251') === enteredPhone ||
-        savedPhone.replace(/^\+251/, '0') === enteredPhone
-      ) {
-        recipientId = id;
-        recipient = p;
-        break;
+  if (phone.startsWith('251')) {
+    phone = phone.slice(3);
+  }
+
+  if (phone.startsWith('0')) {
+    phone = phone.slice(1);
+  }
+
+  return phone;
+};
+
+const savedPhone = normalizePhone(p.phone);
+const enteredPhone = normalizePhone(phone);
+
+if (savedPhone === enteredPhone) {
+  recipientId = id;
+  recipient = p;
+  break;
+}
       }
     }
 

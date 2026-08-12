@@ -360,13 +360,20 @@ const player = snapshot.val();
   }
 
   // Menu handlers
-  if (data === 'menu_deposit') {
-    handleDepositMenu(chatId, player);
-  } else if (data === 'menu_withdraw') {
-    handleWithdrawMenu(chatId, player);
-  } else if (data === 'menu_profile') {
-    handleProfile(chatId, player);
-  }
+if (data === 'menu_deposit') {
+  await bot.answerCallbackQuery(query.id);
+  return handleDepositMenu(chatId, player);
+}
+
+if (data === 'menu_withdraw') {
+  await bot.answerCallbackQuery(query.id);
+  return handleWithdrawMenu(chatId, player);
+}
+
+if (data === 'menu_profile') {
+  await bot.answerCallbackQuery(query.id);
+  return handleProfile(chatId, player);
+}
   // Deposit method selection
 else if (data.startsWith('deposit_method_')) {
   const method = data.replace('deposit_method_', '');

@@ -611,7 +611,6 @@ if (savedPhone === enteredPhone) {
   recipient = p;
   break;
 }
-      }
     }
 
     if (!recipient) {

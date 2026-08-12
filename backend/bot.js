@@ -226,7 +226,7 @@ const withdrawSessions = {};
 // ============================================================
 // TEXT MESSAGE HANDLER (for amount input)
 // ============================================================
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const tgId = String(msg.from.id);
   const text = msg.text;
@@ -234,8 +234,9 @@ bot.on('message', (msg) => {
   // Skip commands and contacts
   if (!text || text.startsWith('/') || msg.contact) return;
 
-  const db = getDB();
-  const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+  const playerRef = db.ref(`players/${tgId}`);
+const snapshot = await playerRef.once('value');
+const player = snapshot.val();
 
   // Handle deposit amount
 if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {

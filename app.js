@@ -570,7 +570,7 @@ const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
 const popupPlayerCount = $('popupPlayerCount');
 const popupPrize = $('popupPrize');
-
+const cancelCountdownBtn = $('cancelCountdownBtn');
 if (
 (game.status === 'waiting' && game.playerCount === 1) ||
 (game.status === 'countdown' && game.countdownStart)
@@ -612,6 +612,41 @@ if (countdownOverlay) {
 countdownOverlay.classList.remove('visible');
 }
 
+}
+
+if (cancelCountdownBtn) {
+  cancelCountdownBtn.onclick = async () => {
+    try {
+      cancelCountdownBtn.disabled = true;
+
+      const response = await fetch(
+        `/api/rooms/${state.currentRoom}/cancel-countdown`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            playerId: state.player.id
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to cancel countdown');
+      }
+
+      countdownOverlay.classList.remove('visible');
+
+      cancelCountdownBtn.disabled = false;
+
+    } catch (error) {
+      console.error('Cancel countdown error:', error);
+      cancelCountdownBtn.disabled = false;
+    }
+  };
 }
 
   // Status bar

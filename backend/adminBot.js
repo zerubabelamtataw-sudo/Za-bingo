@@ -66,15 +66,32 @@ function parseWithdrawalSMS(text) {
 }
 
 // ============================================================
-// FIND PENDING TRANSACTION
+// FIND PENDING TRANSACTION + PREVENT DUPLICATE SMS
 // ============================================================
 
-async function findPendingTransaction(type, amount) {
+async function findPendingTransaction(type, amount, transactionId) {
   const snapshot = await db.ref('transactions').once('value');
   const transactions = snapshot.val();
 
   if (!transactions) return null;
 
+  // Check if this SMS transaction ID was already processed
+  for (const transaction of Object.values(transactions)) {
+    if (!transaction) continue;
+
+    if (
+      String(transaction.transactionId || '').toUpperCase() ===
+      String(transactionId || '').toUpperCase()
+    ) {
+      console.log(
+        '⚠️ Duplicate transaction ID:',
+        transactionId
+      );
+      return null;
+    }
+  }
+
+  // Find the pending transaction
   for (const [key, transaction] of Object.entries(transactions)) {
     if (!transaction) continue;
 
@@ -98,7 +115,11 @@ async function findPendingTransaction(type, amount) {
 // ============================================================
 
 async function processDeposit(text, smsData) {
-  const transaction = await findPendingTransaction('deposit', smsData.amount)
+  const transaction = await findPendingTransaction(
+  'deposit',
+  smsData.amount,
+  smsData.transactionId
+);
 
   if (!transaction) {
     console.log(
@@ -164,7 +185,11 @@ async function processDeposit(text, smsData) {
 // ============================================================
 
 async function processWithdrawal(text, smsData) {
-  const transaction = await findPendingTransaction('withdrawal', smsData.amount)
+  const transaction = await findPendingTransaction(
+  'withdrawal',
+  smsData.amount,
+  smsData.transactionId
+);
 
   if (!transaction) {
     console.log(

@@ -69,6 +69,21 @@ bot.onText(/\/play/, async (msg) => {
 
   showMainMenu(chatId);
 });
+
+bot.onText(/\/deposit/, async (msg) => {
+  const chatId = msg.chat.id;
+  const tgId = String(msg.from.id);
+
+  const snapshot = await db.ref(`players/${tgId}`).once('value');
+  const player = snapshot.val();
+
+  if (!player) {
+    return bot.sendMessage(chatId, 'Please /start first.');
+  }
+
+  handleDepositMenu(chatId, player);
+});
+
 let gameManager = null;
 
 // ============================================================

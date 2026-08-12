@@ -193,15 +193,18 @@ header {
   overflow: hidden;
 }
 .room-card.room-5 {
-  background: #D1D5DB;
+  background: #2A5A60;
+  border: #F1C40F
 }
 
 .room-card.room-10 {
-  background: #9CA3AF;
+  background: #3A5A6A;
+  border: #7F9A8A
 }
 
 .room-card.room-20 {
-  background: #6B7280;
+  background: #3A4A5A;
+  border: #7F9A8A
 }
 .room-card::before {
   content: '';

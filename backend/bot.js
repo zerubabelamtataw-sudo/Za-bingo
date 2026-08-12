@@ -280,16 +280,18 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
     const sms = text;
 
     // Create pending deposit transaction
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, payment_method, description) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(
-      player.id,
-      'deposit',
-      amount,
-      'pending',
-      method,
-      `Deposit via ${method} | SMS: ${sms}`
-    );
+const transactionRef = db.ref('transactions').push();
+
+await transactionRef.set({
+  playerId: tgId,
+  telegramId: tgId,
+  type: 'deposit',
+  amount: amount,
+  status: 'pending',
+  paymentMethod: method,
+  sms: sms,
+  createdAt: new Date().toISOString()
+});
 
     // Notify admin
     const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';

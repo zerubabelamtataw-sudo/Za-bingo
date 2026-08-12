@@ -122,6 +122,27 @@ app.post('/api/rooms/:roomId/join', async (req, res) => {
   } catch (e) { err(res, e.message); }
 });
 
+// POST /api/rooms/:roomId/cancel-countdown
+// body: { playerId }
+app.post('/api/rooms/:roomId/cancel-countdown', async (req, res) => {
+  const { playerId } = req.body || {};
+
+  if (!playerId) {
+    return err(res, 'playerId required');
+  }
+
+  try {
+    const room = await gm.cancelCountdown(
+      req.params.roomId,
+      playerId
+    );
+
+    ok(res, { room });
+  } catch (e) {
+    err(res, e.message);
+  }
+});
+
 // GET /api/game/:roomId — alias for room state (frontend polling)
 app.get('/api/game/:roomId', (req, res) => {
   const room = gm.getRoom(req.params.roomId);

@@ -366,6 +366,49 @@ async addSimulatedPlayers(roomId = '5br') {
 
 }
 
+async cancelCountdown(roomId, playerId) {
+  const room = this.rooms[roomId];
+
+  if (!room) throw new Error('Room not found');
+
+  if (room.status !== 'countdown') {
+    throw new Error('Room is not in countdown');
+  }
+
+  const playerIndex = room.players.findIndex(
+    p => String(p.id) === String(playerId)
+  );
+
+  if (playerIndex === -1) {
+    throw new Error('You are not in this room');
+  }
+
+  // Cancel the 25-second timer
+  clearTimeout(room._countdownTimer);
+  room._countdownTimer = null;
+
+  // Remove player's cartelas
+  const cartelas = room.playerCartelas[playerId] || [];
+
+  for (const cartela of cartelas) {
+    room.reservedCartelas.delete(cartela.id);
+  }
+
+  delete room.playerCartelas[playerId];
+
+  // Remove player
+  room.players.splice(playerIndex, 1);
+
+  // Remove their entry fee from the pot
+  room.pot -= room.entryFee * cartelas.length;
+
+  // Back to waiting
+  room.status = 'waiting';
+  room.countdownStart = null;
+
+  return room.toJSON();
+}
+
   // ── countdown → game ──────────────────────────────────────────────────────
 
   _startCountdown(room) {

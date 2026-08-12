@@ -97,6 +97,20 @@ bot.onText(/\/withdraw/, async (msg) => {
 
   handleWithdrawMenu(chatId, player);
 });
+
+bot.onText(/\/profile/, async (msg) => {
+  const chatId = msg.chat.id;
+  const tgId = String(msg.from.id);
+
+  const snapshot = await db.ref(`players/${tgId}`).once('value');
+  const player = snapshot.val();
+
+  if (!player) {
+    return bot.sendMessage(chatId, 'Please /start first.');
+  }
+
+  handleProfile(chatId, player);
+});
 let gameManager = null;
 
 // ============================================================

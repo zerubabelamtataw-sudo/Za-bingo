@@ -15,6 +15,7 @@ const path    = require('path');
 
 const { GamesManager } = require('./gameManager');
 require('./bot');
+require('./adminBot');
 // ── Firebase init (graceful if credentials missing) ───────────────────────────
 let db = null;
 try {

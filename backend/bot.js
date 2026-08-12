@@ -56,6 +56,19 @@ bot.onText(/\/transfer/, async (msg) => {
     senderId: tgId
   };
 });
+bot.onText(/\/play/, async (msg) => {
+  const chatId = msg.chat.id;
+  const tgId = String(msg.from.id);
+
+  const snapshot = await db.ref(`players/${tgId}`).once('value');
+  const player = snapshot.val();
+
+  if (!player) {
+    return bot.sendMessage(chatId, 'Please /start first.');
+  }
+
+  showMainMenu(chatId);
+});
 let gameManager = null;
 
 // ============================================================

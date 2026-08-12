@@ -333,48 +333,75 @@ await transactionRef.set({
   }
 
   // Handle withdraw amount
-  if (withdrawSessions[chatId] && withdrawSessions[chatId].step === 'amount') {
-    const amount = parseFloat(text);
-    if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(chatId, '❌ Invalid amount. Enter amount:');
-      return;
-    }
-    if (amount > player.balance) {
-      bot.sendMessage(chatId, `❌ Insufficient balance. You have ${player.balance} Br.`);
-      return;
-    }
+if (
+  withdrawSessions[chatId] &&
+  withdrawSessions[chatId].step === 'amount'
+) {
+  const amount = parseFloat(text);
 
-    const session = withdrawSessions[chatId];
-    
-    // Create pending transaction
-    db.prepare(
-      'INSERT INTO transactions (player_id, type, amount, status, payment_method, description) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(player.id, 'withdrawal', amount, 'pending', session.method, `Withdrawal via ${session.method}`);
-
-    const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-    bot.sendMessage(ADMIN_ID,
-      `💸 *New Withdrawal Request*\n\n` +
-      `Player: ${player.first_name} (@${player.username})\n` +
-      `Amount: ${amount} Br\n` +
-      `Method: ${session.method}\n` +
-      `Phone: ${player.phone || 'Not set'}\n` +
-      `Date: ${new Date().toLocaleString()}`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '✅ Approve', callback_data: `approve_withdraw_${chatId}` },
-            { text: '❌ Reject', callback_data: `reject_withdraw_${chatId}` }
-          ]]
-        }
-      }
+  if (isNaN(amount) || amount <= 0) {
+    bot.sendMessage(
+      chatId,
+      '❌ Invalid amount. Enter amount:'
     );
+    return;
+  }
 
-    bot.sendMessage(chatId, `✅ Withdrawal request submitted!\nAmount: ${amount} Br\nStatus: Pending approval`);
-    delete withdrawSessions[chatId];
+  const balance = Number(player.balance || 0);
+
+  if (amount > balance) {
+    bot.sendMessage(
+      chatId,
+      `❌ Insufficient balance. You have ${balance} Br.`
+    );
+    return;
+  }
+
+  const session = withdrawSessions[chatId];
+
+  // Create pending withdrawal transaction
+  const transactionRef = db.ref('transactions').push();
+
+  await transactionRef.set({
+    playerId: tgId,
+    telegramId: tgId,
+    type: 'withdrawal',
+    amount: amount,
+    status: 'pending',
+    paymentMethod: session.method,
+    createdAt: new Date().toISOString()
+  });
+
+  const ADMIN_ID =
+    process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+
+  bot.sendMessage(
+    ADMIN_ID,
+    `💸 *New Withdrawal Request*\n\n` +
+    `Player: ${player.first_name || 'Player'}\n` +
+    `Username: @${player.username || 'N/A'}\n` +
+    `Amount: ${amount} Br\n` +
+    `Method: ${session.method}\n` +
+    `Phone: ${player.phone || 'Not set'}\n` +
+    `Date: ${new Date().toLocaleString()}`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+
+  bot.sendMessage(
+    chatId,
+    `✅ Withdrawal request submitted!\n\n` +
+    `Amount: ${amount} Br\n` +
+    `Method: ${session.method}\n` +
+    `Status: Pending approval`
+  );
+
+        delete withdrawSessions[chatId];
     return;
   }
 });
+
 
 // ============================================================
 // HANDLERS

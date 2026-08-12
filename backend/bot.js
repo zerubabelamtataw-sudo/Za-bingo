@@ -127,13 +127,14 @@ function showMainMenu(chatId) {
 // ============================================================
 // CALLBACK HANDLERS
 // ============================================================
-bot.on('callback_query', (query) => {
+bot.on('callback_query', async (query) => {
   const chatId = query.message.chat.id;
   const tgId = String(query.from.id);
   const data = query.data;
 
-  const db = getDB();
-  const player = db.prepare('SELECT * FROM players WHERE telegram_id = ?').get(tgId);
+  const playerRef = db.ref(`players/${tgId}`);
+const snapshot = await playerRef.once('value');
+const player = snapshot.val();
   if (!player) {
     bot.answerCallbackQuery(query.id, { text: 'Please /start first' });
     return;

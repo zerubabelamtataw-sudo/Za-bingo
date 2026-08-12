@@ -173,7 +173,7 @@ function renderRoomCards(rooms) {
   container.innerHTML = '';
   for (const room of rooms) {
     const el = document.createElement('div');
-    el.className = `room-card${state.selectedRoom === room.id ? ' selected' : ''}`;
+    el.className = `room-card room-${room.entryFee}${state.selectedRoom === room.id ? ' selected' : ''}`;
     el.dataset.id = room.id;
 
     const statusClass = `status-${room.status}`;

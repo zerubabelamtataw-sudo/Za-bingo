@@ -4,7 +4,7 @@
   --surface:   #111827;
   --surface2:  #1a2235;
   --border:    #2a3550;
-  --gold:      #f5c842;
+  --gold:      #f3d58a;
   --gold-dim:  #8a7020;
   --green:     #22c55e;
   --red:       #ef4444;
@@ -183,7 +183,7 @@ header {
 /* ── Rooms ── */
 .room-cards { display: flex; flex-direction: column; gap: 12px; }
 .room-card {
-  background: var(--surface);
+  background: #15130f;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
@@ -192,12 +192,23 @@ header {
   position: relative;
   overflow: hidden;
 }
+.room-card.room-5 {
+  background: #E8D3A3;
+}
+
+.room-card.room-10 {
+  background: #C5A875;
+}
+
+.room-card.room-20 {
+  background: #8B6B43;
+}
 .room-card::before {
   content: '';
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 4px;
-  background: var(--gold);
+  background: #c9a85c;
   transform: scaleY(0);
   transition: transform .2s;
   border-radius: 4px 0 0 4px;
@@ -209,7 +220,7 @@ header {
 .room-fee {
   font-family: var(--font-display);
   font-size: 1.1rem;
-  color: var(--gold);
+  color: #f3d58a;
 }
 .room-meta { display: flex; gap: 16px; font-size: .8rem; color: var(--muted); }
 .room-status-badge {

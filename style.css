@@ -194,17 +194,14 @@ header {
 }
 .room-card.room-5 {
   background: #2A5A60;
-  border: #F1C40F
 }
 
 .room-card.room-10 {
   background: #3A5A6A;
-  border: #7F9A8A
 }
 
 .room-card.room-20 {
   background: #3A4A5A;
-  border: #7F9A8A
 }
 .room-card::before {
   content: '';

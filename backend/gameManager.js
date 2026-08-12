@@ -130,7 +130,7 @@ toJSON() {
     countdownSeconds: COUNTDOWN_SECONDS,
   };
 }
-
+}
 // ── GamesManager ─────────────────────────────────────────────────────────────
 
 class GamesManager {

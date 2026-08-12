@@ -18,6 +18,44 @@ bot.setMyCommands([
   { command: 'transfer', description: 'Transfer to a Player' },
   { command: 'profile', description: 'Profile' }
 ]);
+
+bot.onText(/\/balance/, async (msg) => {
+  const chatId = msg.chat.id;
+  const tgId = String(msg.from.id);
+
+  const snapshot = await db.ref(`players/${tgId}`).once('value');
+  const player = snapshot.val();
+
+  if (!player) {
+    return bot.sendMessage(chatId, 'Please /start first.');
+  }
+
+  bot.sendMessage(
+    chatId,
+    `Balance: ${Number(player.balance || 0)} Br`
+  );
+});
+bot.onText(/\/transfer/, async (msg) => {
+  const chatId = msg.chat.id;
+  const tgId = String(msg.from.id);
+
+  const snapshot = await db.ref(`players/${tgId}`).once('value');
+  const player = snapshot.val();
+
+  if (!player) {
+    return bot.sendMessage(chatId, 'Please /start first.');
+  }
+
+  bot.sendMessage(
+    chatId,
+    'Enter the recipient’s phone number:'
+  );
+
+  transferSessions[chatId] = {
+    step: 'phone',
+    senderId: tgId
+  };
+});
 let gameManager = null;
 
 // ============================================================
@@ -148,6 +186,124 @@ const player = snapshot.val();
     return;
   }
 
+  // Transfer confirmation
+  if (data === 'transfer_cancel') {
+    delete transferSessions[chatId];
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Transfer cancelled'
+    });
+
+    await bot.sendMessage(
+      chatId,
+      'Transfer cancelled.'
+    );
+
+    return;
+  }
+
+  if (data === 'transfer_confirm') {
+    const session = transferSessions[chatId];
+
+    if (!session || session.step !== 'confirm') {
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Transfer session expired'
+      });
+      return;
+    }
+
+    const amount = Number(session.amount);
+    const senderId = tgId;
+    const recipientId = session.recipientId;
+
+    // Get both players again before changing balances
+    const senderRef = db.ref(`players/${senderId}`);
+    const recipientRef = db.ref(`players/${recipientId}`);
+
+    const [senderSnap, recipientSnap] = await Promise.all([
+      senderRef.once('value'),
+      recipientRef.once('value')
+    ]);
+
+    const sender = senderSnap.val();
+    const recipient = recipientSnap.val();
+
+    if (!sender || !recipient) {
+      delete transferSessions[chatId];
+
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Player not found'
+      });
+
+      await bot.sendMessage(chatId, '❌ Transfer failed.');
+      return;
+    }
+
+    const senderBalance = Number(sender.balance || 0);
+
+    if (amount <= 0 || amount > senderBalance) {
+      delete transferSessions[chatId];
+
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Insufficient balance'
+      });
+
+      await bot.sendMessage(
+        chatId,
+        `❌ Insufficient balance.\n\nYour balance: ${senderBalance} Br`
+      );
+
+      return;
+    }
+
+    // Deduct from sender
+    await senderRef.child('balance').set(senderBalance - amount);
+
+    // Add to recipient
+    const recipientBalance = Number(recipient.balance || 0);
+
+    await recipientRef
+      .child('balance')
+      .set(recipientBalance + amount);
+
+    // Save transaction
+    const transactionRef = db.ref('transactions').push();
+
+    await transactionRef.set({
+      type: 'transfer',
+      senderId: senderId,
+      recipientId: recipientId,
+      amount: amount,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+
+    delete transferSessions[chatId];
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Transfer successful'
+    });
+
+    // Sender confirmation
+    await bot.sendMessage(
+      chatId,
+      `✅ Transfer successful!\n\n` +
+      `To: ${recipient.first_name || 'Player'}\n` +
+      `Phone: ${recipient.phone || 'N/A'}\n` +
+      `Amount: ${amount} Br\n\n` +
+      `Remaining balance: ${senderBalance - amount} Br`
+    );
+
+    // Recipient notification
+    await bot.sendMessage(
+      recipientId,
+      `You received ${amount} Br from ${sender.first_name || 'Player'}.\n\n` +
+      `Your new balance: ${recipientBalance + amount} Br`
+    );
+
+    return;
+  }
+
   // Menu handlers
   if (data === 'menu_deposit') {
     handleDepositMenu(chatId, player);
@@ -230,7 +386,7 @@ else if (data.startsWith('deposit_method_')) {
 // ============================================================
 const depositSessions = {};
 const withdrawSessions = {};
-
+const transferSessions = {};
 // ============================================================
 // TEXT MESSAGE HANDLER (for amount input)
 // ============================================================
@@ -413,6 +569,122 @@ await db.ref(`players/${tgId}/balance`).transaction(
         delete withdrawSessions[chatId];
     return;
   }
+  // ============================================================
+// HANDLE PLAYER TRANSFER
+// ============================================================
+
+if (transferSessions[chatId]) {
+  const session = transferSessions[chatId];
+
+  // Step 1: Phone number
+  if (session.step === 'phone') {
+    const phone = text.trim();
+
+    const playersSnapshot = await db.ref('players').once('value');
+    const players = playersSnapshot.val() || {};
+
+    let recipientId = null;
+    let recipient = null;
+
+    for (const [id, p] of Object.entries(players)) {
+      if (!p) continue;
+
+      const savedPhone = String(p.phone || '').replace(/\s+/g, '');
+      const enteredPhone = phone.replace(/\s+/g, '');
+
+      if (
+        savedPhone === enteredPhone ||
+        savedPhone.replace(/^0/, '+251') === enteredPhone ||
+        savedPhone.replace(/^\+251/, '0') === enteredPhone
+      ) {
+        recipientId = id;
+        recipient = p;
+        break;
+      }
+    }
+
+    if (!recipient) {
+      bot.sendMessage(
+        chatId,
+        '❌ No player was found with this phone number.'
+      );
+      return;
+    }
+
+    if (recipientId === tgId) {
+      bot.sendMessage(
+        chatId,
+        '❌ You cannot transfer money to yourself.'
+      );
+      return;
+    }
+
+    session.recipientId = recipientId;
+    session.recipient = recipient;
+    session.step = 'amount';
+
+    bot.sendMessage(
+      chatId,
+      `Recipient: ${recipient.first_name || 'Player'}\n\n` +
+      `Enter the amount to transfer:`
+    );
+
+    return;
+  }
+
+  // Step 2: Amount
+  if (session.step === 'amount') {
+    const amount = Number(text);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      bot.sendMessage(
+        chatId,
+        '❌ Invalid amount. Enter the amount again:'
+      );
+      return;
+    }
+
+    const balance = Number(player.balance || 0);
+
+    if (amount > balance) {
+      bot.sendMessage(
+        chatId,
+        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
+      );
+      return;
+    }
+
+    session.amount = amount;
+    session.step = 'confirm';
+
+    bot.sendMessage(
+      chatId,
+      `Transfer Confirmation\n\n` +
+      `To: ${session.recipient.first_name || 'Player'}\n` +
+      `Phone: ${session.recipient.phone}\n` +
+      `Amount: ${amount} Br\n\n` +
+      `Confirm this transfer?`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Confirm',
+                callback_data: 'transfer_confirm'
+              },
+              {
+                text: 'Cancel',
+                callback_data: 'transfer_cancel'
+              }
+            ]
+          ]
+        }
+      }
+    );
+
+    return;
+  }
+}
 });
 
 

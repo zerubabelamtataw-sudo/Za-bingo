@@ -146,7 +146,7 @@ bot.onText(/\/start/, async (msg) => {
 
       bot.sendMessage(
         chatId,
-        `🎉 *Welcome to ZA Bingo, ${firstName}!*\n\n` +
+        `👑 *እንኳን ደና መጡ, ${firstName}!*\n\n` +
         `You received *30 Br* welcome bonus!\n` +
         `Play Bingo and win real prizes!\n\n` +
         `Share your contact to complete registration.`,
@@ -209,16 +209,16 @@ bot.on('contact', async (msg) => {
 // ============================================================
 function showMainMenu(chatId) {
   bot.sendMessage(chatId,
-    `🎯 *ZA BINGO*\n\n` +
+    ` *ZA BINGO*\n\n` +
     `Choose an option below:`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
-          [{ text: '💰 Deposit', callback_data: 'menu_deposit' }],
-          [{ text: '💸 Withdraw', callback_data: 'menu_withdraw' }],
-          [{ text: '👤 Profile', callback_data: 'menu_profile' }],
+          [{ text: ' Play Now', web_app: { url: WEBAPP_URL } }],
+          [{ text: ' Deposit', callback_data: 'menu_deposit' }],
+          [{ text: ' Withdraw', callback_data: 'menu_withdraw' }],
+          [{ text: ' Profile', callback_data: 'menu_profile' }],
         ]
       }
     }
@@ -413,7 +413,7 @@ else if (data.startsWith('deposit_method_')) {
   else if (data.startsWith('withdraw_method_')) {
     const method = data.replace('withdraw_method_', '');
     bot.sendMessage(chatId,
-      `💸 *Withdraw via ${method.toUpperCase()}*\n\n` +
+      ` *Withdraw via ${method.toUpperCase()}*\n\n` +
       `Enter amount to withdraw:`,
       { parse_mode: 'Markdown' }
     );
@@ -481,13 +481,13 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
 
   bot.sendMessage(
     chatId,
-    `💰 Deposit amount: *${amount} Br*\n\nSelect payment method:`,
+    ` Deposit amount: *${amount} Br*\n\nSelect payment method:`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📱 Telebirr', callback_data: 'deposit_method_telebirr' }],
-          [{ text: '🏦 CBE Birr', callback_data: 'deposit_method_cbe' }],
+          [{ text: ' Telebirr', callback_data: 'deposit_method_telebirr' }],
+          [{ text: ' CBE Birr', callback_data: 'deposit_method_cbe' }],
           [{ text: '🔙 Back', callback_data: 'back_to_menu' }]
         ]
       }
@@ -524,11 +524,11 @@ await transactionRef.set({
 
     bot.sendMessage(
       ADMIN_ID,
-      `📥 *New Deposit Request*\n\n` +
+      ` *New Deposit Request*\n\n` +
       `Player: ${player.first_name} (@${player.username || 'N/A'})\n` +
       `Amount: ${amount} Br\n` +
       `Method: ${method}\n\n` +
-      `📱 *Payment SMS:*\n${sms}`,
+      ` *Payment SMS:*\n${sms}`,
       {
         parse_mode: 'Markdown',
         reply_markup: {
@@ -608,7 +608,7 @@ await db.ref(`players/${tgId}/balance`).transaction(
 
   bot.sendMessage(
     ADMIN_ID,
-    `💸 *New Withdrawal Request*\n\n` +
+    ` *New Withdrawal Request*\n\n` +
     `Player: ${player.first_name || 'Player'}\n` +
     `Username: @${player.username || 'N/A'}\n` +
     `Amount: ${amount} Br\n` +
@@ -766,7 +766,7 @@ if (savedPhone === enteredPhone) {
 function handleDepositMenu(chatId, player) {
   bot.sendMessage(
     chatId,
-    `💰 *Deposit*\n\n` +
+    ` *Deposit*\n\n` +
     `Balance: ${player.balance} Br\n\n` +
     `Enter the amount you want to deposit (minimum 10 Br):`,
     { parse_mode: 'Markdown' }
@@ -779,13 +779,13 @@ function handleDepositMenu(chatId, player) {
 
 function handleWithdrawMenu(chatId, player) {
   bot.sendMessage(chatId,
-    `💸 *Withdraw*\n\nBalance: ${player.balance} Br\nSelect payment method:`,
+    ` *Withdraw*\n\nBalance: ${player.balance} Br\nSelect payment method:`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '📱 Telebirr', callback_data: 'withdraw_method_telebirr' }],
-          [{ text: '🏦 CBE Birr', callback_data: 'withdraw_method_cbe' }],
+          [{ text: ' Telebirr', callback_data: 'withdraw_method_telebirr' }],
+          [{ text: ' CBE Birr', callback_data: 'withdraw_method_cbe' }],
           [{ text: '🔙 Back', callback_data: 'back_to_menu' }],
         ]
       }
@@ -795,7 +795,7 @@ function handleWithdrawMenu(chatId, player) {
 
 function handleProfile(chatId, player) {
   bot.sendMessage(chatId,
-    `👤 *Profile*\n\n` +
+    ` *Profile*\n\n` +
     `Name: ${player.first_name}\n` +
     `Username: @${player.username || 'N/A'}\n` +
     `Phone: ${player.phone || 'Not set'}\n` +

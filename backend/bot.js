@@ -371,6 +371,11 @@ if (
     paymentMethod: session.method,
     createdAt: new Date().toISOString()
   });
+  
+  // Deduct withdrawal amount immediately
+await db.ref(`players/${tgId}/balance`).transaction(
+  balance => Number(balance || 0) - amount
+);
 
   const ADMIN_ID =
     process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';

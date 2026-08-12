@@ -9,7 +9,15 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-
+bot.setMyCommands([
+  { command: 'play', description: 'Play Now' },
+  { command: 'deposit', description: 'Deposit' },
+  { command: 'withdraw', description: 'Withdraw' },
+  { command: 'balance', description: 'Balance' },
+  { command: 'instructions', description: 'Instructions' },
+  { command: 'transfer', description: 'Transfer to a Player' },
+  { command: 'profile', description: 'Profile' }
+]);
 let gameManager = null;
 
 // ============================================================

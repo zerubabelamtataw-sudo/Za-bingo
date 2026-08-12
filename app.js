@@ -184,11 +184,6 @@ function renderRoomCards(rooms) {
   winner: 'Finished'
 }[room.status] || room.status;
 
-if (room.status === 'countdown' && room.countdownStart) {
-  const elapsed = (Date.now() - room.countdownStart) / 1000;
-  const remaining = Math.max(0, 25 - elapsed);
-  statusText = `Starting in ${Math.ceil(remaining)}s`;
-}
 
     el.innerHTML = `
       <div class="room-card-header">
@@ -199,9 +194,17 @@ if (room.status === 'countdown' && room.countdownStart) {
         <span>👥 ${room.playerCount} players</span>
         <span>💰 Pot: ${room.pot} Br</span>
         <span class="room-status-badge ${statusClass}">${statusText}</span>
-      </div>
+      </div>p
     `;
-    el.addEventListener('click', () => selectRoom(room, el));
+    if (room.status === 'playing' || room.status === 'winner') {
+  el.classList.add('locked');
+
+  el.addEventListener('click', () => {
+    toast('This room is currently locked. Please choose another room.', 'error');
+  });
+} else {
+  el.addEventListener('click', () => selectRoom(room, el));
+}
     container.appendChild(el);
   }
 }

@@ -220,7 +220,9 @@ return { id: playerId, ...player };
     const ref = this.db.ref(`players/${playerId}`);
     const snap = await ref.once('value');
 
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+  throw new Error(`Player ${playerId} not found for refund`);
+}
 
     const data = snap.val();
     const balance = (data.balance || 0) + delta;
@@ -384,9 +386,6 @@ async cancelCountdown(roomId, playerId) {
     throw new Error('You are not in this room');
   }
 
-  // Cancel the 25-second timer
-  clearTimeout(room._countdownTimer);
-  room._countdownTimer = null;
 
   // Remove player's cartelas
   const cartelas = room.playerCartelas[playerId] || [];
@@ -394,6 +393,16 @@ async cancelCountdown(roomId, playerId) {
   for (const cartela of cartelas) {
     room.reservedCartelas.delete(cartela.id);
   }
+  
+  // Refund the player's entry fee
+const refundAmount = room.entryFee * cartelas.length;
+
+await this.updatePlayerBalance(playerId, refundAmount, {
+  type: 'cancel',
+  roomId,
+  amount: refundAmount,
+  date: new Date().toISOString()
+});
 
   delete room.playerCartelas[playerId];
 
@@ -403,9 +412,6 @@ async cancelCountdown(roomId, playerId) {
   // Remove their entry fee from the pot
   room.pot -= room.entryFee * cartelas.length;
 
-  // Back to waiting
-  room.status = 'waiting';
-  room.countdownStart = null;
 
   return room.toJSON();
 }

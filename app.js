@@ -696,7 +696,7 @@ cancelCountdownBtn.disabled = false;
 
   // Winner state
   if (game.status === 'winner' && game.winner) {
-    clearInterval(state.pollTimer);
+
     handleWinner(game.winner);
   }
 }

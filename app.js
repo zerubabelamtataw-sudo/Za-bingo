@@ -643,7 +643,7 @@ if (cancelCountdownBtn) {
 state.selectedRoom = null;
 state.selectedCartelas = [];
 
-await loadPlayer();
+await refreshPlayer();
 showPage('lobby');
 refreshRooms();
 

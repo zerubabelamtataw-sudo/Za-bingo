@@ -682,11 +682,17 @@ font-size: .55rem;
   box-shadow: 0 0 80px rgba(245,200,66,.3);
   animation: popupIn .4s ease;
 }
+
 @keyframes popupIn {
   from { transform: scale(.8) translateY(20px); opacity: 0; }
   to   { transform: scale(1) translateY(0); opacity: 1; }
 }
-.winner-crown { font-size: 4rem; margin-bottom: 12px; }
+
+.winner-crown {
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
 .winner-title {
   font-family: var(--font-display);
   font-size: 2rem;
@@ -694,15 +700,31 @@ font-size: .55rem;
   margin-bottom: 8px;
   text-shadow: 0 0 30px rgba(245,200,66,.5);
 }
-.winner-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
-.winner-detail { color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
+
+.winner-name {
+  font-size: .7rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.winner-detail {
+  color: var(--muted);
+  font-size: .9rem;
+  margin-bottom: 8px;
+}
+
 .winner-amount {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: var(--green);
   margin: 16px 0;
 }
-.winner-sub { color: var(--muted); font-size: .8rem; margin-bottom: 24px; }
+
+.winner-sub {
+  color: var(--muted);
+  font-size: .8rem;
+  margin-bottom: 24px;
+}
 
 /* ──────────────── PROFILE PAGE ──────────────── */
 

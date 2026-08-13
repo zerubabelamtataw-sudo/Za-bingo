@@ -223,7 +223,12 @@ header {
   font-size: 1.1rem;
   color: #f3d58a;
 }
-.room-meta { display: flex; gap: 16px; font-size: .8rem; color: var(--muted); }
+.room-meta {
+  display: flex;
+  gap: 16px;
+  font-size: .8rem;
+  color: #ef4444;
+}
 .room-status-badge {
   font-size: .7rem;
   padding: 2px 8px;

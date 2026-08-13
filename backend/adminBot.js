@@ -71,27 +71,9 @@ function parseWithdrawalSMS(text) {
 
 async function findPendingTransaction(type, amount, transactionId) {
   const snapshot = await db.ref('transactions').once('value');
-  const transactions = snapshot.val();
+  const transactions = snapshot.val() || {};
 
-  if (!transactions) return null;
-
-  // Check if this SMS transaction ID was already processed
-  for (const transaction of Object.values(transactions)) {
-    if (!transaction) continue;
-
-    if (
-      String(transaction.transactionId || '').toUpperCase() ===
-      String(transactionId || '').toUpperCase()
-    ) {
-      console.log(
-        '⚠️ Duplicate transaction ID:',
-        transactionId
-      );
-      return null;
-    }
-  }
-
-  // Find the pending transaction
+  // Find the pending transaction first
   for (const [key, transaction] of Object.entries(transactions)) {
     if (!transaction) continue;
 
@@ -104,6 +86,22 @@ async function findPendingTransaction(type, amount, transactionId) {
         key,
         ...transaction
       };
+    }
+  }
+
+  // Check duplicate only if no pending transaction was found
+  for (const transaction of Object.values(transactions)) {
+    if (!transaction) continue;
+
+    if (
+      String(transaction.transactionId || '').toUpperCase() ===
+      String(transactionId || '').toUpperCase()
+    ) {
+      console.log(
+        '⚠️ Duplicate transaction ID:',
+        transactionId
+      );
+      return null;
     }
   }
 

@@ -307,187 +307,99 @@ async addSimulatedPlayers(roomId = '5br') {
 
   const cartelas = await this.getCartelas();
 
-  // Each player gets 2–4 cartelas.
-  // Total will always be between 30 and 45.
-  const cartelaCounts = SIMULATED_PLAYERS.map(() => 2);
+  // ─────────────────────────────────────────────
+  // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
+  // ─────────────────────────────────────────────
+  const playerCount =
+    10 + Math.floor(Math.random() * 6);
 
-  let extra = Math.floor(Math.random() * 16);
-
-  while (extra > 0) {
-    const index = Math.floor(Math.random() * SIMULATED_PLAYERS.length);
-
-    if (cartelaCounts[index] < 4) {
-      cartelaCounts[index]++;
-      extra--;
-    }
-  }
-
-  // Random order for player arrivals
+  // Randomly choose which simulated players participate
   const players = [...SIMULATED_PLAYERS];
 
   players.sort(() => Math.random() - 0.5);
 
-  for (let i = 0; i < players.length; i++) {
+  const selectedPlayers = players.slice(0, playerCount);
 
-    // Different waiting time between players
+  // ─────────────────────────────────────────────
+  // RANDOM CARTELAS: 2–4 PER PLAYER
+  // ─────────────────────────────────────────────
+  for (let i = 0; i < selectedPlayers.length; i++) {
+
+    // Random arrival delay: 0.5–1.5 seconds
     const delay = 500 + Math.floor(Math.random() * 1000);
 
     await new Promise(resolve => setTimeout(resolve, delay));
 
-    // Stop if the room has already started
-    if (room.status === 'playing' || room.status === 'winner') break;
+    // Stop if game has already started
+    if (room.status === 'playing' || room.status === 'winner') {
+      break;
+    }
 
-    const name = players[i];
+    const name = selectedPlayers[i];
     const originalIndex = SIMULATED_PLAYERS.indexOf(name);
-    const count = cartelaCounts[originalIndex];
     const playerId = `sim_${originalIndex + 1}`;
 
-    if (room.players.some(p => p.id === playerId)) continue;
+    // Prevent duplicate player
+    if (room.players.some(p => p.id === playerId)) {
+      continue;
+    }
 
+    // Each simulated player gets 2–4 cartelas
+    const count = 2 + Math.floor(Math.random() * 3);
+
+    // Get cartelas that are not already reserved
     const available = cartelas.filter(
       c => !room.reservedCartelas.has(c.id)
     );
 
+    // Shuffle ALL available cartelas
+    available.sort(() => Math.random() - 0.5);
+
+    // Pick random cartelas from #1–#150
     const selected = available.slice(0, count);
 
-    if (selected.length < count) break;
+    if (selected.length < count) {
+      console.error(
+        `❌ Not enough cartelas for ${name}`
+      );
+      break;
+    }
 
-    selected.forEach(c => room.reservedCartelas.add(c.id));
+    // Reserve selected cartelas
+    selected.forEach(c => {
+      room.reservedCartelas.add(c.id);
+    });
 
+    // Add simulated player
     room.players.push({
       id: playerId,
       name,
+      username: '',
       balance: 999999
     });
-    if (room.players.length === 2 && room.status === 'waiting') {
-  this._startCountdown(room);
-}
 
     room.playerCartelas[playerId] = selected;
 
+    // Add their cartela fees to pot
     room.pot += room.entryFee * count;
+
+    console.log(
+      `🤖 ${name} joined ${room.id} with ${count} cartelas:`,
+      selected.map(c => `#${c.number}`).join(', ')
+    );
+
+    // Start 25-second countdown when second player joins
+    if (
+      room.players.length === 2 &&
+      room.status === 'waiting'
+    ) {
+      this._startCountdown(room);
+    }
   }
 
-}
-
-async cancelCountdown(roomId, playerId) {
-  const room = this.rooms[roomId];
-
-  if (!room) throw new Error('Room not found');
-
-  if (room.status !== 'countdown') {
-    throw new Error('Room is not in countdown');
-  }
-
-  const playerIndex = room.players.findIndex(
-    p => String(p.id) === String(playerId)
+  console.log(
+    `🎮 ${room.id}: ${room.players.length} simulated/real players in game`
   );
-
-  if (playerIndex === -1) {
-    throw new Error('You are not in this room');
-  }
-
-
-  // Remove player's cartelas
-  const cartelas = room.playerCartelas[playerId] || [];
-
-  for (const cartela of cartelas) {
-    room.reservedCartelas.delete(cartela.id);
-  }
-  
-  // Refund the player's entry fee
-const refundAmount = room.entryFee * cartelas.length;
-
-await this.updatePlayerBalance(playerId, refundAmount, {
-  type: 'cancel',
-  roomId,
-  amount: refundAmount,
-  date: new Date().toISOString()
-});
-
-  delete room.playerCartelas[playerId];
-
-  // Remove player
-  room.players.splice(playerIndex, 1);
-
-  // Remove their entry fee from the pot
-  room.pot -= room.entryFee * cartelas.length;
-
-
-  return room.toJSON();
-}
-
-  // ── countdown → game ──────────────────────────────────────────────────────
-
-  _startCountdown(room) {
-  room.status = 'countdown';
-
-  // Store the exact time the 25-second countdown begins
-  room.countdownStart = Date.now();
-
-  room._countdownTimer = setTimeout(() => {
-    // Make sure the room is still counting down
-    if (room.status === 'countdown') {
-      this._startGame(room);
-    }
-  }, COUNTDOWN_SECONDS * 1000);
-}
-
-  _startGame(room) {
-    room.status         = 'playing';
-    room.calledNumbers  = [];
-    room._gameStartTime = Date.now();
-
-    const numbers = [];
-    for (let n = 1; n <= 75; n++) numbers.push(n);
-    numbers.sort(() => Math.random() - 0.5);
-    let idx = 0;
-
-    room._drawTimer = setInterval(() => {
-      if (room.status !== 'playing') {
-        clearInterval(room._drawTimer);
-        return;
-      }
-      if (idx >= numbers.length) {
-        clearInterval(room._drawTimer);
-        return;
-      }
-      room.calledNumbers.push(numbers[idx++]);
-
-// Check simulated players for automatic Bingo
-this._checkSimulatedBingo(room);
-    }, DRAW_INTERVAL_MS);
-  }
-  
-  _checkSimulatedBingo(room) {
-  if (room.status !== 'playing' || room.winner) return;
-
-  for (const player of room.players) {
-    // Only simulated players
-    if (!String(player.id).startsWith('sim_')) continue;
-
-    const cartelas = room.playerCartelas[player.id] || [];
-
-    for (const cartela of cartelas) {
-      const valid = checkBingo(cartela.grid, room.calledNumbers);
-
-      if (valid) {
-        // Automatically claim Bingo
-        this.claimBingo(
-          room.id,
-          player.id,
-          cartela.id
-        ).catch(err => {
-          console.error(
-            `❌ Simulated Bingo error for ${player.name}:`,
-            err.message
-          );
-        });
-
-        return;
-      }
-    }
-  }
 }
 
   // ── bingo claim ───────────────────────────────────────────────────────────

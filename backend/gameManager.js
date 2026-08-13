@@ -120,9 +120,10 @@ toJSON() {
     status: this.status,
     playerCount: this.players.length,
     players: this.players.map(p => ({
-      id: p.id,
-      name: p.name
-    })),
+  id: p.id,
+  name: p.name,
+  cartelaIds: (this.playerCartelas[p.id] || []).map(c => c.id)
+})),
     calledNumbers: this.calledNumbers,
     pot: this.pot,
     winner: this.winner,

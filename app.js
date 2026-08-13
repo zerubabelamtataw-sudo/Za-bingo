@@ -80,7 +80,12 @@ function showPage(name) {
     if (name === 'profile') renderProfile();
   if (name === 'history') renderHistory();
   if (name === 'lobby')   refreshRooms();
-  if (name === 'game')    renderMyCartelas();
+  if (name === 'game') {
+  $('navTabs').style.display = 'none';
+  renderMyCartelas();
+} else {
+  $('navTabs').style.display = 'flex';
+}
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────

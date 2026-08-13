@@ -860,12 +860,16 @@ async function approveDeposit(query, telegramId) {
     );
 
     // Notify player
-    await bot.sendMessage(
-      telegramId,
-      `✅ Deposit Confirmed!\n\n` +
-      `Amount: ${amount} Br\n` +
-      `Your deposit has been approved successfully.`
-    );
+    const playerTelegramId = String(txn.telegramId || txn.playerId);
+
+if (playerTelegramId) {
+  await bot.sendMessage(
+    playerTelegramId,
+    `✅ Deposit Confirmed!\n\n` +
+    `Amount: ${amount} Br\n` +
+    `Your deposit has been approved successfully.`
+  );
+}
 
     await bot.answerCallbackQuery(query.id, {
       text: 'Deposit approved ✅'

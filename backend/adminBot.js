@@ -4,6 +4,7 @@
 // ============================================================
 
 const TelegramBot = require('node-telegram-bot-api');
+const { bot: playerBot } = require('./bot');
 const db = require('./firebase');
 
 // ============================================================
@@ -87,9 +88,9 @@ async function findPendingTransaction(type, amount, transactionId) {
       );
 
       if (transaction.telegramId) {
-        await bot.sendMessage(
-          transaction.telegramId,
-          `⚠️ *Duplicate Deposit*\n\n` +
+        await playerBot.sendMessage(
+  transaction.telegramId,
+          `⚠️ *Duplicate ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}*\n\n` +
           `This transaction has already been processed.\n` +
           `No money was added to your balance.`,
           {
@@ -175,7 +176,7 @@ async function processDeposit(text, smsData) {
     confirmationSms: text
   });
 
-  await bot.sendMessage(
+  await playerBot.sendMessage(
     transaction.telegramId,
     `✅ *Deposit Confirmed!*\n\n` +
     `Amount: ${transaction.amount} Br\n` +
@@ -246,7 +247,7 @@ async function processWithdrawal(text, smsData) {
       updatedAt: new Date().toISOString()
     });
 
-    await bot.sendMessage(
+    await playerBot.sendMessage(
       transaction.telegramId,
       `❌ Withdrawal failed.\n\nInsufficient balance.`
     );
@@ -267,7 +268,7 @@ async function processWithdrawal(text, smsData) {
     confirmationSms: text
   });
 
-  await bot.sendMessage(
+  await playerBot.sendMessage(
     transaction.telegramId,
     `✅ *Withdrawal Confirmed!*\n\n` +
     `Amount: ${amount} Br\n` +

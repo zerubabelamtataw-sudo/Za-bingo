@@ -73,50 +73,7 @@ async function findPendingTransaction(type, amount, transactionId) {
   const snapshot = await db.ref('transactions').once('value');
   const transactions = snapshot.val() || {};
 
-  // Find the pending transaction first
-  for (const [key, transaction] of Object.entries(transactions)) {
-    if (!transaction) continue;
-
-    if (
-      transaction.type === type &&
-      transaction.status === 'pending' &&
-      Number(transaction.amount) === Number(amount)
-    ) {
-      return {
-        key,
-        ...transaction
-      };
-    }
-  }
-
-  // Check duplicate only if no pending transaction was found
-  for (const transaction of Object.values(transactions)) {
-    if (!transaction) continue;
-
-    if (
-      String(transaction.transactionId || '').toUpperCase() ===
-      String(transactionId || '').toUpperCase()
-    ) {
-      console.log(
-        '⚠️ Duplicate transaction ID:',
-        transactionId
-      );
-      return null;
-    }
-  }
-
-  return null;
-}
-
-// ============================================================
-// PROCESS DEPOSIT
-// ============================================================
-
-async function findPendingTransaction(type, amount, transactionId) {
-  const snapshot = await db.ref('transactions').once('value');
-  const transactions = snapshot.val() || {};
-
-  // 1. CHECK DUPLICATE TRANSACTION ID FIRST
+  // CHECK DUPLICATE FIRST
   for (const transaction of Object.values(transactions)) {
     if (!transaction) continue;
 
@@ -129,7 +86,6 @@ async function findPendingTransaction(type, amount, transactionId) {
         transactionId
       );
 
-      // Notify player
       if (transaction.telegramId) {
         await bot.sendMessage(
           transaction.telegramId,
@@ -146,7 +102,7 @@ async function findPendingTransaction(type, amount, transactionId) {
     }
   }
 
-  // 2. FIND THE PENDING TRANSACTION
+  // FIND PENDING TRANSACTION
   for (const [key, transaction] of Object.entries(transactions)) {
     if (!transaction) continue;
 
@@ -166,23 +122,22 @@ async function findPendingTransaction(type, amount, transactionId) {
 }
 
 // ============================================================
-// PROCESS WITHDRAWAL
+// PROCESS DEPOSIT
 // ============================================================
 
-async function processWithdrawal(text, smsData) {
+async function processDeposit(text, smsData) {
   const transaction = await findPendingTransaction(
-  'withdrawal',
-  smsData.amount,
-  smsData.transactionId
-);
+    'deposit',
+    smsData.amount,
+    smsData.transactionId
+  );
 
   if (!transaction) {
     console.log(
-      '⚠️ No matching pending withdrawal:',
+      '⚠️ No matching pending deposit:',
       smsData.amount,
       smsData.transactionId
     );
-
     return false;
   }
 
@@ -198,7 +153,82 @@ async function processWithdrawal(text, smsData) {
   const player = playerSnapshot.val();
 
   if (!player) {
-    console.log('❌ Player not found:', transaction.telegramId);
+    console.log(
+      '❌ Player not found:',
+      transaction.telegramId
+    );
+    return false;
+  }
+
+  const newBalance =
+    Number(player.balance || 0) +
+    Number(transaction.amount);
+
+  await playerRef.update({
+    balance: newBalance
+  });
+
+  await transactionRef.update({
+    status: 'approved',
+    transactionId: smsData.transactionId,
+    confirmedAt: new Date().toISOString(),
+    confirmationSms: text
+  });
+
+  await bot.sendMessage(
+    transaction.telegramId,
+    `✅ *Deposit Confirmed!*\n\n` +
+    `Amount: ${transaction.amount} Br\n` +
+    `Transaction ID: ${smsData.transactionId}\n\n` +
+    `💰 New balance: ${newBalance} Br`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+
+  console.log(
+    `✅ Deposit approved: ${transaction.amount} Br → ${transaction.telegramId}`
+  );
+
+  return true;
+}
+
+// ============================================================
+// PROCESS WITHDRAWAL
+// ============================================================
+
+async function processWithdrawal(text, smsData) {
+  const transaction = await findPendingTransaction(
+    'withdrawal',
+    smsData.amount,
+    smsData.transactionId
+  );
+
+  if (!transaction) {
+    console.log(
+      '⚠️ No matching pending withdrawal:',
+      smsData.amount,
+      smsData.transactionId
+    );
+    return false;
+  }
+
+  const transactionRef = db.ref(
+    `transactions/${transaction.key}`
+  );
+
+  const playerRef = db.ref(
+    `players/${transaction.telegramId}`
+  );
+
+  const playerSnapshot = await playerRef.once('value');
+  const player = playerSnapshot.val();
+
+  if (!player) {
+    console.log(
+      '❌ Player not found:',
+      transaction.telegramId
+    );
     return false;
   }
 

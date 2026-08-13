@@ -181,9 +181,9 @@ function renderRoomCards(rooms) {
     const statusClass = `status-${room.status}`;
     let statusText = {
   waiting: 'Waiting',
-  countdown: 'Starting…',
-  playing: 'Playing',
-  winner: 'Finished'
+  countdown: 'ሊጀመር',
+  playing: 'ተጀምሯል',
+  winner: 'አልቋል'
 }[room.status] || room.status;
 
 
@@ -193,8 +193,8 @@ function renderRoomCards(rooms) {
         <div class="room-fee">${room.entryFee} Br</div>
       </div>
       <div class="room-meta">
-        <span>👥 ${room.playerCount} players</span>
-        <span>💰 Pot: ${room.pot} Br</span>
+        <span>👥 ${room.playerCount} ተጫዋች</span>
+<span>💰 ደራሽ: ${room.pot} Br</span>
         <span class="room-status-badge ${statusClass}">${statusText}</span>
       </div>p
     `;
@@ -202,7 +202,7 @@ function renderRoomCards(rooms) {
   el.classList.add('locked');
 
   el.addEventListener('click', () => {
-    toast('This room is currently locked. Please choose another room.', 'error');
+    toast('ጨዋታ ተጀምሯል', 'error');
   });
 } else {
   el.addEventListener('click', () => selectRoom(room, el));

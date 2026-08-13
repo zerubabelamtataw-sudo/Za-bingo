@@ -173,40 +173,64 @@ async function refreshRooms() {
 function renderRoomCards(rooms) {
   const container = $('roomCards');
   container.innerHTML = '';
+
   for (const room of rooms) {
     const el = document.createElement('div');
-    el.className = `room-card room-${room.entryFee}${state.selectedRoom === room.id ? ' selected' : ''}`;
+
+    el.className = `room-card room-${room.entryFee}${
+      state.selectedRoom === room.id ? ' selected' : ''
+    }`;
+
     el.dataset.id = room.id;
 
     const statusClass = `status-${room.status}`;
-    let statusText = {
-  waiting: 'Waiting',
-  countdown: 'ሊጀመር',
-  playing: 'ተጀምሯል',
-  winner: 'አልቋል'
-}[room.status] || room.status;
 
+    let statusText = {
+      waiting: 'Waiting',
+      countdown: 'ሊጀመር',
+      playing: 'ተጀምሯል',
+      winner: 'አልቋል'
+    }[room.status] || room.status;
+
+    // Show live countdown on the room card
+    if (room.status === 'countdown' && room.countdownStart) {
+      const elapsed = Math.floor(
+        (Date.now() - room.countdownStart) / 1000
+      );
+
+      const remaining = Math.max(
+        0,
+        (room.countdownSeconds || 25) - elapsed
+      );
+
+      statusText = `ሊጀመር · ${remaining}s`;
+    }
 
     el.innerHTML = `
       <div class="room-card-header">
         <div class="room-card-name">${room.name}</div>
         <div class="room-fee">${room.entryFee} Br</div>
       </div>
+
       <div class="room-meta">
         <span>👥 ${room.playerCount} ተጫዋች</span>
-<span>💰 ደራሽ: ${room.pot} Br</span>
-        <span class="room-status-badge ${statusClass}">${statusText}</span>
-      </div>p
+        <span>💰 ደራሽ: ${room.pot} Br</span>
+        <span class="room-status-badge ${statusClass}">
+          ${statusText}
+        </span>
+      </div>
     `;
-    if (room.status === 'playing' || room.status === 'winner') {
-  el.classList.add('locked');
 
-  el.addEventListener('click', () => {
-    toast('ጨዋታ ተጀምሯል', 'error');
-  });
-} else {
-  el.addEventListener('click', () => selectRoom(room, el));
-}
+    if (room.status === 'playing' || room.status === 'winner') {
+      el.classList.add('locked');
+
+      el.addEventListener('click', () => {
+        toast('ጨዋታ ተጀምሯል', 'error');
+      });
+    } else {
+      el.addEventListener('click', () => selectRoom(room, el));
+    }
+
     container.appendChild(el);
   }
 }

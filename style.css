@@ -257,7 +257,12 @@ header {
 }
 .cartela-item:hover { border-color: var(--gold-dim); }
 .cartela-item.selected { background: rgba(245,200,66,.15); border-color: var(--gold); color: var(--gold); font-weight: 700; }
-.cartela-item.reserved { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
+.cartela-item.reserved {
+  background: rgba(239,68,68,.15);
+  border-color: rgba(239,68,68,.5);
+  color: #ef4444;
+  cursor: not-allowed;
+}
 
 .join-bar {
   display: flex;

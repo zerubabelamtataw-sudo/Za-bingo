@@ -157,14 +157,16 @@ async function refreshRooms() {
     renderRoomCards(data.rooms);
     // Update reserved cartelas for selected room
     if (state.selectedRoom) {
-      const room = data.rooms.find(r => r.id === state.selectedRoom);
-      if (room) {
-        const reserved = (room.players || []).flatMap(p => {
-          // We can't easily know which cartelas each player has from this endpoint,
-          // but the backend tracks them — we trust backend to reject conflicts.
-        });
-      }
-    }
+  const room = data.rooms.find(r => r.id === state.selectedRoom);
+
+  if (room) {
+    const reserved = (room.players || [])
+      .flatMap(p => p.cartelaIds || [])
+      .map(String);
+
+    renderCartelaGrid(reserved);
+  }
+}
   } catch {}
 }
 
@@ -620,7 +622,7 @@ if (cancelCountdownBtn) {
       cancelCountdownBtn.disabled = true;
 
       const response = await fetch(
-        `/api/rooms/${state.currentRoom}/cancel-countdown`,
+  `${API}/api/rooms/${state.activeRoomId}/cancel-countdown`,
         {
           method: 'POST',
           headers: {

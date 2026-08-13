@@ -401,6 +401,89 @@ async addSimulatedPlayers(roomId = '5br') {
     `🎮 ${room.id}: ${room.players.length} simulated/real players in game`
   );
 }
+// ── countdown → game ──────────────────────────────────────────────────────
+
+_startCountdown(room) {
+  room.status = 'countdown';
+
+  // Store the exact time the 25-second countdown begins
+  room.countdownStart = Date.now();
+
+  room._countdownTimer = setTimeout(() => {
+    // Make sure the room is still counting down
+    if (room.status === 'countdown') {
+      this._startGame(room);
+    }
+  }, COUNTDOWN_SECONDS * 1000);
+}
+
+_startGame(room) {
+  room.status = 'playing';
+  room.calledNumbers = [];
+  room._gameStartTime = Date.now();
+
+  const numbers = [];
+  for (let n = 1; n <= 75; n++) numbers.push(n);
+
+  numbers.sort(() => Math.random() - 0.5);
+
+  let idx = 0;
+
+  room._drawTimer = setInterval(() => {
+    if (room.status !== 'playing') {
+      clearInterval(room._drawTimer);
+      return;
+    }
+
+    if (idx >= numbers.length) {
+      clearInterval(room._drawTimer);
+      return;
+    }
+
+    room.calledNumbers.push(numbers[idx++]);
+
+    // Check simulated players for automatic Bingo
+    this._checkSimulatedBingo(room);
+
+  }, DRAW_INTERVAL_MS);
+}
+
+_checkSimulatedBingo(room) {
+  if (room.status !== 'playing' || room.winner) return;
+
+  for (const player of room.players) {
+
+    // Only simulated players
+    if (!String(player.id).startsWith('sim_')) continue;
+
+    const cartelas = room.playerCartelas[player.id] || [];
+
+    for (const cartela of cartelas) {
+
+      const valid = checkBingo(
+        cartela.grid,
+        room.calledNumbers
+      );
+
+      if (valid) {
+
+        // Automatically claim Bingo
+        this.claimBingo(
+          room.id,
+          player.id,
+          cartela.id
+        ).catch(err => {
+          console.error(
+            `❌ Simulated Bingo error for ${player.name}:`,
+            err.message
+          );
+        });
+
+        return;
+      }
+    }
+  }
+}
 
   // ── bingo claim ───────────────────────────────────────────────────────────
 

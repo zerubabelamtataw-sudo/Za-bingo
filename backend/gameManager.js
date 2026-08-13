@@ -549,9 +549,26 @@ room.winner = {
 }
 
     // Auto-reset after 3 seconds
-room._resetTimer = setTimeout(() => {
-  console.log(`🔄 RESETTING ROOM: ${room.id}`);
-  this._resetRoom(room);
+setTimeout(() => {
+  console.log(`🔄 AUTO RESET: ${room.id}`);
+
+  room.status = 'waiting';
+  room.players = [];
+  room.playerCartelas = {};
+  room.reservedCartelas = new Set();
+  room.calledNumbers = [];
+  room.pot = 0;
+  room.winner = null;
+  room.countdownStart = null;
+  room._countdownTimer = null;
+  room._drawTimer = null;
+  room._gameStartTime = null;
+
+  console.log(`✅ ROOM RESET: ${room.id} = ${room.status}`);
+
+  this.addSimulatedPlayers(room.id).catch(err => {
+    console.error(`❌ Failed to restart simulated players:`, err);
+  });
 }, 3000);
 
     return room.toJSON();

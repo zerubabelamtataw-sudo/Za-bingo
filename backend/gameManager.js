@@ -550,6 +550,7 @@ room.winner = {
 
     // Auto-reset after 3 seconds
 room._resetTimer = setTimeout(() => {
+  console.log(`🔄 RESETTING ROOM: ${room.id}`);
   this._resetRoom(room);
 }, 3000);
 
@@ -561,7 +562,11 @@ room._resetTimer = setTimeout(() => {
   clearTimeout(room._countdownTimer);
   clearTimeout(room._resetTimer);
 
-  room.reset();
+  console.log(`🔄 BEFORE RESET: ${room.id} = ${room.status}`);
+
+room.reset();
+
+console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
 
   this.addSimulatedPlayers(room.id).catch(err => {
     console.error('❌ Failed to restart simulated players:', err);

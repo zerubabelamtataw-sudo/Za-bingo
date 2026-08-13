@@ -112,70 +112,57 @@ async function findPendingTransaction(type, amount, transactionId) {
 // PROCESS DEPOSIT
 // ============================================================
 
-async function processDeposit(text, smsData) {
-  const transaction = await findPendingTransaction(
-  'deposit',
-  smsData.amount,
-  smsData.transactionId
-);
+async function findPendingTransaction(type, amount, transactionId) {
+  const snapshot = await db.ref('transactions').once('value');
+  const transactions = snapshot.val() || {};
 
-  if (!transaction) {
-    console.log(
-      '⚠️ No matching pending deposit:',
-      smsData.amount,
-      smsData.transactionId
-    );
+  // 1. CHECK DUPLICATE TRANSACTION ID FIRST
+  for (const transaction of Object.values(transactions)) {
+    if (!transaction) continue;
 
-    return false;
-  }
+    if (
+      String(transaction.transactionId || '').toUpperCase() ===
+      String(transactionId || '').toUpperCase()
+    ) {
+      console.log(
+        '⚠️ Duplicate transaction ID:',
+        transactionId
+      );
 
-  const transactionRef = db.ref(
-    `transactions/${transaction.key}`
-  );
+      // Notify player
+      if (transaction.telegramId) {
+        await bot.sendMessage(
+          transaction.telegramId,
+          `⚠️ *Duplicate Deposit*\n\n` +
+          `This transaction has already been processed.\n` +
+          `No money was added to your balance.`,
+          {
+            parse_mode: 'Markdown'
+          }
+        );
+      }
 
-  const playerRef = db.ref(
-    `players/${transaction.telegramId}`
-  );
-
-  const playerSnapshot = await playerRef.once('value');
-  const player = playerSnapshot.val();
-
-  if (!player) {
-    console.log('❌ Player not found:', transaction.telegramId);
-    return false;
-  }
-
-  const newBalance =
-    Number(player.balance || 0) +
-    Number(transaction.amount);
-
-  await playerRef.update({
-    balance: newBalance
-  });
-
-  await transactionRef.update({
-    status: 'approved',
-    transactionId: smsData.transactionId,
-    confirmedAt: new Date().toISOString(),
-    confirmationSms: text
-  });
-
-  await bot.sendMessage(
-    transaction.telegramId,
-    `✅ *Deposit Confirmed!*\n\n` +
-    `Amount: ${transaction.amount} Br\n` +
-    `Transaction ID: ${smsData.transactionId}\n\n` +
-    `💰 New balance: ${newBalance} Br`,
-    {
-      parse_mode: 'Markdown'
+      return null;
     }
-  );
+  }
 
-  console.log(
-    `✅ Deposit approved: ${transaction.amount} Br → ${transaction.telegramId}`
-  );
+  // 2. FIND THE PENDING TRANSACTION
+  for (const [key, transaction] of Object.entries(transactions)) {
+    if (!transaction) continue;
 
-  return true;
+    if (
+      transaction.type === type &&
+      transaction.status === 'pending' &&
+      Number(transaction.amount) === Number(amount)
+    ) {
+      return {
+        key,
+        ...transaction
+      };
+    }
+  }
+
+  return null;
 }
 
 // ============================================================

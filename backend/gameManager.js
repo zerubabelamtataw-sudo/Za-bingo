@@ -548,8 +548,10 @@ room.winner = {
   });
 }
 
-    // Auto-reset after 15s
-    setTimeout(() => this._resetRoom(room), 5000);
+    // Auto-reset after 3 seconds
+room._resetTimer = setTimeout(() => {
+  this._resetRoom(room);
+}, 3000);
 
     return room.toJSON();
   }
@@ -557,10 +559,10 @@ room.winner = {
   _resetRoom(room) {
   clearInterval(room._drawTimer);
   clearTimeout(room._countdownTimer);
+  clearTimeout(room._resetTimer);
 
   room.reset();
 
-  // Automatically bring the 15 simulated players back
   this.addSimulatedPlayers(room.id).catch(err => {
     console.error('❌ Failed to restart simulated players:', err);
   });

@@ -810,90 +810,140 @@ function handleProfile(chatId, player) {
 // ============================================================
 // ADMIN FUNCTIONS
 // ============================================================
-function approveDeposit(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'deposit' AND status = 'pending')"
-  ).get(chatId);
-  
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
-    return;
+async function approveDeposit(query, telegramId) {
+  try {
+    const snapshot = await db.ref('transactions')
+      .orderByChild('telegramId')
+      .equalTo(String(telegramId))
+      .once('value');
+
+    const transactions = snapshot.val() || {};
+
+    let txnId = null;
+    let txn = null;
+
+    for (const [id, transaction] of Object.entries(transactions)) {
+      if (
+        transaction &&
+        transaction.type === 'deposit' &&
+        transaction.status === 'pending'
+      ) {
+        txnId = id;
+        txn = transaction;
+      }
+    }
+
+    if (!txn) {
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Transaction not found'
+      });
+      return;
+    }
+
+    const amount = Number(txn.amount || 0);
+
+    // Add money to player's balance
+    await db.ref(`players/${telegramId}/balance`).transaction(
+      balance => Number(balance || 0) + amount
+    );
+
+    // Mark transaction approved
+    await db.ref(`transactions/${txnId}/status`).set('approved');
+
+    // Remove admin buttons
+    await bot.editMessageReplyMarkup(
+      { inline_keyboard: [] },
+      {
+        chat_id: query.message.chat.id,
+        message_id: query.message.message_id
+      }
+    );
+
+    // Notify player
+    await bot.sendMessage(
+      telegramId,
+      `✅ Deposit Confirmed!\n\n` +
+      `Amount: ${amount} Br\n` +
+      `Your deposit has been approved successfully.`
+    );
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Deposit approved ✅'
+    });
+
+  } catch (error) {
+    console.error('❌ Approve deposit error:', error);
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Failed to approve deposit'
+    });
   }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('approved', txn.id);
-  db.prepare('UPDATE players SET balance = balance + ? WHERE id = ?').run(txn.amount, txn.player_id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `✅ Deposit of ${txn.amount} Br approved!`);
-  bot.answerCallbackQuery(query.id, { text: 'Approved ✅' });
 }
 
-function rejectDeposit(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'deposit' AND status = 'pending')"
-  ).get(chatId);
-  
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
-    return;
+
+async function rejectDeposit(query, telegramId) {
+  try {
+    const snapshot = await db.ref('transactions')
+      .orderByChild('telegramId')
+      .equalTo(String(telegramId))
+      .once('value');
+
+    const transactions = snapshot.val() || {};
+
+    let txnId = null;
+    let txn = null;
+
+    for (const [id, transaction] of Object.entries(transactions)) {
+      if (
+        transaction &&
+        transaction.type === 'deposit' &&
+        transaction.status === 'pending'
+      ) {
+        txnId = id;
+        txn = transaction;
+      }
+    }
+
+    if (!txn) {
+      await bot.answerCallbackQuery(query.id, {
+        text: 'Transaction not found'
+      });
+      return;
+    }
+
+    const amount = Number(txn.amount || 0);
+
+    // Mark transaction rejected
+    await db.ref(`transactions/${txnId}/status`).set('rejected');
+
+    // Remove admin buttons
+    await bot.editMessageReplyMarkup(
+      { inline_keyboard: [] },
+      {
+        chat_id: query.message.chat.id,
+        message_id: query.message.message_id
+      }
+    );
+
+    // Notify player
+    await bot.sendMessage(
+      telegramId,
+      `❌ Deposit Rejected\n\n` +
+      `Amount: ${amount} Br\n` +
+      `Your deposit request was rejected.`
+    );
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Deposit rejected ❌'
+    });
+
+  } catch (error) {
+    console.error('❌ Reject deposit error:', error);
+
+    await bot.answerCallbackQuery(query.id, {
+      text: 'Failed to reject deposit'
+    });
   }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('rejected', txn.id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `❌ Deposit of ${txn.amount} Br rejected.`);
-  bot.answerCallbackQuery(query.id, { text: 'Rejected ❌' });
-}
-
-function approveWithdrawal(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'withdrawal' AND status = 'pending')"
-  ).get(chatId);
-  
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
-    return;
-  }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('approved', txn.id);
-  db.prepare('UPDATE players SET balance = balance - ? WHERE id = ?').run(txn.amount, txn.player_id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `✅ Withdrawal of ${txn.amount} Br approved!`);
-  bot.answerCallbackQuery(query.id, { text: 'Approved ✅' });
-}
-
-function rejectWithdrawal(query, chatId) {
-  const db = getDB();
-  const txn = db.prepare(
-    "SELECT * FROM transactions WHERE id = (SELECT MAX(id) FROM transactions WHERE player_id = (SELECT id FROM players WHERE telegram_id = ?) AND type = 'withdrawal' AND status = 'pending')"
-  ).get(chatId);
-  
-  if (!txn) {
-    bot.answerCallbackQuery(query.id, { text: 'Transaction not found' });
-    return;
-  }
-
-  db.prepare('UPDATE transactions SET status = ? WHERE id = ?').run('rejected', txn.id);
-
-  bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
-  bot.sendMessage(chatId, `❌ Withdrawal of ${txn.amount} Br rejected.`);
-  bot.answerCallbackQuery(query.id, { text: 'Rejected ❌' });
 }
 
 // ============================================================

@@ -285,6 +285,7 @@ return { id: playerId, ...player };
     room.players.push({
   id: String(player.id),
   name: player.name || `Player ${player.id}`,
+  username: player.username || '',
   balance: player.balance - totalFee
 });
     room.playerCartelas[player.id] = selected;
@@ -517,7 +518,7 @@ if (!player) {
   throw new Error('Player not found in room');
 }
 
-const playerName = player.name || `Player ${playerId}`;
+const playerName = player.username || player.name || `Player ${playerId}`;
 
 const winAmt = Math.floor(room.pot * WINNER_SHARE);
 

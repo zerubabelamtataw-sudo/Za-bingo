@@ -639,6 +639,13 @@ if (cancelCountdownBtn) {
       if (!data.success) {
         throw new Error(data.error || 'Failed to cancel countdown');
       }
+      state.activeRoomId = null;
+state.selectedRoom = null;
+state.selectedCartelas = [];
+
+await loadPlayer();
+showPage('lobby');
+refreshRooms();
 
       countdownOverlay.classList.remove('visible');
 

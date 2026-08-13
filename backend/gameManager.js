@@ -531,13 +531,24 @@ room.winner = {
     };
     room.status = 'winner';
 
-    // Credit winner
-    await this.updatePlayerBalance(playerId, winAmt, {
-      type: 'win', roomId, amount: winAmt, cartelaId, date: new Date().toISOString(),
-    });
 
-    // Store in Firebase
-    if (this.db) {
+// ALWAYS schedule reset immediately
+setTimeout(() => {
+  console.log(`🔄 AUTO RESET: ${room.id}`);
+  this._resetRoom(room);
+}, 3000);
+
+// Credit winner
+await this.updatePlayerBalance(playerId, winAmt, {
+  type: 'win',
+  roomId,
+  amount: winAmt,
+  cartelaId,
+  date: new Date().toISOString(),
+});
+
+// Store in Firebase
+if (this.db) {
   const winnerRef = this.db.ref('winners').push();
 
   await winnerRef.set({
@@ -547,29 +558,6 @@ room.winner = {
     date: new Date().toISOString()
   });
 }
-
-    // Auto-reset after 3 seconds
-setTimeout(() => {
-  console.log(`🔄 AUTO RESET: ${room.id}`);
-
-  room.status = 'waiting';
-  room.players = [];
-  room.playerCartelas = {};
-  room.reservedCartelas = new Set();
-  room.calledNumbers = [];
-  room.pot = 0;
-  room.winner = null;
-  room.countdownStart = null;
-  room._countdownTimer = null;
-  room._drawTimer = null;
-  room._gameStartTime = null;
-
-  console.log(`✅ ROOM RESET: ${room.id} = ${room.status}`);
-
-  this.addSimulatedPlayers(room.id).catch(err => {
-    console.error(`❌ Failed to restart simulated players:`, err);
-  });
-}, 3000);
 
     return room.toJSON();
   }

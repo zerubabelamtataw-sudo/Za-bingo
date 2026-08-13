@@ -649,7 +649,20 @@ refreshRooms();
 
       countdownOverlay.classList.remove('visible');
 
-      cancelCountdownBtn.disabled = false;
+state.activeRoomId = null;
+state.selectedRoom = null;
+state.selectedCartelas = [];
+state.myCartelas = [];
+
+clearInterval(state.pollTimer);
+
+await refreshPlayer();
+
+showPage('lobby');
+startLobbyPoll();
+renderCartelaGrid();
+
+cancelCountdownBtn.disabled = false;
 
     } catch (error) {
       console.error('Cancel countdown error:', error);

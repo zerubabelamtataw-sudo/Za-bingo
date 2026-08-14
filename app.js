@@ -326,37 +326,37 @@ state.myCartelas = state.allCartelas.filter(
   }
 });
 
-// ── Called-numbers grid (BINGO rows) ─────────────────────────────────────────
+// ── Called-numbers grid — 5 vertical BINGO columns ─────────────────────────
 function buildCalledGrid() {
   const grid = $('calledGrid');
   grid.innerHTML = '';
 
-  const letters = [
-    { letter: 'B', start: 1,  end: 15 },
-    { letter: 'I', start: 16, end: 30 },
-    { letter: 'N', start: 31, end: 45 },
-    { letter: 'G', start: 46, end: 60 },
-    { letter: 'O', start: 61, end: 75 }
-  ];
+  const letters = ['B', 'I', 'N', 'G', 'O'];
 
-  for (const group of letters) {
-    const row = document.createElement('div');
-    row.className = 'called-row';
+  // Create 5 vertical columns
+  for (let col = 0; col < 5; col++) {
+    const column = document.createElement('div');
+    column.className = `called-column ${letters[col]}`;
 
+    // B I N G O header
     const letter = document.createElement('div');
-    letter.className = `called-row-letter ${group.letter}`;
-    letter.textContent = group.letter;
-    row.appendChild(letter);
+    letter.className = `called-column-letter ${letters[col]}`;
+    letter.textContent = letters[col];
+    column.appendChild(letter);
 
-    for (let n = group.start; n <= group.end; n++) {
+    // 15 numbers under each letter
+    const start = col * 15 + 1;
+    const end = start + 14;
+
+    for (let n = start; n <= end; n++) {
       const el = document.createElement('div');
       el.className = 'cn-cell';
       el.id = `cn-${n}`;
       el.textContent = n;
-      row.appendChild(el);
+      column.appendChild(el);
     }
 
-    grid.appendChild(row);
+    grid.appendChild(column);
   }
 }
 

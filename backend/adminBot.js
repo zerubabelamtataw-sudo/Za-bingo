@@ -280,7 +280,7 @@ bot.on('message', async (msg) => {
         return;
       }
 
-      await processDeposit(text, smsData);
+      await storeOfficialDeposit(text, smsData);
 
       return;
     }

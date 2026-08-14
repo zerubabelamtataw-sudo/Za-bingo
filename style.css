@@ -549,6 +549,7 @@ font-size: 8px;
   gap: 10px;
   width: 100%;
 
+  height: 100%;
   max-height: calc(100vh - 120px);
 
   overflow-y: auto;
@@ -556,6 +557,17 @@ font-size: 8px;
 
   min-height: 0;
   box-sizing: border-box;
+  align-items: stretch;
+}
+
+.cartela-card {
+  flex: 0 0 auto;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .cartela-card {
@@ -1210,9 +1222,9 @@ opacity: 1;
 
 /* Current called number — small left column */
 .called-board-content .last-called {
-  width: 80px;
+  width: 130px;
   height: 58px;
-  min-width: 80px;
+  min-width: 130px;
   min-height: 58px;
 
   margin: 0 auto;

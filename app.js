@@ -387,7 +387,7 @@ const previousNumbers = calledNumbers
   .reverse();
 
 historyEl.innerHTML = previousNumbers
-  .map(n => `<span>${letterFor(n)}-${n}</span>`)
+  .map(n => `<span class="${letterFor(n)}">${letterFor(n)}-${n}</span>`)
   .join('');
     numEl.style.animation = 'none';
     numEl.offsetHeight;

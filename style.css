@@ -1223,7 +1223,7 @@ opacity: 1;
 
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+border-radius: 12px;
 }
 .called-board-content .last-called-history {
   display: flex;
@@ -1254,6 +1254,26 @@ opacity: 1;
   line-height: 1;
   margin: 0;
   font-weight: 900;
+}
+
+.called-board-content .last-called-history span.B {
+  color: var(--B);
+}
+
+.called-board-content .last-called-history span.I {
+  color: var(--I);
+}
+
+.called-board-content .last-called-history span.N {
+  color: var(--N);
+}
+
+.called-board-content .last-called-history span.G {
+  color: var(--G);
+}
+
+.called-board-content .last-called-history span.O {
+  color: var(--O);
 }
 
 /* ───────── 75-NUMBER GRID ───────── */

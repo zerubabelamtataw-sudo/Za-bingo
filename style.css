@@ -570,14 +570,6 @@ font-size: 8px;
   min-width: 0;
 }
 
-.cartela-card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: 8px;
-overflow: hidden;
-min-width: 0;
-}
-
 .cartela-card-header {
 display: flex;
 justify-content: space-between;
@@ -593,10 +585,12 @@ font-size: .68rem;
 }
 
 .bingo-grid {
-display: grid;
-grid-template-columns: repeat(5, 1fr);
-padding: 5px;
-gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 90%;
+  margin: 0 auto;
+  padding: 5px;
+  gap: 2px;
 }
 
 .bingo-header-row {
@@ -1222,9 +1216,9 @@ opacity: 1;
 
 /* Current called number — small left column */
 .called-board-content .last-called {
-  width: 130px;
+  width: 140px;
   height: 58px;
-  min-width: 130px;
+  min-width: 140px;
   min-height: 58px;
 
   margin: 0 auto;

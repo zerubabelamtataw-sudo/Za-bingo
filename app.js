@@ -672,7 +672,7 @@ if (cancelCountdownBtn) {
       cancelCountdownBtn.disabled = true;
 
       const response = await fetch(
-  `${API}/api/rooms/${state.activeRoomId}/cancel-countdown`,
+  `${API}/api/rooms/${state.currentRoomId}/cancel-countdown`,
         {
           method: 'POST',
           headers: {

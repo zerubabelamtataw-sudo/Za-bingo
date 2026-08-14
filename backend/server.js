@@ -53,6 +53,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
+// ── Health check ─────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.status(200).send('ZA Bingo server is alive');
+});
+
 // ── Helper ────────────────────────────────────────────────────────────────────
 const ok  = (res, data)  => res.json({ success: true,  ...data });
 const err = (res, msg, code = 400) => res.status(code).json({ success: false, error: msg });

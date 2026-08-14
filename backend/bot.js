@@ -419,16 +419,7 @@ else if (data.startsWith('deposit_method_')) {
     );
     withdrawSessions[chatId] = { method, step: 'amount' };
   }
-  // Admin: Approve deposit
-  else if (data.startsWith('approve_deposit_')) {
-    const txnId = parseInt(data.replace('approve_deposit_', ''));
-    approveDeposit(query, txnId);
-  }
-  // Admin: Reject deposit
-  else if (data.startsWith('reject_deposit_')) {
-    const txnId = parseInt(data.replace('reject_deposit_', ''));
-    rejectDeposit(query, txnId);
-  }
+  
   // Admin: Approve withdrawal
   else if (data.startsWith('approve_withdraw_')) {
     const txnId = parseInt(data.replace('approve_withdraw_', ''));
@@ -498,65 +489,139 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
 }
 
   // Handle deposit SMS
-  if (depositSessions[chatId] && depositSessions[chatId].step === 'sms') {
-    const session = depositSessions[chatId];
+if (
+  depositSessions[chatId] &&
+  depositSessions[chatId].step === 'sms'
+) {
+  const session = depositSessions[chatId];
+  const amount = Number(session.amount);
+  const method = session.method;
+  const sms = text.trim();
 
-    const amount = session.amount;
-    const method = session.method;
-    const sms = text;
+  // Parse the SMS pasted by the player
+  const amountMatch = sms.match(/([\d,]+\.\d{2})\s*ብር/);
+  const transactionMatch = sms.match(
+    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
+  );
 
-    // Create pending deposit transaction
-const transactionRef = db.ref('transactions').push();
-
-await transactionRef.set({
-  playerId: tgId,
-  telegramId: tgId,
-  type: 'deposit',
-  amount: amount,
-  status: 'pending',
-  paymentMethod: method,
-  sms: sms,
-  createdAt: new Date().toISOString()
-});
-
-    // Notify admin
-    const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-
-    bot.sendMessage(
-      ADMIN_ID,
-      ` *New Deposit Request*\n\n` +
-      `Player: ${player.first_name} (@${player.username || 'N/A'})\n` +
-      `Amount: ${amount} Br\n` +
-      `Method: ${method}\n\n` +
-      ` *Payment SMS:*\n${sms}`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[
-            {
-              text: '✅ Approve',
-              callback_data: `approve_deposit_${chatId}`
-            },
-            {
-              text: '❌ Reject',
-              callback_data: `reject_deposit_${chatId}`
-            }
-          ]]
-        }
-      }
-    );
-
+  if (!amountMatch || !transactionMatch) {
     bot.sendMessage(
       chatId,
-      `✅ Deposit request submitted!\n\n` +
-      `Amount: ${amount} Br\n` +
-      `Method: ${method}\n` +
-      `Status: Pending approval`
+      '❌ Invalid SMS. Please paste the complete payment SMS exactly as received.'
     );
-
-    delete depositSessions[chatId];
     return;
   }
+
+  const smsAmount = Number(
+    amountMatch[1].replace(/,/g, '')
+  );
+
+  const transactionId =
+    transactionMatch[1].toUpperCase();
+
+  // Check that SMS amount matches the amount entered
+  if (smsAmount !== amount) {
+    bot.sendMessage(
+      chatId,
+      `❌ The SMS amount (${smsAmount} Br) does not match your deposit amount (${amount} Br).`
+    );
+    return;
+  }
+
+  // Check official SMS saved by adminBot.js
+  const officialRef = db.ref(
+    `officialDeposits/${transactionId}`
+  );
+
+  const officialSnapshot =
+    await officialRef.once('value');
+
+  const official = officialSnapshot.val();
+
+  if (!official || official.status !== 'available') {
+    bot.sendMessage(
+      chatId,
+      '⏳ We could not find this payment yet. Please make sure the official payment SMS has arrived and try again.'
+    );
+    return;
+  }
+
+  // Verify amount
+  if (Number(official.amount) !== smsAmount) {
+    bot.sendMessage(
+      chatId,
+      '❌ Payment verification failed.'
+    );
+    return;
+  }
+
+  // Compare player's SMS with official SMS
+  const normalizeSMS = value =>
+    String(value || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  if (
+    normalizeSMS(official.sms) !==
+    normalizeSMS(sms)
+  ) {
+    bot.sendMessage(
+      chatId,
+      '❌ The SMS does not match the official payment record.'
+    );
+    return;
+  }
+
+  // Create approved transaction
+  const transactionRef =
+    db.ref('transactions').push();
+
+  await transactionRef.set({
+    playerId: tgId,
+    telegramId: tgId,
+    type: 'deposit',
+    amount: amount,
+    status: 'approved',
+    paymentMethod: method,
+    sms: sms,
+    transactionId: transactionId,
+    officialDepositId: transactionId,
+    createdAt: new Date().toISOString(),
+    confirmedAt: new Date().toISOString()
+  });
+
+  // Add money to player's balance
+  const balanceRef = db.ref(
+    `players/${tgId}/balance`
+  );
+
+  const balanceResult =
+    await balanceRef.transaction(
+      balance => Number(balance || 0) + amount
+    );
+
+  const newBalance =
+    Number(balanceResult.snapshot.val() || 0);
+
+  // Mark official SMS as used
+  await officialRef.update({
+    status: 'used',
+    usedBy: String(tgId),
+    usedTransaction: transactionRef.key,
+    usedAt: new Date().toISOString()
+  });
+
+  await bot.sendMessage(
+    chatId,
+    `✅ Deposit Confirmed!\n\n` +
+    `Amount: ${amount} Br\n` +
+    `Transaction ID: ${transactionId}\n\n` +
+    `💰 New balance: ${newBalance} Br`
+  );
+
+  delete depositSessions[chatId];
+  return;
+}
 
   // Handle withdraw amount
 if (
@@ -810,145 +875,7 @@ function handleProfile(chatId, player) {
 // ============================================================
 // ADMIN FUNCTIONS
 // ============================================================
-async function approveDeposit(query, telegramId) {
-  try {
-    const snapshot = await db.ref('transactions')
-      .orderByChild('telegramId')
-      .equalTo(String(telegramId))
-      .once('value');
 
-    const transactions = snapshot.val() || {};
-
-    let txnId = null;
-    let txn = null;
-
-    for (const [id, transaction] of Object.entries(transactions)) {
-      if (
-        transaction &&
-        transaction.type === 'deposit' &&
-        transaction.status === 'pending'
-      ) {
-        txnId = id;
-        txn = transaction;
-      }
-    }
-
-    if (!txn) {
-      await bot.answerCallbackQuery(query.id, {
-        text: 'Transaction not found'
-      });
-      return;
-    }
-
-    const amount = Number(txn.amount || 0);
-
-    // Add money to player's balance
-    await db.ref(`players/${telegramId}/balance`).transaction(
-      balance => Number(balance || 0) + amount
-    );
-
-    // Mark transaction approved
-    await db.ref(`transactions/${txnId}/status`).set('approved');
-
-    // Remove admin buttons
-    await bot.editMessageReplyMarkup(
-      { inline_keyboard: [] },
-      {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id
-      }
-    );
-
-    // Notify player
-    const playerTelegramId = String(txn.telegramId || txn.playerId);
-
-if (playerTelegramId) {
-  await bot.sendMessage(
-    playerTelegramId,
-    `✅ Deposit Confirmed!\n\n` +
-    `Amount: ${amount} Br\n` +
-    `Your deposit has been approved successfully.`
-  );
-}
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Deposit approved ✅'
-    });
-
-  } catch (error) {
-    console.error('❌ Approve deposit error:', error);
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Failed to approve deposit'
-    });
-  }
-}
-
-
-async function rejectDeposit(query, telegramId) {
-  try {
-    const snapshot = await db.ref('transactions')
-      .orderByChild('telegramId')
-      .equalTo(String(telegramId))
-      .once('value');
-
-    const transactions = snapshot.val() || {};
-
-    let txnId = null;
-    let txn = null;
-
-    for (const [id, transaction] of Object.entries(transactions)) {
-      if (
-        transaction &&
-        transaction.type === 'deposit' &&
-        transaction.status === 'pending'
-      ) {
-        txnId = id;
-        txn = transaction;
-      }
-    }
-
-    if (!txn) {
-      await bot.answerCallbackQuery(query.id, {
-        text: 'Transaction not found'
-      });
-      return;
-    }
-
-    const amount = Number(txn.amount || 0);
-
-    // Mark transaction rejected
-    await db.ref(`transactions/${txnId}/status`).set('rejected');
-
-    // Remove admin buttons
-    await bot.editMessageReplyMarkup(
-      { inline_keyboard: [] },
-      {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id
-      }
-    );
-
-    // Notify player
-    await bot.sendMessage(
-      telegramId,
-      `❌ Deposit Rejected\n\n` +
-      `Amount: ${amount} Br\n` +
-      `Your deposit request was rejected.`
-    );
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Deposit rejected ❌'
-    });
-
-  } catch (error) {
-    console.error('❌ Reject deposit error:', error);
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Failed to reject deposit'
-    });
-  }
-}
 
 // ============================================================
 // GAME MANAGER INTEGRATION

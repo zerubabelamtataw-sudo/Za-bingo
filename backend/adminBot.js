@@ -123,72 +123,35 @@ async function findPendingTransaction(type, amount, transactionId) {
 }
 
 // ============================================================
-// PROCESS DEPOSIT
+// STORE OFFICIAL DEPOSIT SMS
 // ============================================================
 
-async function processDeposit(text, smsData) {
-  const transaction = await findPendingTransaction(
-    'deposit',
-    smsData.amount,
-    smsData.transactionId
+async function storeOfficialDeposit(text, smsData) {
+  const officialRef = db.ref(
+    `officialDeposits/${smsData.transactionId}`
   );
 
-  if (!transaction) {
+  const existingSnapshot = await officialRef.once('value');
+  const existing = existingSnapshot.val();
+
+  if (existing) {
     console.log(
-      '⚠️ No matching pending deposit:',
-      smsData.amount,
-      smsData.transactionId
+      `⚠️ Official deposit already stored: ${smsData.transactionId}`
     );
     return false;
   }
 
-  const transactionRef = db.ref(
-    `transactions/${transaction.key}`
-  );
-
-  const playerRef = db.ref(
-    `players/${transaction.telegramId}`
-  );
-
-  const playerSnapshot = await playerRef.once('value');
-  const player = playerSnapshot.val();
-
-  if (!player) {
-    console.log(
-      '❌ Player not found:',
-      transaction.telegramId
-    );
-    return false;
-  }
-
-  const newBalance =
-    Number(player.balance || 0) +
-    Number(transaction.amount);
-
-  await playerRef.update({
-    balance: newBalance
-  });
-
-  await transactionRef.update({
-    status: 'approved',
+  await officialRef.set({
+    type: 'deposit',
+    amount: smsData.amount,
     transactionId: smsData.transactionId,
-    confirmedAt: new Date().toISOString(),
-    confirmationSms: text
+    sms: text,
+    status: 'available',
+    receivedAt: new Date().toISOString()
   });
-
-  await playerBot.sendMessage(
-    transaction.telegramId,
-    `✅ *Deposit Confirmed!*\n\n` +
-    `Amount: ${transaction.amount} Br\n` +
-    `Transaction ID: ${smsData.transactionId}\n\n` +
-    `💰 New balance: ${newBalance} Br`,
-    {
-      parse_mode: 'Markdown'
-    }
-  );
 
   console.log(
-    `✅ Deposit approved: ${transaction.amount} Br → ${transaction.telegramId}`
+    `✅ Official deposit SMS saved: ${smsData.amount} Br → ${smsData.transactionId}`
   );
 
   return true;

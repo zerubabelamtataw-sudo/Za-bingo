@@ -1189,27 +1189,43 @@ opacity: 1;
 /* ───────── CURRENT NUMBER INSIDE 75-NUMBER BOARD ───────── */
 
 .called-board-content {
-  display: grid;
-  grid-template-columns: 42px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  align-items: start;
+  width: 100%;
 }
 
 /* Current called number — small left column */
 .called-board-content .last-called {
-  margin: 0;
-  padding: 5px 2px;
-  width: 42px;
-  min-width: 42px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 
+  margin: 0;
+  padding: 6px;
+
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+.called-board-content .last-called-history {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.called-board-content .last-called-history span {
+  font-size: .65rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* CURRENT text */

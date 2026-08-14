@@ -371,10 +371,24 @@ function updateCalledGrid(calledNumbers) {
 
   if (calledNumbers.length > prev) {
     const latest = calledNumbers[calledNumbers.length - 1];
-    $('lastCalledWrap').style.display = 'block';
-    const numEl = $('lastCalledNum');
-    numEl.textContent  = `${letterFor(latest)} ${latest}`;
-    numEl.style.color  = `var(--${letterFor(latest)})`;
+
+$('lastCalledWrap').style.display = 'block';
+
+const numEl = $('lastCalledNum');
+numEl.textContent = `${letterFor(latest)} ${latest}`;
+numEl.style.color = `var(--${letterFor(latest)})`;
+
+// Show the previous 5 called numbers
+const historyEl = $('lastCalledHistory');
+
+const previousNumbers = calledNumbers
+  .slice(0, -1)
+  .slice(-5)
+  .reverse();
+
+historyEl.innerHTML = previousNumbers
+  .map(n => `<span>${letterFor(n)}-${n}</span>`)
+  .join('');
     numEl.style.animation = 'none';
     numEl.offsetHeight;
     numEl.style.animation = '';

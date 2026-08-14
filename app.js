@@ -421,8 +421,7 @@ function buildCartelaCard(cartela) {
 
   card.innerHTML = `
     <div class="cartela-card-header">
-      <div class="cartela-card-title">Cartela #${cartela.number}</div>
-      <span id="bingo-indicator-${cartela.id}" style="display:none;color:var(--gold);font-weight:700;font-size:.85rem">★ BINGO!</span>
+      <div class="cartela-card-title">ካርቴላ #${cartela.number}</div>
     </div>
     <div class="bingo-grid" id="grid-${cartela.id}"></div>
     <button class="claim-bingo-btn" id="claimBtn-${cartela.id}" onclick="claimBingo('${cartela.id}')">

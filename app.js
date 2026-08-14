@@ -82,9 +82,16 @@ function showPage(name) {
   if (name === 'lobby')   refreshRooms();
   if (name === 'game') {
   $('navTabs').style.display = 'none';
+  $('playerHud').style.display = 'none';
+  document.querySelector('header').style.display = 'none';
+  document.querySelector('.app').classList.add('game-mode');
+
   renderMyCartelas();
 } else {
   $('navTabs').style.display = 'flex';
+  $('playerHud').style.display = 'flex';
+  document.querySelector('header').style.display = 'flex';
+  document.querySelector('.app').classList.remove('game-mode');
 }
 }
 

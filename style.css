@@ -1394,6 +1394,32 @@ opacity: 1;
   color: #f3d58a;
   text-shadow: 0 0 12px rgba(243,213,138,.45);
 }
+/* ───────── CURRENT NUMBER HISTORY ───────── */
+
+.last-called-history {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  width: 100%;
+}
+
+.last-called-history > * {
+  width: 18px;
+  height: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial Black, Arial, sans-serif;
+  font-size: 7px;
+  font-weight: 900;
+
+  border-radius: 3px;
+  box-sizing: border-box;
+}
 
 /* 75 GRID */
 .called-numbers-grid {

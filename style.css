@@ -438,7 +438,7 @@ header {
 .game-right {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
   min-width: 0;
   min-height: 0;
   height: 100%;

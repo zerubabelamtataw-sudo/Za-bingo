@@ -469,7 +469,7 @@ header {
   width: 90%;
   margin: 0 auto;
 
-  height: 100%;
+  height: auto;
   max-height: calc(100vh - 120px);
 
   overflow-y: auto;
@@ -1499,10 +1499,11 @@ opacity: 1;
 .bingo-partition {
   display: flex;
   flex-direction: row;
+  gap: 3px;
 }
 
-.bingo-letter.B { background: #ff4d4d; color: #fff; }
-.bingo-letter.I { background: #4da6ff; color: #fff; }
-.bingo-letter.N { background: #4dff88; color: #111; }
-.bingo-letter.G { background: #ffd24d; color: #111; }
-.bingo-letter.O { background: #c77dff; color: #111; }
+.bingo-part.B { background: #ff4d4d; color: #fff; }
+.bingo-part.I { background: #4da6ff; color: #fff; }
+.bingo-part.N { background: #4dff88; color: #111; }
+.bingo-part.G { background: #ffd24d; color: #111; }
+.bingo-part.O { background: #c77dff; color: #111; }

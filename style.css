@@ -1496,6 +1496,10 @@ opacity: 1;
   font-weight: 900;
   border-radius: 4px;
 }
+.bingo-partition {
+  display: flex;
+  flex-direction: row;
+}
 
 .bingo-letter.B { background: #ff4d4d; color: #fff; }
 .bingo-letter.I { background: #4da6ff; color: #fff; }

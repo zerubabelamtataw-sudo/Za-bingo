@@ -438,7 +438,7 @@ header {
 .game-right {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 3px;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -1504,8 +1504,42 @@ opacity: 1;
   gap: 3px;
 }
 
-.bingo-part.B { background: #ff4d4d; color: #fff; }
-.bingo-part.I { background: #4da6ff; color: #fff; }
-.bingo-part.N { background: #4dff88; color: #111; }
-.bingo-part.G { background: #ffd24d; color: #111; }
-.bingo-part.O { background: #c77dff; color: #111; }
+.bingo-part {
+  flex: 1;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial Black, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+
+  border-radius: 4px;
+}
+
+.bingo-part.B {
+  background: #ff4d4d;
+  color: #fff;
+}
+
+.bingo-part.I {
+  background: #4da6ff;
+  color: #fff;
+}
+
+.bingo-part.N {
+  background: #4dff88;
+  color: #111;
+}
+
+.bingo-part.G {
+  background: #ffd24d;
+  color: #111;
+}
+
+.bingo-part.O {
+  background: #c77dff;
+  color: #111;
+}

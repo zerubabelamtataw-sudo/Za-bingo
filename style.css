@@ -550,7 +550,7 @@ header {
   font-weight: 900;
 
   border-radius: 3px;
-
+  color: #000000;
   background: #edb967;
   border: 1px solid var(--border);
 

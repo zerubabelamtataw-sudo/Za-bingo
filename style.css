@@ -346,8 +346,6 @@ header {
 
 /* Right: cartelas */
 .game-right {
-  grid-column: 2;
-  grid-row: 2;
   width: 100%;
   min-width: 0;
   margin: 0;

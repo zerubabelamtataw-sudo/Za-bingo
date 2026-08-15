@@ -431,14 +431,6 @@ function buildCartelaCard(cartela) {
 
   const gridEl = card.querySelector(`#grid-${cartela.id}`);
 
-  // Header row
-  for (const letter of LETTERS) {
-    const h = document.createElement('div');
-    h.className = `bingo-header-cell letter-${letter}`;
-    h.textContent = letter;
-    gridEl.appendChild(h);
-  }
-
   // Number cells (row-major: cartela.grid = [[row0], [row1], …])
   for (let r = 0; r < 5; r++) {
     for (let c = 0; c < 5; c++) {

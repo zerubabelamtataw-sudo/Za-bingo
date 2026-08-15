@@ -1203,7 +1203,7 @@ opacity: 1;
   width: 50%;
   max-width: 220px;
 
-  margin: 8px 0 0;
+  margin: 0 auto;
   padding: 8px;
 
   background: #111;
@@ -1271,7 +1271,7 @@ opacity: 1;
 
 .cn-cell {
   width: 28px;
-  height: 24px;
+  height: 31px;
 
   margin: 0 auto;
 
@@ -1478,3 +1478,27 @@ opacity: 1;
     font-size: 7px;
   }
 }
+.bingo-letters {
+  width: 90%;
+  margin: 0 auto 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+}
+
+.bingo-letter {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial Black, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 4px;
+}
+
+.bingo-letter.B { background: #ff4d4d; color: #fff; }
+.bingo-letter.I { background: #4da6ff; color: #fff; }
+.bingo-letter.N { background: #4dff88; color: #111; }
+.bingo-letter.G { background: #ffd24d; color: #111; }
+.bingo-letter.O { background: #c77dff; color: #111; }

@@ -484,7 +484,7 @@ header {
   flex: 0 0 auto;
   width: 100%;
 
-  background: var(--surface);
+  background: #2D2D34;
   border: 1px solid var(--border);
   border-radius: 8px;
 
@@ -551,7 +551,7 @@ header {
 
   border-radius: 3px;
 
-  background: var(--surface2);
+  background: #edb967;
   border: 1px solid var(--border);
 
   cursor: pointer;
@@ -565,9 +565,9 @@ header {
 }
 
 .bingo-cell.marked {
-  background: rgba(245,200,66,.15);
-  border-color: var(--gold);
-  color: var(--gold);
+  background: #475b57;
+  border-color: #475b57;
+  color: #fff;
 }
 
 .bingo-cell.free {
@@ -1497,6 +1497,8 @@ opacity: 1;
   border-radius: 4px;
 }
 .bingo-partition {
+  width: 90%;
+  margin: 0 auto;
   display: flex;
   flex-direction: row;
   gap: 3px;

@@ -343,8 +343,6 @@ header {
 
 /* Left: 75-number board */
 .game-left {
-  grid-column: 1;
-  grid-row: 2;
   width: 100%;
   min-width: 0;
   margin: 0;

@@ -441,7 +441,7 @@ header {
   gap: 0;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  height: auto;
 }
 
 .countdown-bar-wrap {
@@ -1195,177 +1195,12 @@ opacity: 1;
   color: #fff;
   border: none;
 }
-/* =====================================================
-   FULL 75 NUMBER BOARD
-   ===================================================== */
 
-.called-board {
-  width: 50%;
-  max-width: 220px;
-
-  margin: 0 auto;
-  padding: 8px;
-
-  background: #111;
-  border: 1px solid #444;
-  border-radius: 12px;
-
-  overflow: hidden;
-}
-
-.called-numbers-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
-  width: 100%;
-}
-
-/* =====================================================
-   B I N G O COLUMNS
-   ===================================================== */
-
-.called-column {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.called-column-letter {
-  height: 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-family: Arial Black, Arial, Helvetica, sans-serif;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-/* Column colors */
-
-.called-column-letter.B {
-  color: #ff4d4d;
-}
-
-.called-column-letter.I {
-  color: #4da6ff;
-}
-
-.called-column-letter.N {
-  color: #4dff88;
-}
-
-.called-column-letter.G {
-  color: #ffd24d;
-}
-
-.called-column-letter.O {
-  color: #c77dff;
-}
-
-/* =====================================================
-   NUMBER CELLS
-   ===================================================== */
-
-.cn-cell {
-  width: 28px;
-  height: 31px;
-
-  margin: 0 auto;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  min-width: 0;
-
-  font-family: Arial Black, Arial, Helvetica, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-
-  background: #181818;
-  color: #aaa;
-
-  border: 1px solid #333;
-  border-radius: 4px;
-
-  transition: all .2s;
-}
-
-/* =====================================================
-   CALLED NUMBERS
-   ===================================================== */
-
-.cn-cell.called {
-  color: white;
-  font-weight: 900;
-}
-
-.cn-cell.called.B {
-  background: #ff4d4d;
-  border-color: #ff4d4d;
-}
-
-.cn-cell.called.I {
-  background: #4da6ff;
-  border-color: #4da6ff;
-}
-
-.cn-cell.called.N {
-  background: #4dff88;
-  border-color: #4dff88;
-}
-
-.cn-cell.called.G {
-  background: #ffd24d;
-  border-color: #ffd24d;
-}
-
-.cn-cell.called.O {
-  background: #c77dff;
-  border-color: #c77dff;
-}
-
-/* =====================================================
-   MOBILE
-   ===================================================== */
-
-@media (max-width: 600px) {
-
-  .called-board {
-    width: 50%;
-    max-width: 220px;
-    padding: 7px;
-  }
-
-  .called-numbers-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 2px;
-  }
-
-  .called-column {
-    gap: 2px;
-  }
-
-  .called-column-letter {
-    height: 20px;
-    font-size: 11px;
-  }
-
-  .cn-cell {
-    width: 100%;
-    height: 22px;
-    font-size: 8px;
-    border-radius: 3px;
-  }
-}
 /* LEFT 75-NUMBER DISPLAY */
 .called-board {
   width: 100%;
   max-width: 280px;
-  margin: 8px auto 0;
+  margin: 0 auto;
   padding: 8px;
   background: #0b0b0b;
   border: 1px solid #333;

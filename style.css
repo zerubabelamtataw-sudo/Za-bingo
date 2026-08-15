@@ -309,7 +309,7 @@ header {
 .game-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  column-gap: 3px;
+  column-gap: 0px;
   row-gap: 0;
   align-items: start;
 }

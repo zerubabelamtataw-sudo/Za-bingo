@@ -343,6 +343,7 @@ header {
 
 /* Left: 75-number board */
 .game-left {
+  grid-column: 1;
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -351,8 +352,13 @@ header {
 
 /* Right: cartelas */
 .game-right {
+  grid-column: 2;
   width: 100%;
   min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
 }

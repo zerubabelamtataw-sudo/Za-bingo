@@ -596,7 +596,7 @@ header {
 
   border-radius: 3px;
   color: #000000;
-  background: #3c3c45;
+  background: #edb967;
   border: 1px solid var(--border);
 
   cursor: pointer;
@@ -609,17 +609,19 @@ header {
   border-color: var(--gold-dim);
 }
 
+/* Marked + Auto-marked */
 .bingo-cell.marked,
 .bingo-cell.auto-marked {
-  background: #edb967;
+  background: #3c3c45;
   border-color: #475b57;
-  color: #000000;
+  color: #edb967;
 }
 
+/* Free */
 .bingo-cell.free {
   background: #3c3c45;
   border-color: var(--gold);
-  color: #000000;
+  color: #edb967;
 
   font-size: .45rem;
   font-weight: 700;

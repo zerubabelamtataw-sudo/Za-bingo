@@ -923,9 +923,6 @@ function renderHistory() {
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
 $('backToRoomsBtn').addEventListener('click', () => {
-  $('page-cartelas').classList.remove('active');
-  $('page-cartelas').style.display = 'none';
-
   showPage('lobby');
 
   state.selectedRoom = null;

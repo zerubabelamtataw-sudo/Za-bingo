@@ -273,12 +273,16 @@ header {
 }
 
 .cartela-item {
-  background: #eacac7;
+  background: #c0c4c7;
   color: #111;
-  border: 1px solid var(--border);
+
+  border: none;
+  border-radius: 6px;
 
   padding: 2px;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
+
   min-height: 22px;
   height: 22px;
 
@@ -286,16 +290,21 @@ header {
   align-items: center;
   justify-content: center;
 }
-.cartela-item:hover { border-color: var(--gold-dim); }
-.cartela-item.selected {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #111;
-  font-weight: 700;
+
+.cartela-item:hover {
+  border: none;
 }
+
+.cartela-item.selected {
+  background: #2D2D34;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+}
+
 .cartela-item.reserved {
-  background: #ef4444;
-  border-color: #ef4444;
+  background: #d65e69;
+  border: none;
   color: #fff;
   cursor: not-allowed;
 }
@@ -337,13 +346,11 @@ header {
 /* Status bar stays across the full top */
 .game-status-bar {
   width: 100%;
-}
-.game-status-bar {
-  width: 100%;
   display: flex;
   flex-direction: row;
   gap: 4px;
   align-items: stretch;
+  background: #000000;
 }
 
 /* Left: 75-number board */

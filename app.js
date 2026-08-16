@@ -172,6 +172,26 @@ async function refreshRooms() {
   const room = data.rooms.find(r => r.id === state.selectedRoom);
 
   if (room) {
+    // Update Cartela Selection status bar with LIVE room data
+    $('cartelaPlayers').textContent = room.playerCount || 0;
+    $('cartelaPot').textContent = `${room.pot || 0} Br`;
+
+    if (room.status === 'countdown' && room.countdownStart) {
+      const elapsed = Math.floor(
+        (Date.now() - room.countdownStart) / 1000
+      );
+
+      const remaining = Math.max(
+        0,
+        (room.countdownSeconds || 25) - elapsed
+      );
+
+      $('cartelaCountdown').textContent = `${remaining}s`;
+    } else {
+      $('cartelaCountdown').textContent = '—';
+    }
+
+    // Update reserved cartelas
     const reserved = (room.players || [])
       .flatMap(p => p.cartelaIds || [])
       .map(String);

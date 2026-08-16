@@ -268,15 +268,20 @@ header {
 }
 #cartelaGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 5px;
 }
 
 .cartela-item {
+  background: #eacac7;
+  color: #111;
+  border: 1px solid var(--border);
+
   padding: 2px;
   font-size: 10px;
   min-height: 22px;
   height: 22px;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1493,4 +1498,7 @@ opacity: 1;
   body:has(#page-cartelas.active) .page#page-cartelas {
     padding-bottom: 24px;
   }
+}
+#page-cartelas {
+  background: #BA5370;
 }

@@ -1484,3 +1484,13 @@ opacity: 1;
   background: #c77dff;
   color: #111;
 }
+/* ───────── CARTELA SELECTION — NO BOTTOM NAV ───────── */
+@media (max-width: 600px) {
+  body:has(#page-cartelas.active) .nav-tabs {
+    display: none !important;
+  }
+
+  body:has(#page-cartelas.active) .page#page-cartelas {
+    padding-bottom: 24px;
+  }
+}

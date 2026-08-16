@@ -1531,17 +1531,9 @@ opacity: 1;
   background: #c77dff;
   color: #111;
 }
-/* ───────── CARTELA SELECTION — NO BOTTOM NAV ───────── */
-@media (max-width: 600px) {
-  body:has(#.active) .nav-tabs {
-    display: none !important;
-  }
+/* ───────── CARTELA SELECTION ───────── */
 
-  body:has(#.active) .page# {
-    padding-bottom: 24px;
-  }
-}
-# {
+#page-cartelas {
   background: #BA5370;
   position: relative;
 }
@@ -1552,11 +1544,12 @@ opacity: 1;
   left: 12px;
   width: 84px;
 }
+
 .cartela-status-bar {
   width: calc(100% - 87px);
   height: 48px;
 
-  margin-top: 0px;
+  margin-top: 0;
   margin-bottom: 3px;
   margin-left: 87px;
 

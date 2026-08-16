@@ -1534,8 +1534,13 @@ opacity: 1;
 /* ───────── CARTELA SELECTION ───────── */
 
 #page-cartelas {
+  padding-top: 0;
   background: #BA5370;
   position: relative;
+  min-height: 100vh;
+  max-width: none;
+  margin: 0;
+  width: 100%;
 }
 
 #backToRoomsBtn {

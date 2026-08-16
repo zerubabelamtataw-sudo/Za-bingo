@@ -926,7 +926,7 @@ $('backToRoomsBtn').addEventListener('click', () => {
   $('page-cartelas').classList.remove('active');
   $('page-cartelas').style.display = 'none';
 
-  $('page-lobby').classList.add('active');
+  showPage('lobby');
 
   state.selectedRoom = null;
   state.selectedCartelas = [];

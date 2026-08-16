@@ -99,8 +99,21 @@ header {
 }
 
 /* ──────────────── PAGES ──────────────── */
-.page { display: none; padding: 32px 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
-.page.active { display: block; }
+.page {
+  display: none;
+  padding: 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page.active {
+  display: block;
+}
+
+#page-cartelas {
+  padding-top: 0;
+}
 /* ──────────────── FULLSCREEN GAME MODE ──────────────── */
 
 .app.game-mode {
@@ -1520,15 +1533,15 @@ opacity: 1;
 }
 /* ───────── CARTELA SELECTION — NO BOTTOM NAV ───────── */
 @media (max-width: 600px) {
-  body:has(#page-cartelas.active) .nav-tabs {
+  body:has(#.active) .nav-tabs {
     display: none !important;
   }
 
-  body:has(#page-cartelas.active) .page#page-cartelas {
+  body:has(#.active) .page# {
     padding-bottom: 24px;
   }
 }
-#page-cartelas {
+# {
   background: #BA5370;
   position: relative;
 }

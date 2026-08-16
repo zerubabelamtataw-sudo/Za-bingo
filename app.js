@@ -80,7 +80,7 @@ function showPage(name) {
     if (name === 'profile') renderProfile();
   if (name === 'history') renderHistory();
   if (name === 'lobby')   refreshRooms();
-  if (name === 'game') {
+  if (name === 'game' || name === 'cartelas') {
   $('navTabs').style.display = 'none';
   $('playerHud').style.display = 'none';
   document.querySelector('header').style.display = 'none';
@@ -266,8 +266,7 @@ function selectRoom(room, el) {
   $('page-lobby').classList.remove('active');
 
   // Show Cartelas
-  $('page-cartelas').style.display = 'block';
-  $('page-cartelas').classList.add('active');
+  showPage('cartelas');
 
   // Reset cartela selection
   state.selectedCartelas = [];

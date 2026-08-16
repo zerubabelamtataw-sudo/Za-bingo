@@ -1537,9 +1537,11 @@ opacity: 1;
   position: absolute;
   top: 12px;
   left: 12px;
+  width: 84px;
 }
 .cartela-status-bar {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   height: 48px;
   margin-top: 12px;
   margin-bottom: 12px;

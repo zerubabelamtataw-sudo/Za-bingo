@@ -72,7 +72,7 @@ header {
   border-radius: 20px;
   padding: 6px 14px;
   font-family: var(--font-display);
-  font-size: .85rem;
+  font-size: .70rem;
   color: var(--gold);
 }
 .nav-tabs {
@@ -300,8 +300,8 @@ header {
   border-radius: 6px;
 
   padding: 2px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
 
   min-height: 22px;
   height: 22px;

@@ -110,6 +110,10 @@ header {
 .page.active {
   display: block;
 }
+#page-lobby {
+  background: #EDE0D4;
+  min-height: calc(100vh - 64px);
+}
 
 #page-cartelas {
   padding-top: 0;

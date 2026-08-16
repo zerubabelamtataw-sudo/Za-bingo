@@ -1543,8 +1543,8 @@ opacity: 1;
   width: calc(100% - 87px);
   height: 48px;
 
-  margin-top: 3px;
-  margin-bottom: 5px;
+  margin-top: 0px;
+  margin-bottom: 3px;
   margin-left: 87px;
 
   display: flex;

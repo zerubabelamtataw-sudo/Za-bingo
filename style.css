@@ -1256,7 +1256,7 @@ opacity: 1;
   box-sizing: border-box;
 
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 120px 1fr;
   align-items: center;
 
   padding: 8px 12px;

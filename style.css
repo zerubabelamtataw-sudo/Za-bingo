@@ -112,6 +112,9 @@ header {
 }
 #page-lobby {
   background: #EDE0D4;
+  max-width: none;
+  margin: 0;
+  width: 100%;
   min-height: calc(100vh - 64px);
 }
 

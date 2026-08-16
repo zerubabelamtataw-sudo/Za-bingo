@@ -372,7 +372,7 @@ function updateCalledGrid(calledNumbers) {
   if (calledNumbers.length > prev) {
     const latest = calledNumbers[calledNumbers.length - 1];
 
-$('lastCalledWrap').style.display = 'block';
+$('lastCalledWrap').style.visibility = 'visible';
 
 const numEl = $('lastCalledNum');
 numEl.textContent = `${letterFor(latest)} ${latest}`;

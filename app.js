@@ -254,7 +254,20 @@ setInterval(() => {
 }, 1000);
 function selectRoom(room, el) {
   state.selectedRoom = room.id;
+  $('cartelaPlayers').textContent = room.playerCount || 0;
+$('cartelaPot').textContent = `${room.pot || 0} Br`;
 
+if (room.status === 'countdown' && room.countdownStart) {
+  const elapsed = Math.floor((Date.now() - room.countdownStart) / 1000);
+  const remaining = Math.max(
+    0,
+    (room.countdownSeconds || 25) - elapsed
+  );
+
+  $('cartelaCountdown').textContent = `${remaining}s`;
+} else {
+  $('cartelaCountdown').textContent = '—';
+}
   // Highlight selected room
   document.querySelectorAll('.room-card')
     .forEach(c => c.classList.remove('selected'));

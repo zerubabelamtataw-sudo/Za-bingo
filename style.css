@@ -596,7 +596,7 @@ header {
 
   border-radius: 3px;
   color: #000000;
-  background: #edb967;
+  background: #3c3c45;
   border: 1px solid var(--border);
 
   cursor: pointer;
@@ -609,25 +609,20 @@ header {
   border-color: var(--gold-dim);
 }
 
-.bingo-cell.marked {
-  background: #475b57;
+.bingo-cell.marked,
+.bingo-cell.auto-marked {
+  background: #edb967;
   border-color: #475b57;
-  color: #fff;
+  color: #000000;
 }
 
 .bingo-cell.free {
-  background: rgba(245,200,66,.2);
+  background: #3c3c45;
   border-color: var(--gold);
-  color: var(--gold);
+  color: #000000;
 
   font-size: .45rem;
   font-weight: 700;
-}
-
-.bingo-cell.auto-marked {
-  background: rgba(34,197,94,.2);
-  border-color: var(--green);
-  color: var(--green);
 }
 
 .bingo-cell.bingo-hit {
@@ -647,7 +642,6 @@ header {
     box-shadow: 0 0 20px rgba(245,200,66,.8);
   }
 }
-
 
 /* ───────── SMALL PHONES ───────── */
 

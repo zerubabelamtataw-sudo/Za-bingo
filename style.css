@@ -1255,10 +1255,9 @@ opacity: 1;
   height: 82px;
   box-sizing: border-box;
 
-  display: flex;
+  display: grid;
+  grid-template-columns: 90px 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
 
   padding: 8px 12px;
   margin-bottom: 8px;

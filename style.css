@@ -1160,50 +1160,85 @@ header {
   }
 
   /* Bottom navigation */
-  .nav-tabs {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 64px;
-    z-index: 150;
+.nav-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  z-index: 150;
 
-    display: flex;
-    justify-content: space-around;
-    align-items: stretch;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
 
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
 
-    padding: 6px 8px;
-    gap: 4px;
-  }
+  padding: 4px 8px;
+  gap: 4px;
+}
 
-  .nav-tab {
-    flex: 1;
-    height: 52px;
-    padding: 6px 4px;
+.nav-tab {
+  flex: 1;
+  height: 56px;
+  padding: 4px 4px 2px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
-    border: none;
-    border-radius: 10px;
+  gap: 2px;
 
-    font-size: .75rem;
-    color: var(--muted);
-  }
+  border: none;
+  border-radius: 10px;
 
-  .nav-tab.active {
-    background: var(--surface2);
-    color: var(--gold);
-    border: 1px solid var(--gold-dim);
-  }
+  font-size: .72rem;
+  line-height: 1;
 
-  .page {
-    padding-bottom: 90px;
-  }
+  color: var(--muted);
+}
+
+/* ICON */
+.nav-tab::before {
+  font-size: 19px;
+  line-height: 20px;
+  display: block;
+  color: var(--muted);
+}
+
+/* PROFILE */
+.nav-tab:nth-child(1)::before {
+  content: "👤";
+}
+
+/* ROOMS */
+.nav-tab:nth-child(2)::before {
+  content: "🏠";
+}
+
+/* HISTORY */
+.nav-tab:nth-child(3)::before {
+  content: "📜";
+}
+
+/* INFO */
+.nav-tab:nth-child(4)::before {
+  content: "ℹ️";
+}
+
+/* ACTIVE BUTTON */
+.nav-tab.active {
+  background: var(--surface2);
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+
+/* ACTIVE ICON */
+.nav-tab.active::before {
+  color: var(--gold);
+}
 
   /* Room cards */
   .room-card {

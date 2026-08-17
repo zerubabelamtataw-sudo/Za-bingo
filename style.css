@@ -862,7 +862,7 @@ header {
 /* ── PROFILE CARD ── */
 
 .profile-card {
-  background: var(--surface);
+  background: #EDE0D4;
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 22px;
@@ -1650,7 +1650,7 @@ opacity: 1;
   color: #000000 !important;
 }
 #page-profile {
-  background: #EDE0D4;
+  background: #0a0e1a;
   max-width: none;
   margin: 0;
   width: 100%;

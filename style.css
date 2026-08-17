@@ -902,7 +902,7 @@ header {
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text);
+  color: #000000;
   margin-bottom: 14px;
 
   word-break: break-word;
@@ -911,7 +911,7 @@ header {
 /* Balance label */
 .profile-balance-label {
   font-size: .7rem;
-  color: var(--muted);
+  color: #000000;
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
@@ -921,7 +921,7 @@ header {
   font-family: var(--font-display);
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--gold);
+  color: #0a2a43;
   margin-top: 6px;
 }
 
@@ -947,13 +947,13 @@ header {
 }
 
 .profile-info-row span {
-  color: var(--muted);
+  color: #0a2a43;
   font-size: .78rem;
   white-space: nowrap;
 }
 
 .profile-info-row strong {
-  color: var(--text);
+  color: #000000;
   font-family: var(--font-body);
   font-size: .85rem;
   font-weight: 600;
@@ -964,7 +964,7 @@ header {
 
 /* Balance row */
 .profile-info-row strong[id="playerBalance"] {
-  color: var(--gold);
+  color: #0a2a43;
   font-family: var(--font-display);
 }
 

@@ -1648,3 +1648,13 @@ opacity: 1;
 #page-lobby .section-title {
   color: #000000 !important;
 }
+#page-profile {
+  background: #EDE0D4;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  min-height: calc(100vh - 64px);
+}
+#page-lobby .rooms-section {
+  padding-top: 24px;
+}

@@ -217,6 +217,22 @@ header {
   letter-spacing: 2px;
   margin-bottom: 16px;
 }
+#page-lobby .rooms-section {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#page-lobby .room-cards {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#page-lobby .room-card {
+  width: 100%;
+  margin: 0;
+}
 
 /* ── Rooms ── */
 .room-cards {

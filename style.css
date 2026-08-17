@@ -323,7 +323,8 @@ header {
   letter-spacing: 1px;
 }
 .status-waiting  { background: rgba(107,114,128,.2); color: var(--muted); }
-.status-countdown{ background: #000; color: #000; }
+.status-countdown{ background: #000;
+  color: #fff; }
 .status-playing  { background: rgba(34,197,94,.15);  color: var(--green); }
 .status-winner   { background: rgba(239,68,68,.15);  color: var(--red);   }
 

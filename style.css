@@ -1159,7 +1159,8 @@ header {
     font-size: .75rem;
   }
 
-  /* Bottom navigation */
+  /* ──────────────── BOTTOM NAVIGATION ──────────────── */
+
 .nav-tabs {
   position: fixed;
   left: 0;
@@ -1172,6 +1173,7 @@ header {
   justify-content: space-around;
   align-items: stretch;
 
+  /* NAV BAR STAYS THE SAME */
   background: var(--surface);
   border-top: 1px solid var(--border);
 
@@ -1179,9 +1181,12 @@ header {
   gap: 4px;
 }
 
+/* ── INDIVIDUAL BUTTONS ── */
+
 .nav-tab {
   flex: 1;
   height: 56px;
+
   padding: 4px 4px 2px;
 
   display: flex;
@@ -1191,16 +1196,24 @@ header {
 
   gap: 2px;
 
-  border: none;
+  /* BUTTON BACKGROUND = MAIN BACKGROUND */
+  background: #0a0e1a;
+
+  border: 1px solid transparent;
   border-radius: 10px;
 
+  font-family: var(--font-body);
   font-size: .72rem;
   line-height: 1;
 
   color: var(--muted);
+
+  cursor: pointer;
+  transition: all .15s ease;
 }
 
-/* ICON */
+/* ── ICON ── */
+
 .nav-tab::before {
   font-size: 19px;
   line-height: 20px;
@@ -1228,14 +1241,20 @@ header {
   content: "ℹ️";
 }
 
-/* ACTIVE BUTTON */
+/* ── ACTIVE BUTTON ── */
+
 .nav-tab.active {
-  background: var(--surface2);
+  background: #0a0e1a;
+
   color: var(--gold);
+
   border: 1px solid var(--gold-dim);
+
+  box-shadow: 0 0 10px rgba(243, 213, 138, .12);
 }
 
 /* ACTIVE ICON */
+
 .nav-tab.active::before {
   color: var(--gold);
 }

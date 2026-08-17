@@ -666,7 +666,7 @@ header {
 
   border-radius: 3px;
   color: #000000;
-  background: #edb967;
+  background: #EDE0D4;
   border: 1px solid var(--border);
 
   cursor: pointer;
@@ -1524,7 +1524,7 @@ opacity: 1;
   align-items: center;
   justify-content: center;
 
-  background: #151515;
+  background: #EDE0D4;
   border: 1px solid #292929;
   border-radius: 3px;
 

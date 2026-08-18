@@ -24,7 +24,7 @@ const state = {
   pollTimer:        null,
   lastCalledCount:  0,
   bingoDetected:    {},          // { cartelaId: bool }
-  autoMark:         true,        // automatic marking ON/OFF
+  autoMark:         false,       // automatic marking OFF by default
 };
 
 // ── Utils ──────────────────────────────────────────────────────────────────────

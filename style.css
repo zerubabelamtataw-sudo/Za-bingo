@@ -1592,12 +1592,12 @@ opacity: 1;
 }
 
 .bingo-letter {
-  height: 28px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: Arial Black, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 900;
   border-radius: 4px;
 }
@@ -1611,16 +1611,16 @@ opacity: 1;
 
 .bingo-part {
   flex: 1;
-  height: 28px;
+  height: 32px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   font-family: Arial Black, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 900;
-  border: 1px solid #000;
+  border: 3px solid #000;
   border-radius: 4px;
 }
 

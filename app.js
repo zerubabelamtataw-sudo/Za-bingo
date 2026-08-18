@@ -504,15 +504,39 @@ function buildCartelaCard(cartela) {
 
 function toggleCell(cartelaId, cell, val) {
   if (state.gameStatus !== 'playing') return;
-  const marked = state.markedCells[cartelaId];
-  if (marked.has(val)) {
-    marked.delete(val);
-    cell.classList.remove('marked', 'auto-marked');
-  } else {
-    marked.add(val);
-    cell.classList.add('marked');
+
+  // Check whether this number is currently marked
+  // on the cartela that was clicked.
+  const clickedMarked = state.markedCells[cartelaId];
+
+  const shouldUnmark = clickedMarked.has(val);
+
+  // Apply the same action to ALL of the player's cartelas
+  for (const cartela of state.myCartelas) {
+    const marked = state.markedCells[cartela.id];
+    const gridEl = document.querySelector(`#grid-${cartela.id}`);
+
+    if (!gridEl) continue;
+
+    const cells = gridEl.querySelectorAll('.bingo-cell');
+
+    for (const otherCell of cells) {
+      if (Number(otherCell.dataset.val) === Number(val)) {
+
+        if (shouldUnmark) {
+          marked.delete(val);
+          otherCell.classList.remove('marked', 'auto-marked');
+        } else {
+          marked.add(val);
+          otherCell.classList.add('marked');
+        }
+
+      }
+    }
+
+    // Re-check BINGO for every affected cartela
+    checkBingoLocal(cartela.id);
   }
-  checkBingoLocal(cartelaId);
 }
 
 function autoMarkCartelas(calledNumbers) {

@@ -87,7 +87,7 @@ app.get('/api/rooms/:roomId', (req, res) => {
 // POST /api/player — get or create player
 // body: { playerId, name }
 app.post('/api/player', async (req, res) => {
-  const { playerId, name } = req.body || {};
+  const { playerId, name, username } = req.body || {};
 
   if (!playerId) {
     return err(res, 'Telegram player ID required');
@@ -95,9 +95,10 @@ app.post('/api/player', async (req, res) => {
 
   try {
     const player = await gm.getOrCreatePlayer(
-      String(playerId),
-      name || 'Player'
-    );
+  String(playerId),
+  name || 'Player',
+  username || ''
+);
 
     ok(res, { player });
   } catch (e) {

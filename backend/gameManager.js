@@ -189,7 +189,7 @@ class GamesManager {
 
   // ── player ────────────────────────────────────────────────────────────────
 
-  async getOrCreatePlayer(playerId, name) {
+  async getOrCreatePlayer(playerId, name, username = '') {
     if (this.db) {
       const ref = this.db.ref(`players/${playerId}`);
 const snap = await ref.once('value');
@@ -200,6 +200,7 @@ if (snap.exists()) {
 
 const player = {
   name,
+  username: '',
   balance: 100,
   history: []
 };

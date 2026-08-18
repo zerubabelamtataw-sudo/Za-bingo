@@ -456,7 +456,7 @@ function buildCartelaCard(cartela) {
       <div class="cartela-card-title">ካርቴላ #${cartela.number}</div>
     </div>
     <div class="bingo-grid" id="grid-${cartela.id}"></div>
-    <button class="claim-bingo-btn" id="claimBtn-${cartela.id}" onclick="claimBingo('${cartela.id}')">
+    <button class="claim-bingo-btn visible" id="claimBtn-${cartela.id}" onclick="claimBingo('${cartela.id}')">
       🎉 CLAIM BINGO!
     </button>
   `;
@@ -489,10 +489,6 @@ function buildCartelaCard(cartela) {
 
 function toggleCell(cartelaId, cell, val) {
   if (state.gameStatus !== 'playing') return;
-  const called = new Set(state.calledNumbers);
-  if (!called.has(Number(val))) {
-    toast(`${val} hasn't been called yet`, 'error'); return;
-  }
   const marked = state.markedCells[cartelaId];
   if (marked.has(val)) {
     marked.delete(val);
@@ -556,14 +552,14 @@ function checkBingoLocal(cartelaId) {
   const indicator = $(`bingo-indicator-${cartelaId}`);
   if (bingo && !state.bingoDetected[cartelaId] && state.gameStatus === 'playing') {
     state.bingoDetected[cartelaId] = true;
-    if (claimBtn) claimBtn.classList.add('visible');
+    
     if (indicator) indicator.style.display = 'inline';
     // Highlight winning cells
     highlightBingoCells(cartela, isMarked);
     toast('🎉 BINGO detected! Click to claim!', 'success');
   } else if (!bingo) {
     state.bingoDetected[cartelaId] = false;
-    if (claimBtn) claimBtn.classList.remove('visible');
+   
     if (indicator) indicator.style.display = 'none';
   }
 }
@@ -604,24 +600,50 @@ function highlightBingoCells(cartela, isMarked) {
 // ── Claim BINGO (server) ──────────────────────────────────────────────────────
 async function claimBingo(cartelaId) {
   if (!state.activeRoomId) return;
+
   const btn = $(`claimBtn-${cartelaId}`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+  }
 
   try {
     const data = await apiFetch(`/api/rooms/${state.activeRoomId}/bingo`, {
       method: 'POST',
-      body: JSON.stringify({ playerId: state.player.id, cartelaId }),
+      body: JSON.stringify({
+        playerId: state.player.id,
+        cartelaId
+      }),
     });
+
     // Winner! The poll will pick it up, but show immediately
     console.log('WINNER DATA:', data.winner);
     handleWinner(data.winner);
+
   } catch (e) {
+
+    // Invalid BINGO → burn this cartela
+    if (e.message === 'Invalid BINGO') {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '❌ INVALID BINGO';
+        btn.classList.add('burned');
+      }
+      return;
+    }
+
+    // Other errors
     toast(e.message, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = '🎉 CLAIM BINGO!'; }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🎉 CLAIM BINGO!';
+    }
   }
 }
-window.claimBingo = claimBingo;
 
+window.claimBingo = claimBingo;
 // ── Game Polling ──────────────────────────────────────────────────────────────
 function startGamePoll() {
   if (state.pollTimer) clearInterval(state.pollTimer);

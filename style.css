@@ -770,6 +770,14 @@ header {
   animation: glowPulse 1s ease infinite alternate;
 }
 
+.claim-bingo-btn.burned {
+  background: rgba(255, 70, 70, .15);
+  border-color: rgba(255, 70, 70, .4);
+  color: #ff6b6b;
+  cursor: not-allowed;
+  opacity: .7;
+}
+
 .claim-bingo-btn.visible {
   display: block;
 }
@@ -783,6 +791,7 @@ header {
     box-shadow: 0 0 30px rgba(245,200,66,.8);
   }
 }
+
 
 /* ──────────────── WINNER POPUP ──────────────── */
 .overlay {

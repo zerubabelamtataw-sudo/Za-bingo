@@ -1792,7 +1792,7 @@ opacity: 1;
   font-size: .55rem;
 }
 #autoMarkBtn {
-  margin: 0 12px 12px;
+  margin: 12px 0;
   width: calc(100% - 24px);
 
   background: linear-gradient(

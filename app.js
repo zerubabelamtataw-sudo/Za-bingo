@@ -927,7 +927,7 @@ if (winnerGrid && winner.cartelaGrid) {
     refreshPlayer();
 
     // Return to Rooms
-    showPage('cartelas');
+    showPage('lobby');
 renderCartelaGrid();
 
   }, 4000);

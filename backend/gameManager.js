@@ -521,10 +521,10 @@ room.winner = {
   playerId,
   playerName,
   cartelaId,
-      cartelaNumber: cartela.number,
-      amount: winAmt,
-      calledCount: room.calledNumbers.length,
-    };
+  cartelaNumber: cartela.number,
+  cartelaGrid: cartela.grid,
+  amount: winAmt,
+};
     room.status = 'winner';
 
 

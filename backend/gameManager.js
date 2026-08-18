@@ -540,7 +540,7 @@ room.winner = {
 setTimeout(() => {
   console.log(`🔄 AUTO RESET: ${room.id}`);
   this._resetRoom(room);
-}, 3000);
+}, 5000);
 
 // Credit winner
 await this.updatePlayerBalance(playerId, winAmt, {

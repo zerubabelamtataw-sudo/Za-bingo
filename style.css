@@ -1727,18 +1727,35 @@ opacity: 1;
   margin-bottom: 4px;
 }
 
+.winner-cartela {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.winner-cartela-header {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
 .winner-cartela-header span {
   font-family: var(--font-display);
   font-weight: 900;
   font-size: .75rem;
   padding: 5px 0;
   border-radius: 6px;
-  background: rgba(245,200,66,.15);
+  background: rgba(245, 200, 66, .15);
   color: var(--gold);
+  text-align: center;
 }
 
 .winner-cartela-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
+  gap: 5px;
+  width: 100%;
 }
 
 .winner-cartela-cell {
@@ -1747,8 +1764,8 @@ opacity: 1;
   align-items: center;
   justify-content: center;
 
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 6px;
 
   color: var(--text);
@@ -1757,7 +1774,7 @@ opacity: 1;
 }
 
 .winner-cartela-cell.free {
-  background: rgba(245,200,66,.2);
+  background: rgba(245, 200, 66, .2);
   color: var(--gold);
   font-size: .55rem;
 }

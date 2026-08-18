@@ -835,7 +835,7 @@ header {
 }
 
 .winner-detail {
-  color: var(--muted);
+  color: #edb967;
   font-size: .85rem;
   margin-bottom: 14px;
 }

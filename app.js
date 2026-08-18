@@ -158,6 +158,38 @@ function toggleCartela(id, el) {
 
 // ── Rooms ─────────────────────────────────────────────────────────────────────
 let lobbyPollInterval = null;
+let cartelaCountdownTimer = null;
+
+function startCartelaCountdown(room) {
+  if (cartelaCountdownTimer) {
+    clearInterval(cartelaCountdownTimer);
+    cartelaCountdownTimer = null;
+  }
+
+  if (room.status !== 'countdown' || !room.countdownStart) {
+    $('cartelaCountdown').textContent = '—';
+    return;
+  }
+
+  const update = () => {
+    const elapsed = (Date.now() - room.countdownStart) / 1000;
+    const remaining = Math.max(
+      0,
+      (room.countdownSeconds || 25) - elapsed
+    );
+
+    $('cartelaCountdown').textContent =
+      `${Math.ceil(remaining)}s`;
+
+    if (remaining <= 0) {
+      clearInterval(cartelaCountdownTimer);
+      cartelaCountdownTimer = null;
+    }
+  };
+
+  update();
+  cartelaCountdownTimer = setInterval(update, 250);
+}
 
 function startLobbyPoll() {
   refreshRooms();
@@ -177,20 +209,7 @@ async function refreshRooms() {
     $('cartelaPlayers').textContent = room.playerCount || 0;
     $('cartelaPot').textContent = `${room.pot || 0} Br`;
 
-    if (room.status === 'countdown' && room.countdownStart) {
-      const elapsed = Math.floor(
-        (Date.now() - room.countdownStart) / 1000
-      );
-
-      const remaining = Math.max(
-        0,
-        (room.countdownSeconds || 25) - elapsed
-      );
-
-      $('cartelaCountdown').textContent = `${remaining}s`;
-    } else {
-      $('cartelaCountdown').textContent = '—';
-    }
+    startCartelaCountdown(room);
 
     // Update reserved cartelas
     const reserved = (room.players || [])
@@ -300,7 +319,12 @@ if (room.status === 'countdown' && room.countdownStart) {
 
   // Reset cartela selection
   state.selectedCartelas = [];
-  renderCartelaGrid();
+
+const reserved = (room.players || [])
+  .flatMap(p => p.cartelaIds || [])
+  .map(String);
+
+renderCartelaGrid(reserved);
 
   $('selectedCount').textContent = '0 cartelas selected';
   $('joinBtn').disabled = true;

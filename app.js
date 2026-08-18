@@ -161,7 +161,7 @@ let lobbyPollInterval = null;
 
 function startLobbyPoll() {
   refreshRooms();
-  lobbyPollInterval = setInterval(refreshRooms, 3000);
+  lobbyPollInterval = setInterval(refreshRooms, 1000);
 }
 
 async function refreshRooms() {
@@ -268,11 +268,7 @@ function renderRoomCards(rooms) {
   }
 }
 
-setInterval(() => {
-  if (document.getElementById('page-lobby')?.classList.contains('active')) {
-    refreshRooms();
-  }
-}, 1000);
+
 function selectRoom(room, el) {
   state.selectedRoom = room.id;
   $('cartelaPlayers').textContent = room.playerCount || 0;
@@ -710,13 +706,13 @@ const popupPlayerCount = $('popupPlayerCount');
 const popupPrize = $('popupPrize');
 const cancelCountdownBtn = $('cancelCountdownBtn');
 if (
-(game.status === 'waiting' && game.playerCount === 1) ||
-(game.status === 'countdown' && game.countdownStart)
+  game.status === 'countdown' &&
+  game.countdownStart
 ) {
 
-const COUNTDOWN_SECONDS = 25;
+const COUNTDOWN_SECONDS = 30;
 
-let remaining = 25;
+let remaining = 30;
 
 if (game.status === 'countdown' && game.countdownStart) {
 const elapsed = (Date.now() - game.countdownStart) / 1000;
@@ -758,7 +754,7 @@ if (cancelCountdownBtn) {
       cancelCountdownBtn.disabled = true;
 
       const response = await fetch(
-  `${API}/api/rooms/${state.currentRoomId}/cancel-countdown`,
+  `${API}/api/rooms/${state.activeRoomId}/cancel-countdown`,
         {
           method: 'POST',
           headers: {
@@ -904,9 +900,8 @@ if (winnerGrid && winner.cartelaGrid) {
     refreshPlayer();
 
     // Return to Rooms
-    showPage('lobby');
-    startLobbyPoll();
-    renderCartelaGrid();
+    showPage('cartelas');
+renderCartelaGrid();
 
   }, 4000);
 

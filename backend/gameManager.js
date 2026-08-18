@@ -11,8 +11,8 @@ const ROOMS_CONFIG = [
   { id: '20br', name: '20 Br Room', entryFee: 20 },
 ];
 
-const COUNTDOWN_SECONDS = 25;
-const DRAW_INTERVAL_MS  = 3000;
+const COUNTDOWN_SECONDS = 30;
+const DRAW_INTERVAL_MS  = 4000;
 const WINNER_SHARE      = 0.85;
 
 const SIMULATED_PLAYERS = [
@@ -97,19 +97,20 @@ class Room {
     this.reset();
   }
 
-  reset() {
-    this.status          = 'waiting';   // waiting | countdown | playing | winner
-    this.players         = [];          // [{ id, name, balance }]
-    this.playerCartelas  = {};          // { playerId: [cartelaObj, …] }
-    this.reservedCartelas = new Set();  // cartelaIds reserved for this room
-    this.calledNumbers   = [];
-    this.pot             = 0;
-    this.winner          = null;        // { playerId, playerName, cartelaId, amount }
-    this.countdownStart  = null;
-    this._countdownTimer = null;
-    this._drawTimer      = null;
-    this._gameStartTime  = null;
-  }
+reset() {
+  this.status           = 'waiting';   // waiting | countdown | playing | winner
+  this.players          = [];           // [{ id, name, balance }]
+  this.playerCartelas   = {};           // { playerId: [cartelaObj, …] }
+  this.burnedCartelas   = new Set();    // cartelas burned by invalid BINGO
+  this.reservedCartelas = new Set();    // cartelaIds reserved for this room
+  this.calledNumbers    = [];
+  this.pot              = 0;
+  this.winner           = null;         // { playerId, playerName, cartelaId, amount }
+  this.countdownStart   = null;
+  this._countdownTimer  = null;
+  this._drawTimer       = null;
+  this._gameStartTime   = null;
+}
 
 // Public snapshot for API
 toJSON() {
@@ -491,6 +492,9 @@ _checkSimulatedBingo(room) {
     const room = this.rooms[roomId];
     if (!room) throw new Error('Room not found');
     if (room.status !== 'playing') throw new Error('Game not in progress');
+    if (room.burnedCartelas.has(cartelaId)) {
+  throw new Error('Cartela is burned');
+}
     if (room.winner) throw new Error('Winner already declared');
 
     const playerCartelas = room.playerCartelas[playerId];
@@ -500,7 +504,10 @@ _checkSimulatedBingo(room) {
     if (!cartela) throw new Error('Cartela not yours');
 
     const valid = checkBingo(cartela.grid, room.calledNumbers);
-    if (!valid) throw new Error('No valid BINGO pattern');
+    if (!valid) {
+  room.burnedCartelas.add(cartelaId);
+  throw new Error('Invalid BINGO');
+}
 
     // Stop drawing
     clearInterval(room._drawTimer);

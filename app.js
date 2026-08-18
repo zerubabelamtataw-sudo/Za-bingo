@@ -613,6 +613,7 @@ async function claimBingo(cartelaId) {
       body: JSON.stringify({ playerId: state.player.id, cartelaId }),
     });
     // Winner! The poll will pick it up, but show immediately
+    console.log('WINNER DATA:', data.winner);
     handleWinner(data.winner);
   } catch (e) {
     toast(e.message, 'error');
@@ -781,6 +782,31 @@ function handleWinner(winner) {
   $('popupWinnerName').textContent = winner.playerName;
   $('popupCartelaDetail').textContent =
     `Cartela #${winner.cartelaNumber} · ${winner.calledCount} numbers called`;
+   // Show winning cartela
+const winnerGrid = $('winnerCartelaGrid');
+
+if (winnerGrid && winner.cartelaGrid) {
+  winnerGrid.innerHTML = '';
+
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+
+      const cell = document.createElement('div');
+      const value = winner.cartelaGrid[r][c];
+
+      cell.className = 'winner-cartela-cell';
+
+      if (value === 'FREE') {
+        cell.classList.add('free');
+        cell.textContent = 'FREE';
+      } else {
+        cell.textContent = value;
+      }
+
+      winnerGrid.appendChild(cell);
+    }
+  }
+} 
   $('popupAmount').textContent =
     isMe
       ? `+${winner.amount} Br 🎉`

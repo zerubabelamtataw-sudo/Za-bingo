@@ -1708,3 +1708,56 @@ opacity: 1;
 #page-lobby .rooms-section {
   padding-top: 24px;
 }
+/* ──────────────── WINNER CARTELA ──────────────── */
+
+.winner-cartela {
+  margin: 18px auto;
+  width: 100%;
+  max-width: 300px;
+}
+
+.winner-cartela-header,
+.winner-cartela-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.winner-cartela-header {
+  margin-bottom: 4px;
+}
+
+.winner-cartela-header span {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: .75rem;
+  padding: 5px 0;
+  border-radius: 6px;
+  background: rgba(245,200,66,.15);
+  color: var(--gold);
+}
+
+.winner-cartela-grid {
+  grid-template-rows: repeat(5, 1fr);
+}
+
+.winner-cartela-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+
+  color: var(--text);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.winner-cartela-cell.free {
+  background: rgba(245,200,66,.2);
+  color: var(--gold);
+  font-size: .55rem;
+}

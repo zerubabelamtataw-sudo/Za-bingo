@@ -312,8 +312,11 @@ async addSimulatedPlayers(roomId = '5br') {
   // ─────────────────────────────────────────────
   // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
   // ─────────────────────────────────────────────
-  const playerCount =
-    10 + Math.floor(Math.random() * 6);
+  const playerCount = {
+  '5br': 10 + Math.floor(Math.random() * 6),
+  '10br': 5,
+  '20br': 2
+}[roomId] || 0;
 
   // Randomly choose which simulated players participate
   const players = [...SIMULATED_PLAYERS];

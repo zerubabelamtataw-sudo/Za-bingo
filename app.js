@@ -850,25 +850,30 @@ const winnerGrid = $('winnerCartelaGrid');
 if (winnerGrid && winner.cartelaGrid) {
   winnerGrid.innerHTML = '';
 
+  const called = new Set(state.calledNumbers);
+
   for (let r = 0; r < 5; r++) {
     for (let c = 0; c < 5; c++) {
-
-      const cell = document.createElement('div');
       const value = winner.cartelaGrid[r][c];
 
+      const cell = document.createElement('div');
       cell.className = 'winner-cartela-cell';
 
       if (value === 'FREE') {
-        cell.classList.add('free');
+        cell.classList.add('free', 'marked');
         cell.textContent = 'FREE';
       } else {
         cell.textContent = value;
+
+        if (called.has(value)) {
+          cell.classList.add('marked');
+        }
       }
 
       winnerGrid.appendChild(cell);
     }
   }
-} 
+}
   $('popupAmount').textContent =
     isMe
       ? `+${winner.amount} Br 🎉`
@@ -879,7 +884,7 @@ if (winnerGrid && winner.cartelaGrid) {
 
   $('winnerOverlay').classList.add('visible');
 
-  // Return to Rooms after 2 seconds
+  // Return to Rooms after 4 seconds
   setTimeout(() => {
     $('winnerOverlay').classList.remove('visible');
 
@@ -903,7 +908,7 @@ if (winnerGrid && winner.cartelaGrid) {
     startLobbyPoll();
     renderCartelaGrid();
 
-  }, 2000);
+  }, 4000);
 
   if (isMe) {
     state.player.balance += winner.amount;
@@ -1078,9 +1083,10 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     const data = await apiFetch('/api/player', {
       method: 'POST',
       body: JSON.stringify({
-        playerId,
-        name: playerName
-      }),
+  playerId,
+  name: playerName,
+  username: telegramUser.username || ''
+}),
     });
 
     state.player = data.player;

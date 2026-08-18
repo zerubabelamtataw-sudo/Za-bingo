@@ -762,6 +762,7 @@ header {
 
   border: none;
   border-radius: 8px;
+  border: 3px solid #000;
 
   cursor: pointer;
 
@@ -1811,8 +1812,41 @@ opacity: 1;
 
   border: none;
   border-radius: 8px;
+  border: 3px solid #000;
 
   cursor: pointer;
 
   animation: glowPulse 1s ease infinite alternate;
+}
+.sapphire-gem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 60px;
+
+  background: linear-gradient(145deg, #1a3f5c, #0d2a40);
+  border: 2px solid #0a1f30;
+  color: #e9f3fa;
+
+  font-size: .78rem;
+  font-weight: 600;
+  margin-right: -6px;
+
+  box-shadow:
+    0 4px 0 #0a1f30,
+    0 7px 15px rgba(0, 20, 40, .2),
+    inset 0 1px 3px rgba(255,255,255,.6);
+}
+
+.sapphire-gem.hot {
+  background: linear-gradient(145deg, #b83f3f, #711f1f);
+  border-color: #551717;
+  color: #fff;
+
+  box-shadow:
+    0 4px 0 #551717,
+    0 7px 15px rgba(100, 20, 20, .25),
+    inset 0 1px 3px rgba(255,255,255,.5);
 }

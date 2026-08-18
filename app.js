@@ -260,9 +260,12 @@ function renderRoomCards(rooms) {
 
     el.innerHTML = `
       <div class="room-card-header">
-        <div class="room-card-name">${room.name}</div>
-        <div class="room-fee">${room.entryFee} Br</div>
-      </div>
+  <div class="room-card-name">${room.name}</div>
+
+  <div class="sapphire-gem ${room.id === '5br' ? 'hot' : ''}">
+    ${room.id === '5br' ? '◆ HOT JOIN' : 'JOIN →'}
+  </div>
+</div>
 
       <div class="room-meta">
         <span>👥 ${room.playerCount} ተጫዋች</span>

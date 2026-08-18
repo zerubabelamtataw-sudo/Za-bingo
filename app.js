@@ -24,6 +24,7 @@ const state = {
   pollTimer:        null,
   lastCalledCount:  0,
   bingoDetected:    {},          // { cartelaId: bool }
+  autoMark:         true,        // automatic marking ON/OFF
 };
 
 // ── Utils ──────────────────────────────────────────────────────────────────────
@@ -359,6 +360,20 @@ state.myCartelas = state.allCartelas.filter(
 });
 
 // ── Called-numbers grid — 5 vertical BINGO columns ─────────────────────────
+function toggleAutoMark() {
+  state.autoMark = !state.autoMark;
+
+  const btn = $('autoMarkBtn');
+
+  if (btn) {
+    btn.textContent = state.autoMark
+      ? 'AUTO MARK: ON'
+      : 'AUTO MARK: OFF';
+
+    btn.classList.toggle('off', !state.autoMark);
+  }
+}
+window.toggleAutoMark = toggleAutoMark;
 function buildCalledGrid() {
   const grid = $('calledGrid');
   grid.innerHTML = '';
@@ -457,8 +472,8 @@ function buildCartelaCard(cartela) {
     </div>
     <div class="bingo-grid" id="grid-${cartela.id}"></div>
     <button class="claim-bingo-btn visible" id="claimBtn-${cartela.id}" onclick="claimBingo('${cartela.id}')">
-      🎉 CLAIM BINGO!
-    </button>
+  BINGO
+</button>
   `;
 
   const gridEl = card.querySelector(`#grid-${cartela.id}`);
@@ -501,6 +516,7 @@ function toggleCell(cartelaId, cell, val) {
 }
 
 function autoMarkCartelas(calledNumbers) {
+if (!state.autoMark) return;
   const called = new Set(calledNumbers);
   for (const cartela of state.myCartelas) {
     const marked = state.markedCells[cartela.id];
@@ -638,7 +654,7 @@ async function claimBingo(cartelaId) {
 
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '🎉 CLAIM BINGO!';
+      btn.textContent = 'BINGO';
     }
   }
 }

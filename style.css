@@ -1183,7 +1183,7 @@ header {
   align-items: stretch;
 
   /* NAV BAR STAYS THE SAME */
-  background: var(--surface);
+  background: #ef44;
   border-top: 1px solid var(--border);
 
   padding: 4px 8px;
@@ -1196,7 +1196,7 @@ header {
   flex: 1;
   height: 56px;
 
-  padding: 4px 4px 2px;
+  padding: 2px 4px 2px;
 
   display: flex;
   flex-direction: column;
@@ -1206,16 +1206,16 @@ header {
   gap: 2px;
 
   /* BUTTON BACKGROUND = MAIN BACKGROUND */
-  background: #0a0e1a;
+  background: #EDE0D4;
 
-  border: 1px solid transparent;
+  border: 1px solid #000;
   border-radius: 10px;
 
   font-family: var(--font-body);
   font-size: .72rem;
   line-height: 1;
 
-  color: var(--muted);
+  color: #000;
 
   cursor: pointer;
   transition: all .15s ease;
@@ -1253,9 +1253,9 @@ header {
 /* ── ACTIVE BUTTON ── */
 
 .nav-tab.active {
-  background: #0a0e1a;
+  background: #EDE0D4;
 
-  color: var(--gold);
+  color: #000;
 
   border: 1px solid var(--gold-dim);
 
@@ -1850,4 +1850,20 @@ opacity: 1;
     0 4px 0 #551717,
     0 7px 15px rgba(100, 20, 20, .25),
     inset 0 1px 3px rgba(255,255,255,.5);
+}
+.sapphire-gem.hot {
+  background: #f3d5;
+  border: 1px solid #551717;
+  color: #f3d58a;
+
+  box-shadow:
+    0 4px 0 #551717,
+    0 7px 15px rgba(100, 20, 20, .25),
+    inset 0 1px 3px rgba(255,255,255,.5);
+}
+.sapphire-gem.select-room {
+  font-size: inherit;
+  padding: inherit;
+  width: auto;
+  height: auto;
 }

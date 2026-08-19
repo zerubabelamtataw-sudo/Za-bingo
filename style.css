@@ -35,8 +35,9 @@ body {
 .app { display: flex; flex-direction: column; min-height: 100vh; }
 
 /* ──────────────── HEADER ──────────────── */
+
 header {
-  background: var(--surface);
+  background: #EDE0D4;
   border-bottom: 2px solid var(--gold);
   padding: 0 24px;
   display: flex;
@@ -47,25 +48,50 @@ header {
   top: 0;
   z-index: 100;
 }
+
 .logo {
   font-family: var(--font-display);
   font-size: 1.4rem;
   color: var(--gold);
   letter-spacing: 2px;
   text-shadow: 0 0 20px rgba(245,200,66,.4);
+
+  /* Logo background */
+  background: #111827;
+
+  padding: 8px 14px;
+  border-radius: 8px;
+
+  /* Outer logo shadow */
+  border: 1px solid rgba(10,31,48,.35);
+
+  box-shadow:
+    0 3px 0 #0a1f30,
+    0 6px 12px rgba(0,20,40,.28),
+    0 0 18px rgba(10,31,48,.12);
 }
-.logo span { color: var(--text); font-size: .75rem; display: block; letter-spacing: 4px; font-weight: 400; margin-top: -4px; }
+
+.logo span {
+  color: var(--text);
+  font-size: .75rem;
+  display: block;
+  letter-spacing: 4px;
+  font-weight: 400;
+  margin-top: -4px;
+}
 
 .player-hud {
   display: flex;
   align-items: center;
   gap: 16px;
 }
+
 .player-name-badge {
   font-size: .85rem;
   font-weight: 600;
   color: var(--text);
 }
+
 .balance-badge {
   background: linear-gradient(135deg, #1f2937, #111827);
   border: 1px solid var(--gold-dim);
@@ -75,10 +101,12 @@ header {
   font-size: .70rem;
   color: var(--gold);
 }
+
 .nav-tabs {
   display: flex;
   gap: 4px;
 }
+
 .nav-tab {
   background: none;
   border: 1px solid transparent;
@@ -91,7 +119,12 @@ header {
   font-weight: 500;
   transition: all .15s;
 }
-.nav-tab:hover { color: var(--text); border-color: var(--border); }
+
+.nav-tab:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
 .nav-tab.active {
   background: var(--surface2);
   border-color: var(--gold-dim);

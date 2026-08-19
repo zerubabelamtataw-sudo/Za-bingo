@@ -307,7 +307,12 @@ header {
 .room-card.room-5,
 .room-card.room-10,
 .room-card.room-20 {
-  background: #ef44;
+  background:
+  radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
+  #ef44;
 }
 
 .room-card:hover {

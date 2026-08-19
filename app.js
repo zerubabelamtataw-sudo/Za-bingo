@@ -907,7 +907,7 @@ if (winnerGrid && winner.cartelaGrid) {
 
   $('winnerOverlay').classList.add('visible');
 
-  // Return to Rooms after 4 seconds
+  // Return to Rooms after 5 seconds
   setTimeout(() => {
     $('winnerOverlay').classList.remove('visible');
 
@@ -933,7 +933,7 @@ renderCartelaGrid();
 // Restart live lobby updates
 startLobbyPoll();
 
-}, 4000);
+}, 5000);
 
   if (isMe) {
     state.player.balance += winner.amount;

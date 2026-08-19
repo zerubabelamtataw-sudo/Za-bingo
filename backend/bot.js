@@ -388,26 +388,28 @@ else if (data.startsWith('deposit_method_')) {
   session.step = 'sms';
 
   if (method === 'telebirr') {
-    bot.sendMessage(
-      chatId,
-      `የቴሌብር አካውንት 0985661720።\n\n` +
-      `ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ።\n\n` +
-      `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-      `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል።\n\n` +
-      `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-      `ማሳሰቢያ፡ የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`
-    );
-  } else if (method === 'cbe') {
-    bot.sendMessage(
-      chatId,
-      `Cbe birr አካውንት 0985661720።\n\n` +
-      `ከላይ ባለው Cbe birr ብር ያስገቡ።\n\n` +
-      `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-      `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከCbe birr ይደርሳችኋል።\n\n` +
-      `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-      `ማሳሰቢያ፡ በCbe birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`
-    );
-  }
+  bot.sendMessage(
+    chatId,
+    `የቴሌብር አካውንት: \`0985661720\`።\n\n` +
+    `ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ።\n\n` +
+    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
+    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል።\n\n` +
+    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
+    `ማሳሰቢያ፡ የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+    { parse_mode: 'Markdown' }
+  );
+} else if (method === 'cbe') {
+  bot.sendMessage(
+    chatId,
+    `Cbe birr አካውንት: \`0985661720\`።\n\n` +
+    `ከላይ ባለው Cbe birr ብር ያስገቡ።\n\n` +
+    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
+    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከCbe birr ይደርሳችኋል።\n\n` +
+    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
+    `ማሳሰቢያ፡ በCbe birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+    { parse_mode: 'Markdown' }
+  );
+}
 }
   // Withdraw method selection
   else if (data.startsWith('withdraw_method_')) {
@@ -506,9 +508,9 @@ if (
 
   if (!amountMatch || !transactionMatch) {
     bot.sendMessage(
-      chatId,
-      '❌ Invalid SMS. Please paste the complete payment SMS exactly as received.'
-    );
+  chatId,
+  'ያስገቡት የትራንዛክሽን ቁጥር የተሳሳተ ነው። እባክዎ ሲከፍሉ የደረስዎትን የጹሁፍ መልክት(sms) ሙሉውን ኮፒ አርገው እዚህ ላይ ፔስት ያርጉት።'
+);
     return;
   }
 
@@ -612,12 +614,14 @@ if (
   });
 
   await bot.sendMessage(
-    chatId,
-    `✅ Deposit Confirmed!\n\n` +
-    `Amount: ${amount} Br\n` +
-    `Transaction ID: ${transactionId}\n\n` +
-    `💰 New balance: ${newBalance} Br`
-  );
+  chatId,
+  `🧾 *ሂሳብዎ ገብቷል*\n\n` +
+  `Receiver phone:  ${player.phone || 'N/A'}\n` +
+  `Amount:          ${amount.toFixed(2)} ETB\n` +
+  `Reference:       ${transactionId}\n\n` +
+  `💰 New balance:   ${newBalance.toFixed(2)} ETB`,
+  { parse_mode: 'Markdown' }
+);
 
   delete depositSessions[chatId];
   return;
@@ -831,9 +835,9 @@ if (savedPhone === enteredPhone) {
 function handleDepositMenu(chatId, player) {
   bot.sendMessage(
     chatId,
-    ` *Deposit*\n\n` +
-    `Balance: ${player.balance} Br\n\n` +
-    `Enter the amount you want to deposit (minimum 10 Br):`,
+    ` *ገንዘብ ለማስገባት*\n\n` +
+    `ቀሪ ሂሳብ: ${player.balance} Br\n\n` +
+    `ማስገባት የሚፈልጉትን መጠን (ዝቅተኛ 10 ብር):`,
     { parse_mode: 'Markdown' }
   );
 

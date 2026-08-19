@@ -37,13 +37,13 @@ body {
 /* ──────────────── HEADER ──────────────── */
 
 header {
-  background: #EDE0D4;
-  border-bottom: 0px solid #000;
+  border-bottom: 1.5px solid #000;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 52px;
+  height: 64px;
+  background: #f3d58a;
   position: sticky;
   top: 0;
   z-index: 100;

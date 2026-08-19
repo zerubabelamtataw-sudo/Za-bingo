@@ -248,7 +248,7 @@ header {
   width: 100%;
   min-height: 110px;
 
-  background-color: #FCFCFD;
+  background-color: #ef44;
 
   border-radius: 8px;
   border: none;
@@ -273,7 +273,7 @@ header {
 .room-card.room-5,
 .room-card.room-10,
 .room-card.room-20 {
-  background: #FCFCFD;
+  background: #ef44;
 }
 
 .room-card:hover {
@@ -311,14 +311,14 @@ header {
 .room-meta {
   display: flex;
   gap: 16px;
-  font-size: .8rem;
-  color: #ef4444;
+  font-size: .9rem;
+  color: #000;
 }
 .room-status-badge {
-  font-size: .7rem;
+  font-size: 1rem;
   padding: 2px 8px;
   border-radius: 20px;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -1826,9 +1826,9 @@ opacity: 1;
   padding: 8px 14px;
   border-radius: 60px;
 
-  background: linear-gradient(145deg, #1a3f5c, #0d2a40);
+  background: #f3d58a;
   border: 2px solid #0a1f30;
-  color: #e9f3fa;
+  color: #000;
 
   font-size: .78rem;
   font-weight: 600;
@@ -1841,9 +1841,9 @@ opacity: 1;
 }
 
 .sapphire-gem.hot {
-  background: linear-gradient(145deg, #b83f3f, #711f1f);
+  background: #f3d58a;
   border-color: #551717;
-  color: #fff;
+  color: #000000;
 
   box-shadow:
     0 4px 0 #551717,

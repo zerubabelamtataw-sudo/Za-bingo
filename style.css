@@ -987,7 +987,7 @@ header {
 .history-table {
   grid-column: 1 / -1;
 
-  background: var(--surface);
+  background: #EDE0D4;
   border: 1px solid var(--border);
   border-radius: 16px;
 
@@ -1406,7 +1406,7 @@ opacity: 1;
   padding: 8px 12px;
   margin-bottom: 8px;
 
-  background: #3c3c45;
+  background: #000;
   border: 1px solid var(--border);
   border-radius: 4px;
 
@@ -1723,7 +1723,7 @@ opacity: 1;
   color: #000000 !important;
 }
 #page-profile {
-  background: #0a0e1a;
+  background: #EDE0D4;
   max-width: none;
   margin: 0;
   width: 100%;

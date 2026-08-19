@@ -439,10 +439,34 @@ async cancelCountdown(roomId, playerId) {
     throw new Error('You are not in this room');
   }
 
-  clearTimeout(room._countdownTimer);
-  room._countdownTimer = null;
+// Get this player's cartelas
+const playerCartelas = room.playerCartelas[playerId] || [];
 
-  room.reset();
+// Release their cartelas
+for (const cartela of playerCartelas) {
+  room.reservedCartelas.delete(cartela.id);
+}
+
+// Calculate and refund their entry fee
+const refundAmount = room.entryFee * playerCartelas.length;
+
+await this.updatePlayerBalance(playerId, refundAmount, {
+  type: 'cancel',
+  roomId,
+  amount: refundAmount,
+  date: new Date().toISOString(),
+});
+
+// Remove player from the room
+room.players = room.players.filter(
+  p => String(p.id) !== String(playerId)
+);
+
+// Remove their cartelas from the room
+delete room.playerCartelas[playerId];
+
+// Remove their fee from the pot
+room.pot -= refundAmount;
 
   this.addSimulatedPlayers(room.id).catch(err => {
     console.error('❌ Failed to restart simulated players:', err);

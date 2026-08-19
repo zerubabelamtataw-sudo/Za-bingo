@@ -764,7 +764,7 @@ popupPlayerCount.textContent = game.playerCount || 0;
 console.log("GAME DATA:", game);
 // Live prize
 if (popupPrize) {
-popupPrize.textContent = game.pot || 0;
+popupPrize.textContent = (game.pot || 0) * 0.85;
 }
 
 } else {

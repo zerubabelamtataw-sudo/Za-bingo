@@ -2013,13 +2013,10 @@ opacity: 1;
 
 .info-content {
   flex: 1;
-
   width: 100%;
-  max-width: 700px;
-
-  margin: 0 auto;
-
-  padding: 24px 16px 90px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* INFO CARD */

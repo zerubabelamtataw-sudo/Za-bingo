@@ -233,7 +233,7 @@ async function processWithdrawal(text, smsData) {
 
   await playerBot.sendMessage(
     transaction.telegramId,
-    `✅ *Withdrawal Confirmed!*\n\n` +
+    `🧾 *ያዘዙት ወጪ ተረጋግጧል 💯*\n\n` +
     `Amount: ${amount} Br\n` +
     `Transaction ID: ${smsData.transactionId}\n\n` +
     `💰 Remaining balance: ${newBalance} Br`,

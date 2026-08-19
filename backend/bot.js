@@ -415,8 +415,8 @@ else if (data.startsWith('deposit_method_')) {
   else if (data.startsWith('withdraw_method_')) {
     const method = data.replace('withdraw_method_', '');
     bot.sendMessage(chatId,
-      ` *Withdraw via ${method.toUpperCase()}*\n\n` +
-      `Enter amount to withdraw:`,
+      ` *በ${method === 'telebirr' ? 'ቴሌ ብር' : 'CBE Birr'} ለማውጣት*\n\n` +
+`ማውጣት የፈለጉትን መጠን ያስገቡ 👇`,
       { parse_mode: 'Markdown' }
     );
     withdrawSessions[chatId] = { method, step: 'amount' };
@@ -474,7 +474,7 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
 
   bot.sendMessage(
     chatId,
-    ` Deposit amount: *${amount} Br*\n\nSelect payment method:`,
+    `ለማስገባት የፈለጉት: *${amount} Br*\n\nየመክፈያ አማራጭ ይምረጡ 👇:`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
@@ -691,10 +691,10 @@ await db.ref(`players/${tgId}/balance`).transaction(
 
   bot.sendMessage(
     chatId,
-    `✅ Withdrawal request submitted!\n\n` +
-    `Amount: ${amount} Br\n` +
-    `Method: ${session.method}\n` +
-    `Status: Pending approval`
+    `🧾 *የገንዘብ ማውጣት ጥያቄ አስገብተዋል *\n\n` +
+`Amount:          ${amount.toFixed(2)} ETB\n` +
+`Payment method:  ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
+`Status:          Pending approval`
   );
 
         delete withdrawSessions[chatId];
@@ -837,7 +837,7 @@ function handleDepositMenu(chatId, player) {
     chatId,
     ` *ገንዘብ ለማስገባት*\n\n` +
     `ቀሪ ሂሳብ: ${player.balance} Br\n\n` +
-    `ማስገባት የሚፈልጉትን መጠን (ዝቅተኛ 10 ብር):`,
+    `ማስገባት የሚፈልጉትን መጠን ያስገቡ 👇 ( ዝቅተኛ 10 ብር):`,
     { parse_mode: 'Markdown' }
   );
 
@@ -848,7 +848,9 @@ function handleDepositMenu(chatId, player) {
 
 function handleWithdrawMenu(chatId, player) {
   bot.sendMessage(chatId,
-    ` *Withdraw*\n\nBalance: ${player.balance} Br\nSelect payment method:`,
+    ` *ገንዘብ ለማውጣት*\n\n` +
+`ቀሪ ሂሳብዎ: ${player.balance} Br\n` +
+`ገንዘብ የማውጫ መንገድ ይምረጡ 👇`,
     {
       parse_mode: 'Markdown',
       reply_markup: {

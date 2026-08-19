@@ -987,7 +987,7 @@ header {
 .history-table {
   grid-column: 1 / -1;
 
-  background: #EDE0D4;
+  background: #ef44;
   border: 1px solid var(--border);
   border-radius: 16px;
 
@@ -1014,7 +1014,7 @@ header {
   text-transform: uppercase;
   letter-spacing: 1px;
 
-  color: var(--muted);
+  color: #000;
 
   border-bottom: 1px solid var(--border);
 }
@@ -1025,7 +1025,7 @@ header {
   border-bottom: 1px solid var(--border);
 
   font-size: .82rem;
-  color: var(--text);
+  color: #000;
 }
 
 .history-table tr:last-child td {
@@ -1880,4 +1880,11 @@ opacity: 1;
   padding: inherit;
   width: auto;
   height: auto;
+}
+#page-history {
+  background: #EDE0D4;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  min-height: calc(100vh - 64px);
 }

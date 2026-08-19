@@ -1890,7 +1890,15 @@ opacity: 1;
   padding: 8px 14px;
   border-radius: 60px;
 
-  background: #f3d58a;
+  background:
+  linear-gradient(
+    to bottom,
+    rgba(85, 23, 23, .35) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(85, 23, 23, .35) 100%
+  ),
+  #f3d58a;
   border: 2px solid #0a1f30;
   color: #000;
 
@@ -1905,7 +1913,15 @@ opacity: 1;
 }
 
 .sapphire-gem.hot {
-  background: #f3d58a;
+  background:
+  linear-gradient(
+    to bottom,
+    rgba(85, 23, 23, .35) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(85, 23, 23, .35) 100%
+  ),
+  #f3d58a;
   border-color: #551717;
   color: #000000;
 
@@ -1915,7 +1931,15 @@ opacity: 1;
     inset 0 1px 3px rgba(255,255,255,.5);
 }
 .sapphire-gem.hot {
-  background: #f3d58a;
+  background:
+  linear-gradient(
+    to bottom,
+    rgba(85, 23, 23, .35) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(85, 23, 23, .35) 100%
+  ),
+  #f3d58a;
   border: 1px solid #551717;
   color: #000000;
   font-family: var(--font-display);
@@ -1940,4 +1964,171 @@ opacity: 1;
   margin: 0;
   width: 100%;
   min-height: calc(100vh - 64px);
+}
+/* ──────────────── INFO SCREEN ──────────────── */
+
+.info-screen {
+  width: 100%;
+  min-height: 100vh;
+  background: #EDE0D4;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* INFO HEADER */
+
+.info-header {
+  height: 64px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(85,23,23,.25),
+      transparent 35%,
+      transparent 65%,
+      rgba(85,23,23,.25)
+    ),
+    #f3d58a;
+
+  border-bottom: 2px solid #551717;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.25);
+}
+
+.info-header-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #000;
+}
+
+/* INFO CONTENT */
+
+.info-content {
+  flex: 1;
+
+  width: 100%;
+  max-width: 700px;
+
+  margin: 0 auto;
+
+  padding: 24px 16px 90px;
+}
+
+/* INFO CARD */
+
+.info-card {
+  width: 100%;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(243,213,138,.12),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgba(243,213,138,.08),
+      transparent 35%
+    ),
+    #111827;
+
+  border: 1px solid #3b455c;
+  border-radius: 14px;
+
+  padding: 20px;
+
+  margin-bottom: 14px;
+
+  box-shadow:
+    0 5px 0 #080c15,
+    0 10px 20px rgba(0,0,0,.25),
+    inset 0 1px 3px rgba(255,255,255,.05);
+}
+
+/* CARD TITLE */
+
+.info-card-title {
+  color: var(--gold);
+
+  font-size: 1rem;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  margin-bottom: 12px;
+}
+
+/* CARD TEXT */
+
+.info-card-text {
+  color: #d5d9e1;
+
+  font-size: .85rem;
+
+  line-height: 1.6;
+}
+
+/* HOW TO PLAY RULES */
+
+.info-rule {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 10px 0;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.info-rule:last-child {
+  border-bottom: none;
+}
+
+/* NUMBER CIRCLE */
+
+.info-number {
+  width: 30px;
+  height: 30px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #f3d58a;
+
+  color: #111;
+
+  border-radius: 50%;
+
+  font-weight: 900;
+}
+
+/* RULE TEXT */
+
+.info-rule-text {
+  color: #d5d9e1;
+  font-size: .82rem;
+}
+
+/* VERSION */
+
+.info-version {
+  text-align: center;
+
+  color: #6b7280;
+
+  font-size: .7rem;
+
+  margin-top: 20px;
 }

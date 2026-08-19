@@ -916,7 +916,12 @@ header {
 /* ── PROFILE CARD ── */
 
 .profile-card {
-  background:  #ef44;
+  background:
+  radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
+  radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
+  #ef44;
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 22px;

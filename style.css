@@ -1231,7 +1231,7 @@ header {
   background: #EDE0D4;
   border-top: 0px
 
-  padding: 4px 8px;
+  padding-bottom: 0;
   gap: 4px;
 }
 

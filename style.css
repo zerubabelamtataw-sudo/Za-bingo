@@ -1862,12 +1862,13 @@ opacity: 1;
     inset 0 1px 3px rgba(255,255,255,.5);
 }
 .sapphire-gem.hot {
-  background: #f3d5;
+  background: #f3d58a;
   border: 1px solid #551717;
   color: #000000;
   font-family: var(--font-display);
   font-size: 1.1rem;
   letter-spacing: 2px;
+  transform: translateY(-20px);
 
   box-shadow:
     0 4px 0 #551717,
@@ -1879,10 +1880,4 @@ opacity: 1;
   padding: inherit;
   width: auto;
   height: auto;
-}
-.section-title {
-  
-  
-  
-  margin-bottom: 16px;
 }

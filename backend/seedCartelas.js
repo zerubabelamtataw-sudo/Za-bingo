@@ -71,16 +71,16 @@ async function seedRoom(roomId) {
 
   const cartelas = {};
 
-  // Create 150 cartelas
-  // Numbering: 1 → 150
-  for (let i = 1; i <= 150; i++) {
-    cartelas[i] = generateCartela(i);
-  }
+  // Create 300 cartelas
+// Numbering: 1 → 300
+for (let i = 1; i <= 300; i++) {
+  cartelas[i] = generateCartela(i);
+}
 
   // Upload cartelas to Firebase
   await db.ref(`rooms/${roomId}/cartelas`).set(cartelas);
 
-  console.log(`✅ ${roomId} seeded with 150 cartelas (1–150)`);
+  console.log(`✅ ${roomId} seeded with 300 cartelas (1–300)`);
 }
 
 // ------------------------------

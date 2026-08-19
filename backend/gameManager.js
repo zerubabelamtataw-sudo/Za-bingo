@@ -422,6 +422,35 @@ _startCountdown(room) {
   }, COUNTDOWN_SECONDS * 1000);
 }
 
+async cancelCountdown(roomId, playerId) {
+  const room = this.rooms[roomId];
+
+  if (!room) throw new Error('Room not found');
+
+  if (room.status !== 'countdown') {
+    throw new Error('Game is not in countdown');
+  }
+
+  const player = room.players.find(
+    p => String(p.id) === String(playerId)
+  );
+
+  if (!player) {
+    throw new Error('You are not in this room');
+  }
+
+  clearTimeout(room._countdownTimer);
+  room._countdownTimer = null;
+
+  room.reset();
+
+  this.addSimulatedPlayers(room.id).catch(err => {
+    console.error('❌ Failed to restart simulated players:', err);
+  });
+
+  return room.toJSON();
+}
+
 _startGame(room) {
   room.status = 'playing';
   room.calledNumbers = [];

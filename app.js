@@ -927,10 +927,13 @@ if (winnerGrid && winner.cartelaGrid) {
     refreshPlayer();
 
     // Return to Rooms
-    showPage('lobby');
+showPage('lobby');
 renderCartelaGrid();
 
-  }, 4000);
+// Restart live lobby updates
+startLobbyPoll();
+
+}, 4000);
 
   if (isMe) {
     state.player.balance += winner.amount;

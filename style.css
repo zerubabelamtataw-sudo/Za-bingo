@@ -2042,7 +2042,8 @@ opacity: 1;
       circle at 100% 100%,
       rgba(243,213,138,.08),
       transparent 35%
-    )
+    ),
+    #111827;
 
   border: 1px solid #3b455c;
   border-radius: 14px;

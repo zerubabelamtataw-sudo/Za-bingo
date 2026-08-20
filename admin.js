@@ -147,16 +147,34 @@ document.getElementById('playerSearch').addEventListener('input', (event) => {
 
     const name = String(player.first_name || '').toLowerCase();
     const username = String(player.username || '').toLowerCase();
-    const phone = String(player.phone || '').toLowerCase();
+    const phone = String(player.phone || '');
 
-    if (
-      id.toLowerCase().includes(search) ||
-      name.includes(search) ||
-      username.includes(search) ||
-      phone.includes(search)
-    ) {
-      filtered[id] = player;
-    }
+const normalizePhone = (value) => {
+
+  value = value.replace(/\D/g, '');
+
+  if (value.startsWith('0')) {
+    return '251' + value.substring(1);
+  }
+
+  if (value.startsWith('251')) {
+    return value;
+  }
+
+  return value;
+};
+
+const searchPhone = normalizePhone(search);
+const playerPhone = normalizePhone(phone);
+
+if (
+  id.toLowerCase().includes(search) ||
+  name.includes(search) ||
+  username.includes(search) ||
+  playerPhone.includes(searchPhone)
+) {
+  filtered[id] = player;
+}
 
   });
 
@@ -388,6 +406,43 @@ onValue(transactionsRef, (snapshot) => {
     `;
 
     transactionsList.appendChild(div);
+
+  });
+
+});
+// ============================================================
+// ADMIN — BOTTOM NAVIGATION
+// ============================================================
+
+const navItems = document.querySelectorAll('.nav-item');
+const tabContents = document.querySelectorAll('.tab-content');
+
+navItems.forEach((navItem) => {
+
+  navItem.addEventListener('click', () => {
+
+    const targetTab = navItem.dataset.tab;
+
+    // Remove active from all navigation buttons
+    navItems.forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // Hide all tabs
+    tabContents.forEach(tab => {
+      tab.classList.remove('active');
+    });
+
+    // Activate selected navigation button
+    navItem.classList.add('active');
+
+    // Show selected tab
+    const selectedTab =
+      document.getElementById(targetTab);
+
+    if (selectedTab) {
+      selectedTab.classList.add('active');
+    }
 
   });
 

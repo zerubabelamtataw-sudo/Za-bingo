@@ -13,18 +13,29 @@ body {
   color: #ffffff;
 }
 
+
+/* ============================================================
+   ADMIN APP
+   ============================================================ */
+
 .admin-app {
   width: 100%;
   min-height: 100vh;
+  padding-bottom: 80px;
 }
 
-/* HEADER */
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 
 .admin-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   padding: 18px;
+
   background: #111827;
   border-bottom: 1px solid #263044;
 }
@@ -36,48 +47,82 @@ body {
 
 .admin-header p {
   margin: 4px 0 0;
+
   color: #9ca3af;
   font-size: 13px;
 }
 
 #logoutBtn {
   padding: 9px 14px;
+
   border: 0;
   border-radius: 8px;
+
   background: #dc2626;
-  color: #fff;
+  color: #ffffff;
+
   cursor: pointer;
 }
 
-/* CONTENT */
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
 
 .admin-content {
-  width: 100%;
+  width: calc(100% - 24px);
   max-width: 1200px;
+
   margin: 0 auto;
-  padding: 16px;
+
+  padding: 18px 0;
 }
 
-/* STATS */
+
+/* ============================================================
+   TABS
+   ============================================================ */
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+
+/* ============================================================
+   STATS
+   ============================================================ */
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+
+  grid-template-columns: repeat(2, 1fr);
+
   gap: 12px;
-  margin-bottom: 18px;
+
+  margin-bottom: 16px;
 }
 
 .stat-card {
   background: #111827;
+
   border: 1px solid #263044;
+
   border-radius: 12px;
+
   padding: 16px;
 }
 
 .stat-card span {
   display: block;
+
   color: #9ca3af;
+
   font-size: 13px;
+
   margin-bottom: 8px;
 }
 
@@ -85,70 +130,245 @@ body {
   font-size: 22px;
 }
 
-/* SECTIONS */
+
+/* ============================================================
+   ADMIN SECTIONS
+   ============================================================ */
 
 .admin-section {
   background: #111827;
+
   border: 1px solid #263044;
+
   border-radius: 12px;
+
   padding: 16px;
+
   margin-bottom: 16px;
 }
 
 .admin-section h2 {
   margin: 0 0 14px;
+
   font-size: 18px;
 }
 
-/* INPUTS */
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
 
 .admin-section input {
   width: 100%;
+
   padding: 12px;
+
   margin-bottom: 10px;
+
   border: 1px solid #374151;
+
   border-radius: 8px;
+
   background: #0a0e1a;
-  color: #fff;
+
+  color: #ffffff;
+
   outline: none;
 }
 
+.admin-section input:focus {
+  border-color: #2563eb;
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
 .admin-section button {
   padding: 11px 16px;
+
   border: 0;
+
   border-radius: 8px;
+
   background: #2563eb;
-  color: #fff;
+
+  color: #ffffff;
+
   cursor: pointer;
 }
 
-/* LISTS */
+
+/* ============================================================
+   LISTS
+   ============================================================ */
 
 #playersList,
+#transactionsList,
+#winnersList,
 #depositsList,
 #withdrawalsList,
-#roomsList,
-#winnersList,
-#transactionsList {
+#roomsList {
+
   width: 100%;
-  overflow-x: auto;
+
   color: #d1d5db;
 }
 
-/* MOBILE */
+
+/* ============================================================
+   BOTTOM NAVIGATION
+   ============================================================ */
+
+.bottom-nav {
+
+  position: fixed;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 68px;
+
+  display: flex;
+
+  background: #111827;
+
+  border-top: 1px solid #263044;
+
+  z-index: 1000;
+}
+
+
+.nav-item {
+
+  flex: 1;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #9ca3af;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 4px;
+
+  cursor: pointer;
+}
+
+
+.nav-item span {
+  font-size: 21px;
+}
+
+
+.nav-item small {
+  font-size: 11px;
+}
+
+
+.nav-item.active {
+  color: #2563eb;
+}
+
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+
+#loginScreen {
+
+  min-height: 100vh;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  padding: 20px;
+}
+
+.login-box {
+
+  width: 100%;
+
+  max-width: 360px;
+
+  padding: 24px;
+
+  background: #111827;
+
+  border: 1px solid #263044;
+
+  border-radius: 12px;
+
+  text-align: center;
+}
+
+.login-box h1 {
+  margin: 0;
+}
+
+.login-box p {
+  color: #9ca3af;
+}
+
+.login-box input {
+
+  width: 100%;
+
+  padding: 12px;
+
+  margin-bottom: 10px;
+
+  border: 1px solid #374151;
+
+  border-radius: 8px;
+
+  background: #0a0e1a;
+
+  color: #ffffff;
+}
+
+.login-box button {
+
+  width: 100%;
+
+  padding: 12px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
 
 @media (max-width: 700px) {
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .admin-content {
-    padding: 10px;
+    width: calc(100% - 20px);
   }
 
   .admin-section {
-    padding: 12px;
+    padding: 14px;
   }
 
 }

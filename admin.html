@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>ZA Bingo Admin</title>
+
   <link rel="stylesheet" href="admin.css">
 </head>
 
 <body>
 
-  <!-- ADMIN LOGIN -->
+  <!-- =========================================================
+       ADMIN LOGIN
+  ========================================================== -->
+
   <div id="loginScreen">
 
     <div class="login-box">
 
       <h1>ZA Bingo</h1>
+
       <p>Admin Login</p>
 
       <input
@@ -34,14 +40,26 @@
   </div>
 
 
-  <!-- ADMIN DASHBOARD -->
-  <div class="admin-app" id="adminDashboard" style="display:none;">
+  <!-- =========================================================
+       ADMIN DASHBOARD
+  ========================================================== -->
+
+  <div
+    class="admin-app"
+    id="adminDashboard"
+    style="display:none;"
+  >
+
+    <!-- HEADER -->
 
     <header class="admin-header">
 
       <div>
+
         <h1>ZA Bingo</h1>
+
         <p>Admin Dashboard</p>
+
       </div>
 
       <button id="logoutBtn">
@@ -51,135 +69,269 @@
     </header>
 
 
+    <!-- =======================================================
+         MAIN CONTENT
+    ======================================================== -->
+
     <main class="admin-content">
 
-      <section class="stats-grid">
 
-        <div class="stat-card">
-          <span>👥 Players</span>
-          <strong id="playersCount">0</strong>
-        </div>
+      <!-- =====================================================
+           STATS TAB
+      ====================================================== -->
 
-        <div class="stat-card">
-          <span>💰 Total Balance</span>
-          <strong id="totalBalance">0 Br</strong>
-        </div>
+      <div
+        id="statsTab"
+        class="tab-content active"
+      >
 
-        <div class="stat-card">
-          <span>💳 Deposits</span>
-          <strong id="depositCount">0</strong>
-        </div>
+        <!-- STAT CARDS -->
 
-        <div class="stat-card">
-          <span>💸 Withdrawals</span>
-          <strong id="withdrawalCount">0</strong>
-        </div>
+        <section class="stats-grid">
 
-      </section>
+          <div class="stat-card">
 
+            <span>👥 Players</span>
 
-      <section class="admin-section">
+            <strong id="playersCount">
+              0
+            </strong>
 
-        <h2>👥 Players</h2>
-
-        <input
-          type="text"
-          id="playerSearch"
-          placeholder="Search player..."
-        >
-
-        <div id="playersList">
-          Loading players...
-        </div>
-
-      </section>
+          </div>
 
 
-      <section class="admin-section">
+          <div class="stat-card">
 
-        <h2>💰 Add Balance</h2>
+            <span>💰 Total Balance</span>
 
-        <input
-          type="text"
-          id="balancePlayerId"
-          placeholder="Player ID"
-        >
+            <strong id="totalBalance">
+              0 Br
+            </strong>
 
-        <input
-          type="number"
-          id="balanceAmount"
-          placeholder="Amount in Br"
-        >
-
-        <button id="addBalanceBtn">
-          Add Balance
-        </button>
-
-        <p id="balanceMessage"></p>
-
-      </section>
+          </div>
 
 
-      <section class="admin-section">
+          <div class="stat-card">
 
-        <h2>💳 Deposits</h2>
+            <span>💳 Deposits</span>
 
-        <div id="depositsList">
-          Loading deposits...
-        </div>
+            <strong id="depositCount">
+              0
+            </strong>
 
-      </section>
-
-
-      <section class="admin-section">
-
-        <h2>💸 Withdrawals</h2>
-
-        <div id="withdrawalsList">
-          Loading withdrawals...
-        </div>
-
-      </section>
+          </div>
 
 
-      <section class="admin-section">
+          <div class="stat-card">
 
-        <h2>🎮 Game Rooms</h2>
+            <span>💸 Withdrawals</span>
 
-        <div id="roomsList">
-          Loading rooms...
-        </div>
+            <strong id="withdrawalCount">
+              0
+            </strong>
 
-      </section>
+          </div>
 
-
-      <section class="admin-section">
-
-        <h2>🏆 Winners</h2>
-
-        <div id="winnersList">
-          Loading winners...
-        </div>
-
-      </section>
+        </section>
 
 
-      <section class="admin-section">
+        <!-- GAME ROOMS -->
 
-        <h2>📊 Transactions</h2>
+        <section class="admin-section">
 
-        <div id="transactionsList">
-          Loading transactions...
-        </div>
+          <h2>🎮 Game Rooms</h2>
 
-      </section>
+          <div id="roomsList">
+            Loading rooms...
+          </div>
+
+        </section>
+
+
+        <!-- ADD BALANCE -->
+
+        <section class="admin-section">
+
+          <h2>💰 Add Balance</h2>
+
+          <input
+            type="text"
+            id="balancePlayerId"
+            placeholder="Player ID"
+          >
+
+          <input
+            type="number"
+            id="balanceAmount"
+            placeholder="Amount in Br"
+          >
+
+          <button id="addBalanceBtn">
+            Add Balance
+          </button>
+
+          <p id="balanceMessage"></p>
+
+        </section>
+
+      </div>
+
+
+      <!-- =====================================================
+           PLAYERS TAB
+      ====================================================== -->
+
+      <div
+        id="playersTab"
+        class="tab-content"
+      >
+
+
+        <!-- PLAYERS -->
+
+        <section class="admin-section">
+
+          <h2>👥 Players</h2>
+
+          <input
+            type="text"
+            id="playerSearch"
+            placeholder="Search player..."
+          >
+
+          <div id="playersList">
+            Loading players...
+          </div>
+
+        </section>
+
+
+        <!-- TRANSACTIONS -->
+
+        <section class="admin-section">
+
+          <h2>📊 Transactions</h2>
+
+          <div id="transactionsList">
+            Loading transactions...
+          </div>
+
+        </section>
+
+
+        <!-- WINNERS -->
+
+        <section class="admin-section">
+
+          <h2>🏆 Winners</h2>
+
+          <div id="winnersList">
+            Loading winners...
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <!-- =====================================================
+           STATUS TAB
+      ====================================================== -->
+
+      <div
+        id="statusTab"
+        class="tab-content"
+      >
+
+
+        <!-- DEPOSITS -->
+
+        <section class="admin-section">
+
+          <h2>💳 Deposits</h2>
+
+          <div id="depositsList">
+            Loading deposits...
+          </div>
+
+        </section>
+
+
+        <!-- WITHDRAWALS -->
+
+        <section class="admin-section">
+
+          <h2>💸 Withdrawals</h2>
+
+          <div id="withdrawalsList">
+            Loading withdrawals...
+          </div>
+
+        </section>
+
+      </div>
 
     </main>
+
+
+    <!-- =======================================================
+         BOTTOM NAVIGATION
+    ======================================================== -->
+
+    <nav class="bottom-nav">
+
+      <button
+        class="nav-item active"
+        data-tab="statsTab"
+      >
+
+        <span>📊</span>
+
+        <small>
+          Stats
+        </small>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="playersTab"
+      >
+
+        <span>👥</span>
+
+        <small>
+          Players
+        </small>
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-tab="statusTab"
+      >
+
+        <span>📋</span>
+
+        <small>
+          Status
+        </small>
+
+      </button>
+
+    </nav>
 
   </div>
 
 
-  <script type="module" src="admin.js"></script>
+  <!-- ADMIN JAVASCRIPT -->
+
+  <script
+    type="module"
+    src="admin.js"
+  ></script>
 
 </body>
 </html>

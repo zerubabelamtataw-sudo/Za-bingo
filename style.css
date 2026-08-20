@@ -919,6 +919,7 @@ header {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 24px;
+  margin-bottom: 50px;
 }
 
 /* ── PROFILE CARD ── */

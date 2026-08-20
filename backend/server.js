@@ -88,6 +88,103 @@ app.post('/api/admin/login', (req, res) => {
 
 });
 
+// ============================================================
+// ADMIN — ADD BALANCE
+// ============================================================
+
+app.post('/api/admin/add-balance', async (req, res) => {
+
+  try {
+
+    const { password, playerId, amount } = req.body || {};
+
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    // Check admin password
+    if (!adminPassword || password !== adminPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    // Validate player ID
+    if (!playerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Player ID required'
+      });
+    }
+
+    // Validate amount
+    const addAmount = Number(amount);
+
+    if (!Number.isFinite(addAmount) || addAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid amount'
+      });
+    }
+
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Firebase is not connected'
+      });
+    }
+
+    const playerRef = db.ref(`players/${playerId}`);
+
+    const snapshot = await playerRef.once('value');
+    const player = snapshot.val();
+
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: 'Player not found'
+      });
+    }
+
+    const currentBalance = Number(player.balance || 0);
+    const newBalance = currentBalance + addAmount;
+
+    await playerRef.update({
+      balance: newBalance
+    });
+
+    // Save admin transaction
+    const transactionRef = db.ref('transactions').push();
+
+    await transactionRef.set({
+      type: 'admin_add_balance',
+      playerId: String(playerId),
+      amount: addAmount,
+      previousBalance: currentBalance,
+      newBalance: newBalance,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+
+    return res.json({
+      success: true,
+      message: 'Balance added successfully',
+      previousBalance: currentBalance,
+      newBalance: newBalance
+    });
+
+  } catch (error) {
+
+    console.error('❌ Admin add balance error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+
+  }
+
+});
+
 // ── Helper ────────────────────────────────────────────────────────────────────
 const ok  = (res, data)  => res.json({ success: true,  ...data });
 const err = (res, msg, code = 400) => res.status(code).json({ success: false, error: msg });

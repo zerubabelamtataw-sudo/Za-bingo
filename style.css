@@ -908,7 +908,7 @@ header {
 }
 
 .winner-sub {
-  color: var(--muted);
+  color: #edb967;
   font-size: .8rem;
   margin-bottom: 24px;
 }
@@ -1498,7 +1498,7 @@ opacity: 1;
   flex-wrap: nowrap;
   width: auto;
   min-width: 0;
-  margin-top: 0;
+  margin-top: 5px;
 }
 
 .last-called-history > * {

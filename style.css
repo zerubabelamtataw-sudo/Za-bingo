@@ -631,7 +631,7 @@ header {
   gap: 10px;
 
   width: 90%;
-  margin: 0 auto;
+  margin: 0;
 
   height: auto;
   max-height: calc(100vh - 120px);

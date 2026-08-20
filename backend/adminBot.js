@@ -251,36 +251,73 @@ async function processWithdrawal(text, smsData) {
 
 // ============================================================
 // RECEIVE SMS FROM SMS FORWARDER
+// ONLY ACCEPT SMS FROM SENDER 127
 // ============================================================
 
 bot.on('message', async (msg) => {
 
-  const text = msg.text;
+  const forwardedText = msg.text;
 
-  if (!text) return;
+  if (!forwardedText) return;
 
-  console.log('\n📩 SMS received:');
-  console.log(text);
+  console.log('\n📩 Forwarded SMS received:');
+  console.log(forwardedText);
 
   try {
+
+    // --------------------------------------------------------
+    // CHECK SMS FORWARDER SENDER
+    // --------------------------------------------------------
+
+    const senderMatch = forwardedText.match(/^From:\s*(\d+)/i);
+
+    if (!senderMatch) {
+      console.log('❌ SMS sender not found');
+      return;
+    }
+
+    const sender = senderMatch[1];
+
+    // ONLY TRUST TELEBIRR SENDER 127
+    if (sender !== '127') {
+      console.log(
+        `❌ Unauthorized SMS sender: ${sender}`
+      );
+      return;
+    }
+
+    console.log('✅ Authorized SMS sender: 127');
+
+    // --------------------------------------------------------
+    // REMOVE FORWARDER HEADER
+    // Keep only the actual SMS
+    // --------------------------------------------------------
+
+    const smsText = forwardedText
+      .replace(/^From:\s*\d+\s*/i, '')
+      .replace(/^Time:\s*[^\n\r]*/i, '')
+      .trim();
+
+    console.log('\n📨 Actual SMS:');
+    console.log(smsText);
 
     // --------------------------------------------------------
     // DEPOSIT SMS
     // --------------------------------------------------------
 
     if (
-      text.includes('ተቀብለዋል') &&
-      text.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
+      smsText.includes('ተቀብለዋል') &&
+      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
     ) {
 
-      const smsData = parseDepositSMS(text);
+      const smsData = parseDepositSMS(smsText);
 
       if (!smsData) {
         console.log('❌ Could not parse deposit SMS');
         return;
       }
 
-      await storeOfficialDeposit(text, smsData);
+      await storeOfficialDeposit(smsText, smsData);
 
       return;
     }
@@ -290,18 +327,18 @@ bot.on('message', async (msg) => {
     // --------------------------------------------------------
 
     if (
-      text.includes('ልከዋል') &&
-      text.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
+      smsText.includes('ልከዋል') &&
+      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
     ) {
 
-      const smsData = parseWithdrawalSMS(text);
+      const smsData = parseWithdrawalSMS(smsText);
 
       if (!smsData) {
         console.log('❌ Could not parse withdrawal SMS');
         return;
       }
 
-      await processWithdrawal(text, smsData);
+      await processWithdrawal(smsText, smsData);
 
       return;
     }

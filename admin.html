@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZA Bingo Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+  <!-- ADMIN LOGIN -->
+  <div id="loginScreen">
+
+    <div class="login-box">
+
+      <h1>ZA Bingo</h1>
+      <p>Admin Login</p>
+
+      <input
+        type="password"
+        id="adminPassword"
+        placeholder="Admin password"
+      >
+
+      <button id="loginBtn">
+        Login
+      </button>
+
+      <p id="loginMessage"></p>
+
+    </div>
+
+  </div>
+
+
+  <!-- ADMIN DASHBOARD -->
+  <div class="admin-app" id="adminDashboard" style="display:none;">
+
+    <header class="admin-header">
+
+      <div>
+        <h1>ZA Bingo</h1>
+        <p>Admin Dashboard</p>
+      </div>
+
+      <button id="logoutBtn">
+        Logout
+      </button>
+
+    </header>
+
+
+    <main class="admin-content">
+
+      <section class="stats-grid">
+
+        <div class="stat-card">
+          <span>👥 Players</span>
+          <strong id="playersCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>💰 Total Balance</span>
+          <strong id="totalBalance">0 Br</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>💳 Deposits</span>
+          <strong id="depositCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>💸 Withdrawals</span>
+          <strong id="withdrawalCount">0</strong>
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>👥 Players</h2>
+
+        <input
+          type="text"
+          id="playerSearch"
+          placeholder="Search player..."
+        >
+
+        <div id="playersList">
+          Loading players...
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>💰 Add Balance</h2>
+
+        <input
+          type="text"
+          id="balancePlayerId"
+          placeholder="Player ID"
+        >
+
+        <input
+          type="number"
+          id="balanceAmount"
+          placeholder="Amount in Br"
+        >
+
+        <button id="addBalanceBtn">
+          Add Balance
+        </button>
+
+        <p id="balanceMessage"></p>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>💳 Deposits</h2>
+
+        <div id="depositsList">
+          Loading deposits...
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>💸 Withdrawals</h2>
+
+        <div id="withdrawalsList">
+          Loading withdrawals...
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>🎮 Game Rooms</h2>
+
+        <div id="roomsList">
+          Loading rooms...
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>🏆 Winners</h2>
+
+        <div id="winnersList">
+          Loading winners...
+        </div>
+
+      </section>
+
+
+      <section class="admin-section">
+
+        <h2>📊 Transactions</h2>
+
+        <div id="transactionsList">
+          Loading transactions...
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <script type="module" src="admin.js"></script>
+
+</body>
+</html>

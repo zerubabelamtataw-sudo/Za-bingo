@@ -58,6 +58,36 @@ app.get('/health', (req, res) => {
   res.status(200).send('ZA Bingo server is alive');
 });
 
+// ============================================================
+// ADMIN LOGIN
+// ============================================================
+
+app.post('/api/admin/login', (req, res) => {
+
+  const { password } = req.body || {};
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    return res.status(500).json({
+      success: false,
+      message: 'ADMIN_PASSWORD is not configured'
+    });
+  }
+
+  if (!password || password !== adminPassword) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid admin password'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Admin login successful'
+  });
+
+});
+
 // ── Helper ────────────────────────────────────────────────────────────────────
 const ok  = (res, data)  => res.json({ success: true,  ...data });
 const err = (res, msg, code = 400) => res.status(code).json({ success: false, error: msg });

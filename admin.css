@@ -1,6 +1,6 @@
-/* ============================================================
-   ZA BINGO — ADMIN DASHBOARD
-   ============================================================ */
+ /* ============================================================
+    ZA BINGO — ADMIN DASHBOARD
+    ============================================================ */
 
 * {
   box-sizing: border-box;
@@ -80,7 +80,7 @@ body {
 
 
 /* ============================================================
-   TABS
+   MAIN TABS
    ============================================================ */
 
 .tab-content {
@@ -201,6 +201,58 @@ body {
 
 
 /* ============================================================
+   PLAYERS SUB-NAVIGATION
+   ============================================================ */
+
+.player-subnav {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 8px;
+
+  margin-bottom: 16px;
+}
+
+.player-subnav-btn {
+  padding: 12px 8px;
+
+  border: 1px solid #263044;
+
+  border-radius: 8px;
+
+  background: #111827;
+
+  color: #9ca3af;
+
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.player-subnav-btn.active {
+  background: #2563eb;
+
+  border-color: #2563eb;
+
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   PLAYER SUB-TABS
+   ============================================================ */
+
+.player-tab-content {
+  display: none;
+}
+
+.player-tab-content.active {
+  display: block;
+}
+
+
+/* ============================================================
    LISTS
    ============================================================ */
 
@@ -210,7 +262,6 @@ body {
 #depositsList,
 #withdrawalsList,
 #roomsList {
-
   width: 100%;
 
   color: #d1d5db;
@@ -222,7 +273,6 @@ body {
    ============================================================ */
 
 .bottom-nav {
-
   position: fixed;
 
   left: 0;
@@ -240,9 +290,7 @@ body {
   z-index: 1000;
 }
 
-
 .nav-item {
-
   flex: 1;
 
   border: 0;
@@ -264,16 +312,13 @@ body {
   cursor: pointer;
 }
 
-
 .nav-item span {
   font-size: 21px;
 }
 
-
 .nav-item small {
   font-size: 11px;
 }
-
 
 .nav-item.active {
   color: #2563eb;
@@ -285,7 +330,6 @@ body {
    ============================================================ */
 
 #loginScreen {
-
   min-height: 100vh;
 
   display: flex;
@@ -298,7 +342,6 @@ body {
 }
 
 .login-box {
-
   width: 100%;
 
   max-width: 360px;
@@ -323,7 +366,6 @@ body {
 }
 
 .login-box input {
-
   width: 100%;
 
   padding: 12px;
@@ -337,10 +379,11 @@ body {
   background: #0a0e1a;
 
   color: #ffffff;
+
+  outline: none;
 }
 
 .login-box button {
-
   width: 100%;
 
   padding: 12px;
@@ -369,6 +412,10 @@ body {
 
   .admin-section {
     padding: 14px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
 }

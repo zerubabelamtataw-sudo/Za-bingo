@@ -77,15 +77,15 @@
 
 
       <!-- =====================================================
-           STATS TAB
+           GAMEROOM TAB
       ====================================================== -->
 
       <div
-        id="statsTab"
+        id="gameroomTab"
         class="tab-content active"
       >
 
-        <!-- STAT CARDS -->
+        <!-- DASHBOARD STATS -->
 
         <section class="stats-grid">
 
@@ -147,6 +147,18 @@
 
         </section>
 
+      </div>
+
+
+      <!-- =====================================================
+           PLAYERS TAB
+      ====================================================== -->
+
+      <div
+        id="playersTab"
+        class="tab-content"
+      >
+
 
         <!-- ADD BALANCE -->
 
@@ -174,22 +186,41 @@
 
         </section>
 
-      </div>
+
+        <!-- PLAYER SUB-NAVIGATION -->
+
+        <div class="player-subnav">
+
+          <button
+            class="player-subnav-btn active"
+            data-player-tab="playersListPanel"
+          >
+            👥 Players
+          </button>
+
+          <button
+            class="player-subnav-btn"
+            data-player-tab="transactionsPanel"
+          >
+            📊 Transactions
+          </button>
+
+          <button
+            class="player-subnav-btn"
+            data-player-tab="winnersPanel"
+          >
+            🏆 Winners
+          </button>
+
+        </div>
 
 
-      <!-- =====================================================
-           PLAYERS TAB
-      ====================================================== -->
+        <!-- PLAYERS LIST -->
 
-      <div
-        id="playersTab"
-        class="tab-content"
-      >
-
-
-        <!-- PLAYERS -->
-
-        <section class="admin-section">
+        <section
+          id="playersListPanel"
+          class="admin-section player-tab-content active"
+        >
 
           <h2>👥 Players</h2>
 
@@ -208,7 +239,10 @@
 
         <!-- TRANSACTIONS -->
 
-        <section class="admin-section">
+        <section
+          id="transactionsPanel"
+          class="admin-section player-tab-content"
+        >
 
           <h2>📊 Transactions</h2>
 
@@ -221,7 +255,10 @@
 
         <!-- WINNERS -->
 
-        <section class="admin-section">
+        <section
+          id="winnersPanel"
+          class="admin-section player-tab-content"
+        >
 
           <h2>🏆 Winners</h2>
 
@@ -282,13 +319,13 @@
 
       <button
         class="nav-item active"
-        data-tab="statsTab"
+        data-tab="gameroomTab"
       >
 
-        <span>📊</span>
+        <span>🎮</span>
 
         <small>
-          Stats
+          Gameroom
         </small>
 
       </button>

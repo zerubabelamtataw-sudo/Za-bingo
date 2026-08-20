@@ -213,10 +213,15 @@ async function refreshRooms() {
 
     // Update reserved cartelas
     const reserved = (room.players || [])
-      .flatMap(p => p.cartelaIds || [])
-      .map(String);
+  .flatMap(p => p.cartelaIds || [])
+  .map(String);
 
-    renderCartelaGrid(reserved);
+// Remove any cartela from our selection if another player took it
+state.selectedCartelas = state.selectedCartelas.filter(
+  id => !reserved.includes(String(id))
+);
+
+renderCartelaGrid(reserved);
   }
 }
   } catch {}

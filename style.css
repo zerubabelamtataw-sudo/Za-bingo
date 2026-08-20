@@ -2011,6 +2011,14 @@ opacity: 1;
 
 /* INFO CONTENT */
 
+#page-info {
+  padding: 0 !important;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  background: #EDE0D4;
+}
+
 .info-content {
   flex: 1;
   width: 100%;
@@ -2034,8 +2042,7 @@ opacity: 1;
       circle at 100% 100%,
       rgba(243,213,138,.08),
       transparent 35%
-    ),
-    #111827;
+    )
 
   border: 1px solid #3b455c;
   border-radius: 14px;

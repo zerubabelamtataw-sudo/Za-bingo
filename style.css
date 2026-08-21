@@ -2138,32 +2138,228 @@ opacity: 1;
 
   margin-top: 20px;
 }
-/* BONUS PAGE */
-.bonus-section {
-  padding: 20px;
-}
+/* ──────────────── BONUS CARD ──────────────── */
 
 .bonus-card {
-  background: var(--room-bg);
-  color: #000;
-  border-radius: 18px;
-  padding: 24px;
-  text-align: center;
+
+  width: 100%;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(90, 45, 20, .35),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(90, 45, 20, .35),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(90, 45, 20, .35),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgba(90, 45, 20, .35),
+      transparent 35%
+    ),
+    #ef44;
+
+  border: 1.5px solid #000;
+
+  border-radius: 10px;
+
+  padding: 18px;
+
+  box-shadow:
+    rgba(45, 35, 66, .4) 0 2px 4px,
+    rgba(45, 35, 66, .3) 0 7px 13px -3px,
+    #D6D6E7 0 -5px 0 inset;
 }
 
-.bonus-title {
-  font-size: 24px;
-  font-weight: 900;
+
+/* HEADER */
+
+.bonus-card-header {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 14px;
 }
+
+.bonus-card-title {
+
+  font-size: 1.1rem;
+
+  font-weight: 900;
+
+  color: #000;
+}
+
+.place-count {
+
+  background: #000;
+
+  color: #fff;
+
+  padding: 5px 10px;
+
+  border-radius: 20px;
+
+  font-size: .65rem;
+
+  font-weight: 900;
+
+  letter-spacing: .5px;
+}
+
+
+/* ──────────────── RANK ROW ──────────────── */
+
+.bonus-row {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  min-height: 58px;
+
+  padding: 9px 12px;
+
+  margin-bottom: 8px;
+
+  background: rgba(237, 224, 212, .82);
+
+  border: 1px solid #000;
+
+  border-radius: 8px;
+}
+
+.bonus-row:last-of-type {
+  margin-bottom: 0;
+}
+
+
+/* LEFT SIDE */
+
+.bonus-rank {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.medal {
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: #f3d58a;
+
+  border: 1px solid #551717;
+
+  border-radius: 50%;
+
+  font-size: 1rem;
+}
+
+.rank-text {
+
+  font-size: .85rem;
+
+  font-weight: 900;
+
+  color: #000;
+}
+
+
+/* MONEY */
 
 .bonus-amount {
-  font-size: 32px;
+
+  font-size: 1.05rem;
+
   font-weight: 900;
-  margin: 12px 0;
+
+  color: #000;
+
+  white-space: nowrap;
 }
 
-.bonus-text {
-  font-size: 14px;
+
+/* FOOTER */
+
+.bonus-note {
+
+  text-align: center;
+
+  font-size: .7rem;
+
+  font-weight: 600;
+
+  color: #000;
+
+  margin-top: 16px;
+}
+
+
+/* ──────────────── MOBILE ──────────────── */
+
+@media (max-width: 480px) {
+
+  .bonus-page {
+    padding: 20px 10px 80px;
+  }
+
+  .bonus-title {
+    font-size: 1.3rem;
+  }
+
+  .bonus-tabs {
+    gap: 8px;
+  }
+
+  .bonus-tab {
+    min-height: 48px;
+
+    font-size: .8rem;
+  }
+
+  .bonus-card {
+    padding: 14px;
+  }
+
+  .bonus-row {
+    min-height: 54px;
+
+    padding: 8px 10px;
+  }
+
+  .rank-text {
+    font-size: .78rem;
+  }
+
+  .bonus-amount {
+    font-size: .95rem;
+  }
 }
 .tournament-card {
   margin-top: 16px;

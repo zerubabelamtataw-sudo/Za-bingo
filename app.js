@@ -175,7 +175,7 @@ function startCartelaCountdown(room) {
     const elapsed = (Date.now() - room.countdownStart) / 1000;
     const remaining = Math.max(
       0,
-      (room.countdownSeconds || 25) - elapsed
+      (room.countdownSeconds || 30) - elapsed
     );
 
     $('cartelaCountdown').textContent =
@@ -257,7 +257,7 @@ function renderRoomCards(rooms) {
 
       const remaining = Math.max(
         0,
-        (room.countdownSeconds || 25) - elapsed
+        (room.countdownSeconds || 30) - elapsed
       );
 
       statusText = `ሊጀመር · ${remaining}s`;
@@ -305,7 +305,7 @@ if (room.status === 'countdown' && room.countdownStart) {
   const elapsed = Math.floor((Date.now() - room.countdownStart) / 1000);
   const remaining = Math.max(
     0,
-    (room.countdownSeconds || 25) - elapsed
+    (room.countdownSeconds || 30) - elapsed
   );
 
   $('cartelaCountdown').textContent = `${remaining}s`;
@@ -1125,3 +1125,174 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     toast('Could not load your Telegram account: ' + e.message, 'error');
   }
 })();
+/* ─────────────────────────────
+   BONUS LEADERBOARD
+───────────────────────────── */
+
+const bonuses = {
+
+  daily: [
+    {
+      place: 1,
+      amount: 500
+    },
+    {
+      place: 2,
+      amount: 250
+    },
+    {
+      place: 3,
+      amount: 100
+    }
+  ],
+
+  weekly: [
+    {
+      place: 1,
+      amount: 3000
+    },
+    {
+      place: 2,
+      amount: 1500
+    },
+    {
+      place: 3,
+      amount: 700
+    },
+    {
+      place: 4,
+      amount: 400
+    },
+    {
+      place: 5,
+      amount: 250
+    }
+  ]
+
+};
+
+
+function placeText(place) {
+
+  if (place === 1) return "1ST PLACE";
+  if (place === 2) return "2ND PLACE";
+  if (place === 3) return "3RD PLACE";
+
+  return place + "TH PLACE";
+}
+
+
+function medal(place) {
+
+  if (place === 1) return "🥇";
+  if (place === 2) return "🥈";
+  if (place === 3) return "🥉";
+
+  return place;
+}
+
+
+function showBonus(type, button) {
+
+  document
+    .querySelectorAll(".bonus-tab")
+    .forEach(tab => {
+      tab.classList.remove("active");
+    });
+
+  button.classList.add("active");
+
+  const list = bonuses[type];
+
+  const title =
+    type === "daily"
+      ? "DAILY BONUS"
+      : "WEEKLY BONUS";
+
+  let rows = "";
+
+  list.forEach(item => {
+
+    rows += `
+
+      <div class="bonus-row">
+
+        <div class="bonus-rank">
+
+          <div class="medal">
+            ${medal(item.place)}
+          </div>
+
+          <div class="rank-text">
+            ${placeText(item.place)}
+          </div>
+
+        </div>
+
+        <div class="bonus-amount">
+          ${item.amount.toLocaleString()} Br
+        </div>
+
+      </div>
+
+    `;
+
+  });
+
+  document.getElementById("bonusCard").innerHTML = `
+
+    <div class="bonus-card-header">
+
+      <div class="bonus-card-title">
+        ${title}
+      </div>
+
+      <div class="place-count">
+        ${list.length} PLACES
+      </div>
+
+    </div>
+
+    ${rows}
+
+    <div class="bonus-note">
+      Rewards are based on leaderboard position.
+    </div>
+
+  `;
+}
+
+
+/* BONUS TAB EVENTS */
+
+document
+  .querySelectorAll(".bonus-tab")
+  .forEach(button => {
+
+    button.addEventListener("click", () => {
+
+      showBonus(
+        button.dataset.bonusType,
+        button
+      );
+
+    });
+
+  });
+
+
+/* DEFAULT BONUS */
+
+const defaultBonusTab =
+  document.querySelector(
+    '.bonus-tab[data-bonus-type="daily"]'
+  );
+
+if (defaultBonusTab) {
+
+  showBonus(
+    "daily",
+    defaultBonusTab
+  );
+
+}

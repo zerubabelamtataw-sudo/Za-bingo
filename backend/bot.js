@@ -7,10 +7,16 @@ const db = require('./firebase');
 // Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
-const BONUS_CHANNEL = '@EdelBingoo';
-
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const BONUS_CHANNEL = '@EdelBingoo';
+function getEthiopiaTime() {
+  return new Date(
+    new Date().toLocaleString('en-US', {
+      timeZone: 'Africa/Addis_Ababa'
+    })
+  );
+}
 bot.setMyCommands([
   { command: 'play', description: 'Play Now' },
   { command: 'deposit', description: 'Deposit' },
@@ -891,5 +897,21 @@ function handleProfile(chatId, player) {
 function setGameManager(gm) {
   gameManager = gm;
 }
+
+// ============================================================
+// DAILY BONUS — 9:00 PM ETHIOPIA TIME
+// ============================================================
+
+setInterval(async () => {
+  const now = getEthiopiaTime();
+
+  if (now.getHours() !== 21 || now.getMinutes() !== 0) {
+    return;
+  }
+
+  console.log('🏆 Running daily bonus announcement...');
+
+  // We will add the winner calculation here next.
+}, 30 * 1000);
 
 module.exports = { bot, setGameManager }

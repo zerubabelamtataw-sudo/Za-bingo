@@ -401,11 +401,18 @@ async addSimulatedPlayers(roomId = '5br') {
   // ─────────────────────────────────────────────
   // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
   // ─────────────────────────────────────────────
-  const playerCount = {
+  const baseCount = {
   '5br': this.simPlayerSettings?.['5br'] ?? 10,
   '10br': this.simPlayerSettings?.['10br'] ?? 3,
   '20br': this.simPlayerSettings?.['20br'] ?? 1
 }[roomId] || 0;
+
+const minSimPlayers = Math.max(0, baseCount - 1);
+const maxSimPlayers = baseCount + 2;
+
+const playerCount =
+  minSimPlayers +
+  Math.floor(Math.random() * (maxSimPlayers - minSimPlayers + 1));
 
   // Randomly choose which simulated players participate
   const players = [...SIMULATED_PLAYERS];

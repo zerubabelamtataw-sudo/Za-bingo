@@ -911,7 +911,62 @@ setInterval(async () => {
 
   console.log('🏆 Running daily bonus announcement...');
 
-  // We will add the winner calculation here next.
+  const snapshot = await db.ref('winners').once('value');
+const data = snapshot.val() || {};
+
+const today = new Date().toLocaleDateString('en-CA', {
+  timeZone: 'Africa/Addis_Ababa'
+});
+
+const todayWinners = Object.values(data).filter(winner => {
+  if (!winner.date) return false;
+
+  const winnerDate = new Date(winner.date).toLocaleDateString('en-CA', {
+    timeZone: 'Africa/Addis_Ababa'
+  });
+
+  return winnerDate === today;
+});
+
+console.log(`🏆 Today's winners found: ${todayWinners.length}`);
+todayWinners.sort((a, b) => {
+  return new Date(a.date) - new Date(b.date);
+});
+
+const topThree = todayWinners.slice(0, 3);
+
+console.log(
+  '🏆 Daily bonus top 3:',
+  topThree.map(w => w.playerName)
+);
+const names = [
+  topThree[0]?.playerName || 'No winner',
+  topThree[1]?.playerName || 'No winner',
+  topThree[2]?.playerName || 'No winner'
+];
+
+const message =
+`🏆 *የዕለታዊ ቦነስ ተሸላሚዎች* 🏆
+
+🥇 *1ኛ ደረጃ — ${names[0]}* 💰 *500 ብር*
+
+🥈 *2ኛ ደረጃ — ${names[1]}* 💰 *250 ብር*
+
+🥉 *3ኛ ደረጃ — ${names[2]}* 💰 *100 ብር*
+
+🎉 *አሸናፊዎች እንኳን ደስ አላችሁ!*
+
+🎱 *ይጫወቱ ያሸንፉ ይሸለሙ!*
+🔥 *ወደ ጨዋታችን ይቀላቀሉ!*
+💰 *ይጫወቱ እና 30% ቦነስዎን ያግኙ!*
+
+🎁 *የ30 ብር ቦነስ ያግኙ!*
+https://t.me/ZABingo_bot
+
+❤️ *Edel Bingo — መልካም ጨዋታ!*`;
+await bot.sendMessage(BONUS_CHANNEL, message, {
+  parse_mode: 'Markdown'
+});
 }, 30 * 1000);
 
 module.exports = { bot, setGameManager }

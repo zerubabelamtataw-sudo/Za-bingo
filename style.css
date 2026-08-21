@@ -2535,7 +2535,8 @@ opacity: 1;
   font-size: 1.1rem;
   letter-spacing: 2px;
 
-  transform: translateY(-20px);
+  transform: translateY(0);
+  margin-top: 15px;
 
   box-shadow:
     0 4px 0 #551717,

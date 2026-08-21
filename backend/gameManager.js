@@ -218,37 +218,103 @@ return { id: playerId, ...player };
   }
 
   async updatePlayerBalance(playerId, delta, historyEntry) {
+
+  // ─────────────────────────────────────────────
+  // SIMULATED PLAYER
+  // ─────────────────────────────────────────────
+  if (String(playerId).startsWith('sim_')) {
+
+    // Find the simulated player in any active room
+    for (const room of Object.values(this.rooms)) {
+
+      const simPlayer = room.players.find(
+        p => String(p.id) === String(playerId)
+      );
+
+      if (simPlayer) {
+
+        simPlayer.balance =
+          Number(simPlayer.balance || 0) + Number(delta || 0);
+
+        // ONLY wins are counted.
+        // Simulated games are NOT counted as gamesPlayed.
+        if (historyEntry?.type === 'win') {
+          simPlayer.gamesWon =
+            Number(simPlayer.gamesWon || 0) + 1;
+        }
+
+        return {
+          id: playerId,
+          ...simPlayer
+        };
+      }
+    }
+
+    throw new Error(`Simulated player ${playerId} not found`);
+  }
+
+  // ─────────────────────────────────────────────
+  // REAL PLAYER
+  // ─────────────────────────────────────────────
   if (this.db) {
+
     const ref = this.db.ref(`players/${playerId}`);
     const snap = await ref.once('value');
 
     if (!snap.exists()) {
-  throw new Error(`Player ${playerId} not found for refund`);
-}
+      throw new Error(`Player ${playerId} not found`);
+    }
 
     const data = snap.val();
-    const balance = (data.balance || 0) + delta;
-    const history = [...(data.history || []), historyEntry];
 
-    await ref.update({
+    const balance =
+      Number(data.balance || 0) + Number(delta || 0);
+
+    const history =
+      [...(data.history || []), historyEntry];
+
+    const updates = {
       balance,
       history
-    });
+    };
+
+    // ONLY increment gamesWon when the transaction is a win.
+    // Do NOT increment gamesPlayed here.
+    if (historyEntry?.type === 'win') {
+      updates.gamesWon =
+        Number(data.gamesWon || 0) + 1;
+    }
+
+    await ref.update(updates);
 
     return {
       id: playerId,
       ...data,
-      balance,
-      history
+      ...updates
     };
   }
 
+  // ─────────────────────────────────────────────
+  // MEMORY FALLBACK
+  // ─────────────────────────────────────────────
   if (this._players && this._players[playerId]) {
+
     const p = this._players[playerId];
-    p.balance += delta;
+
+    p.balance =
+      Number(p.balance || 0) + Number(delta || 0);
+
     p.history.push(historyEntry);
+
+    if (historyEntry?.type === 'win') {
+      p.gamesWon =
+        Number(p.gamesWon || 0) + 1;
+    }
+
     return p;
   }
+
+  throw new Error(`Player ${playerId} not found`);
 }
   // ── join ──────────────────────────────────────────────────────────────────
 
@@ -377,11 +443,12 @@ async addSimulatedPlayers(roomId = '5br') {
 
     // Add simulated player
     room.players.push({
-      id: playerId,
-      name,
-      username: '',
-      balance: 999999
-    });
+  id: playerId,
+  name,
+  username: '',
+  balance: 999999,
+  gamesWon: 0
+});
 
     room.playerCartelas[playerId] = selected;
 

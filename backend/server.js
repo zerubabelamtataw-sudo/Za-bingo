@@ -46,6 +46,29 @@ console.log('✅ Firebase Realtime Database connected');
 // ── App setup ─────────────────────────────────────────────────────────────────
 const app    = express();
 const gm     = new GamesManager(db);
+app.get('/api/admin/sim-settings', (req, res) => {
+  ok(res, {
+    settings: gm.simPlayerSettings
+  });
+});
+
+app.post('/api/admin/sim-settings', (req, res) => {
+  const { settings } = req.body || {};
+
+  if (!settings) {
+    return err(res, 'Settings required');
+  }
+
+  gm.simPlayerSettings = {
+    '5br': Math.max(0, Number(settings['5br'] || 0)),
+    '10br': Math.max(0, Number(settings['10br'] || 0)),
+    '20br': Math.max(0, Number(settings['20br'] || 0))
+  };
+
+  ok(res, {
+    settings: gm.simPlayerSettings
+  });
+});
 gm.addSimulatedPlayers('5br');
 const PORT   = process.env.PORT || 3000;
 

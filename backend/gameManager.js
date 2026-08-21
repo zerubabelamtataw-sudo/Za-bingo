@@ -16,6 +16,17 @@ const DRAW_INTERVAL_MS  = 4000;
 const WINNER_SHARE      = 0.85;
 
 const SIMULATED_PLAYERS = [
+  '@fano',
+  '🤘',
+  'ማሜ',
+  'neqelu',
+  'Rasta',
+  'Mimi',
+  'Mati',
+  'ኢብሮ',
+  'ትራምፕ',
+  'lala',
+  'Tare',
   'በሌ',
   'yoni',
   'Maje',
@@ -30,7 +41,11 @@ const SIMULATED_PLAYERS = [
   '@mente',
   'Messi',
   'Runner',
-  'Here we go'
+  'Here we go',
+  'deme',
+  '@fifi',
+  'Adu',
+  'ደላላው'
 ];
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -140,6 +155,11 @@ class GamesManager {
     this.db = db;   // Firebase Realtime Database instance
     this.rooms = {};
     this._cartelaCache = null;
+    this.simPlayerSettings = {
+  '5br': 10,
+  '10br': 3,
+  '20br': 1
+};
 
     for (const cfg of ROOMS_CONFIG) {
       this.rooms[cfg.id] = new Room(cfg);
@@ -382,9 +402,9 @@ async addSimulatedPlayers(roomId = '5br') {
   // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
   // ─────────────────────────────────────────────
   const playerCount = {
-  '5br': 10 + Math.floor(Math.random() * 6),
-  '10br': 3 + Math.floor(Math.random() * 4),
-  '20br': 1 + Math.floor(Math.random() * 3)
+  '5br': this.simPlayerSettings?.['5br'] ?? 10,
+  '10br': this.simPlayerSettings?.['10br'] ?? 3,
+  '20br': this.simPlayerSettings?.['20br'] ?? 1
 }[roomId] || 0;
 
   // Randomly choose which simulated players participate

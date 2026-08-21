@@ -945,7 +945,7 @@
       if (isMe) {
         state.player.balance += winner.amount;
         updateHUD();
-        toast(`You won ${winner.amount} Br! 🏆`, 'success');
+        
       }
     }
     

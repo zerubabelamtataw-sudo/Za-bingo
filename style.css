@@ -1313,13 +1313,18 @@ header {
   content: "🏠";
 }
 
-/* HISTORY */
+/* BONUS & TOURNAMENT */
 .nav-tab:nth-child(3)::before {
+  content: "🏆";
+}
+
+/* HISTORY */
+.nav-tab:nth-child(4)::before {
   content: "📜";
 }
 
 /* INFO */
-.nav-tab:nth-child(4)::before {
+.nav-tab:nth-child(5)::before {
   content: "ℹ️";
 }
 

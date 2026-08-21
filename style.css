@@ -2165,3 +2165,21 @@ opacity: 1;
 .bonus-text {
   font-size: 14px;
 }
+.tournament-card {
+  margin-top: 16px;
+  background: var(--room-bg);
+  color: #000;
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+}
+
+.tournament-title {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.tournament-text {
+  margin-top: 8px;
+  font-size: 14px;
+}

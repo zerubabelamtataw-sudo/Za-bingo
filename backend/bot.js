@@ -924,10 +924,10 @@ setInterval(async () => {
 
     const now = getEthiopiaTimeParts();
 
-    // 10:00 PM Ethiopia time
-    if (now.hour !== 22 || now.minute !== 0) {
-      return;
-    }
+   // 10:30 PM Ethiopia time
+if (now.hour !== 22 || now.minute !== 30) {
+  return;
+}
 
     const today =
       `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
@@ -991,28 +991,26 @@ setInterval(async () => {
     ];
 
     const message =
-`🏆 *የዕለታዊ ቦነስ ተሸላሚዎች* 🏆
+`🏆 የዕለታዊ ቦነስ ተሸላሚዎች 🏆
 
-🥇 *1ኛ ደረጃ — ${names[0]}* 💰 *500 ብር*
+🥇 1ኛ ደረጃ — ${names[0]} 💰 500 ብር
 
-🥈 *2ኛ ደረጃ — ${names[1]}* 💰 *250 ብር*
+🥈 2ኛ ደረጃ — ${names[1]} 💰 250 ብር
 
-🥉 *3ኛ ደረጃ — ${names[2]}* 💰 *100 ብር*
+🥉 3ኛ ደረጃ — ${names[2]} 💰 100 ብር
 
-🎉 *አሸናፊዎች እንኳን ደስ አላችሁ!*
+🎉 አሸናፊዎች እንኳን ደስ አላችሁ!
 
-🎱 *ይጫወቱ ያሸንፉ ይሸለሙ!*
-🔥 *ወደ ጨዋታችን ይቀላቀሉ!*
-💰 *ይጫወቱ እና 30% ቦነስዎን ያግኙ!*
+🎱 ይጫወቱ ያሸንፉ ይሸለሙ!
+🔥 ወደ ጨዋታችን ይቀላቀሉ!
+💰 ይጫወቱ እና 30% ቦነስዎን ያግኙ!
 
-🎁 *የ30 ብር ቦነስ ያግኙ!*
+🎁 የ30 ብር ቦነስ ያግኙ!
 https://t.me/ZABingo_bot
 
-❤️ *Edel Bingo — መልካም ጨዋታ!*`;
+❤️ Edel Bingo — መልካም ጨዋታ!`;
 
-    await bot.sendMessage(BONUS_CHANNEL, message, {
-      parse_mode: 'Markdown'
-    });
+await bot.sendMessage(BONUS_CHANNEL, message);
 
     // Mark today's post as completed
     lastBonusPostDate = today;

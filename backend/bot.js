@@ -7,6 +7,11 @@ const db = require('./firebase');
 // Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
+const BONUS_CHANNEL = '@EdelBingoo';
+bot.sendMessage(
+  BONUS_CHANNEL,
+  '🤖 ZA Bingo bot connection test'
+);
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 bot.setMyCommands([

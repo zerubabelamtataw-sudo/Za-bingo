@@ -10,12 +10,26 @@ const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const BONUS_CHANNEL = '@EdelBingoo';
-function getEthiopiaTime() {
-  return new Date(
-    new Date().toLocaleString('en-US', {
-      timeZone: 'Africa/Addis_Ababa'
-    })
-  );
+function getEthiopiaTimeParts() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Addis_Ababa',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).formatToParts(new Date());
+
+  const result = {};
+
+  for (const part of parts) {
+    if (part.type !== 'literal') {
+      result[part.type] = Number(part.value);
+    }
+  }
+
+  return result;
 }
 bot.setMyCommands([
   { command: 'play', description: 'Play Now' },
@@ -899,53 +913,84 @@ function setGameManager(gm) {
 }
 
 // ============================================================
-// DAILY BONUS — 9:00 PM ETHIOPIA TIME
+// DAILY BONUS — 10:00 PM ETHIOPIA TIME
 // ============================================================
 
+let lastBonusPostDate = null;
+
 setInterval(async () => {
-  const now = getEthiopiaTime();
 
-  if (now.getHours() !== 21 || now.getMinutes() !== 0) {
-    return;
-  }
+  try {
 
-  console.log('🏆 Running daily bonus announcement...');
+    const now = getEthiopiaTimeParts();
 
-  const snapshot = await db.ref('winners').once('value');
-const data = snapshot.val() || {};
+    // 10:00 PM Ethiopia time
+    if (now.hour !== 22 || now.minute !== 0) {
+      return;
+    }
 
-const today = new Date().toLocaleDateString('en-CA', {
-  timeZone: 'Africa/Addis_Ababa'
-});
+    const today =
+      `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
 
-const todayWinners = Object.values(data).filter(winner => {
-  if (!winner.date) return false;
+    // Prevent duplicate post on the same day
+    if (lastBonusPostDate === today) {
+      return;
+    }
 
-  const winnerDate = new Date(winner.date).toLocaleDateString('en-CA', {
-    timeZone: 'Africa/Addis_Ababa'
-  });
+    console.log('🏆 Running daily bonus announcement...');
 
-  return winnerDate === today;
-});
+    const snapshot = await db.ref('winners').once('value');
+    const data = snapshot.val() || {};
 
-console.log(`🏆 Today's winners found: ${todayWinners.length}`);
-todayWinners.sort((a, b) => {
-  return new Date(a.date) - new Date(b.date);
-});
+    const todayWinners = Object.values(data).filter(winner => {
 
-const topThree = todayWinners.slice(0, 3);
+      if (!winner.date) return false;
 
-console.log(
-  '🏆 Daily bonus top 3:',
-  topThree.map(w => w.playerName)
-);
-const names = [
-  topThree[0]?.playerName || 'No winner',
-  topThree[1]?.playerName || 'No winner',
-  topThree[2]?.playerName || 'No winner'
-];
+      const winnerDate = new Date(winner.date);
 
-const message =
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Addis_Ababa',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(winnerDate);
+
+      const dateParts = {};
+
+      for (const part of parts) {
+        if (part.type !== 'literal') {
+          dateParts[part.type] = Number(part.value);
+        }
+      }
+
+      const winnerDay =
+        `${dateParts.year}-${String(dateParts.month).padStart(2, '0')}-${String(dateParts.day).padStart(2, '0')}`;
+
+      return winnerDay === today;
+    });
+
+    console.log(
+      `🏆 Today's winners found: ${todayWinners.length}`
+    );
+
+    todayWinners.sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    const topThree = todayWinners.slice(0, 3);
+
+    console.log(
+      '🏆 Daily bonus top 3:',
+      topThree.map(w => w.playerName)
+    );
+
+    const names = [
+      topThree[0]?.playerName || 'No winner',
+      topThree[1]?.playerName || 'No winner',
+      topThree[2]?.playerName || 'No winner'
+    ];
+
+    const message =
 `🏆 *የዕለታዊ ቦነስ ተሸላሚዎች* 🏆
 
 🥇 *1ኛ ደረጃ — ${names[0]}* 💰 *500 ብር*
@@ -964,9 +1009,25 @@ const message =
 https://t.me/ZABingo_bot
 
 ❤️ *Edel Bingo — መልካም ጨዋታ!*`;
-await bot.sendMessage(BONUS_CHANNEL, message, {
-  parse_mode: 'Markdown'
-});
-}, 30 * 1000);
 
-module.exports = { bot, setGameManager }
+    await bot.sendMessage(BONUS_CHANNEL, message, {
+      parse_mode: 'Markdown'
+    });
+
+    // Mark today's post as completed
+    lastBonusPostDate = today;
+
+    console.log(
+      `✅ Daily bonus posted successfully to ${BONUS_CHANNEL}`
+    );
+
+  } catch (error) {
+
+    console.error(
+      '❌ DAILY BONUS POST ERROR:',
+      error
+    );
+
+  }
+
+}, 30 * 1000);

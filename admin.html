@@ -280,10 +280,33 @@
         class="tab-content"
       >
 
+        <!-- STATUS BUTTONS -->
+
+        <div class="status-nav">
+
+          <button
+            class="status-nav-btn active"
+            data-status-tab="depositsStatus"
+          >
+            💳 Deposits
+          </button>
+
+          <button
+            class="status-nav-btn"
+            data-status-tab="withdrawalsStatus"
+          >
+            💸 Withdrawals
+          </button>
+
+        </div>
+
 
         <!-- DEPOSITS -->
 
-        <section class="admin-section">
+        <section
+          id="depositsStatus"
+          class="admin-section status-content active"
+        >
 
           <h2>💳 Deposits</h2>
 
@@ -296,7 +319,10 @@
 
         <!-- WITHDRAWALS -->
 
-        <section class="admin-section">
+        <section
+          id="withdrawalsStatus"
+          class="admin-section status-content"
+        >
 
           <h2>💸 Withdrawals</h2>
 

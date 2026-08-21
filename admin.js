@@ -498,6 +498,43 @@ const transactionsRef =
 
 
 // ============================================================
+// STATUS HELPER
+// ============================================================
+
+function getStatusHTML(status) {
+
+  const value =
+    String(status || 'N/A').toLowerCase();
+
+  if (value === 'pending') {
+
+    return `
+      <span class="status-pending">
+        Pending
+      </span>
+    `;
+
+  }
+
+  if (
+    value === 'approved' ||
+    value === 'approve'
+  ) {
+
+    return `
+      <span class="status-approved">
+        Approved
+      </span>
+    `;
+
+  }
+
+  return status || 'N/A';
+
+}
+
+
+// ============================================================
 // ADMIN — DEPOSITS
 // ============================================================
 
@@ -565,11 +602,13 @@ onValue(
           <br>
 
           Player:
-          ${
-            transaction.playerId ||
-            transaction.telegramId ||
-            'N/A'
-          }
+          <span class="copyable-player">
+            ${
+              transaction.playerId ||
+              transaction.telegramId ||
+              'N/A'
+            }
+          </span>
 
           <br>
 
@@ -583,17 +622,20 @@ onValue(
 
           Status:
           ${
-            transaction.status ||
-            'N/A'
+            getStatusHTML(
+              transaction.status
+            )
           }
 
           <br>
 
           Transaction ID:
-          ${
-            transaction.transactionId ||
-            'N/A'
-          }
+          <span class="copyable-player">
+            ${
+              transaction.transactionId ||
+              'N/A'
+            }
+          </span>
 
           <br>
 
@@ -689,11 +731,13 @@ onValue(
           <br>
 
           Player:
-          ${
-            transaction.playerId ||
-            transaction.telegramId ||
-            'N/A'
-          }
+          <span class="copyable-player">
+            ${
+              transaction.playerId ||
+              transaction.telegramId ||
+              'N/A'
+            }
+          </span>
 
           <br>
 
@@ -707,17 +751,20 @@ onValue(
 
           Status:
           ${
-            transaction.status ||
-            'N/A'
+            getStatusHTML(
+              transaction.status
+            )
           }
 
           <br>
 
           Transaction ID:
-          ${
-            transaction.transactionId ||
-            'Pending'
-          }
+          <span class="copyable-player">
+            ${
+              transaction.transactionId ||
+              'Pending'
+            }
+          </span>
 
           <br>
 
@@ -878,7 +925,6 @@ navItems.forEach((navItem) => {
         navItem.dataset.tab;
 
 
-      // Remove active from all
       navItems.forEach(item => {
 
         item.classList.remove(
@@ -888,7 +934,6 @@ navItems.forEach((navItem) => {
       });
 
 
-      // Hide all main tabs
       tabContents.forEach(tab => {
 
         tab.classList.remove(
@@ -898,13 +943,11 @@ navItems.forEach((navItem) => {
       });
 
 
-      // Activate selected button
       navItem.classList.add(
         'active'
       );
 
 
-      // Show selected tab
       const selectedTab =
         document.getElementById(
           targetTab
@@ -952,7 +995,6 @@ playerSubnavButtons.forEach((button) => {
         button.dataset.playerTab;
 
 
-      // Remove active from all
       playerSubnavButtons.forEach(item => {
 
         item.classList.remove(
@@ -962,7 +1004,6 @@ playerSubnavButtons.forEach((button) => {
       });
 
 
-      // Hide all Players sections
       playerTabContents.forEach(tab => {
 
         tab.classList.remove(
@@ -972,13 +1013,11 @@ playerSubnavButtons.forEach((button) => {
       });
 
 
-      // Activate selected button
       button.classList.add(
         'active'
       );
 
 
-      // Show selected section
       const selectedPlayerTab =
         document.getElementById(
           targetPlayerTab
@@ -988,6 +1027,76 @@ playerSubnavButtons.forEach((button) => {
       if (selectedPlayerTab) {
 
         selectedPlayerTab.classList.add(
+          'active'
+        );
+
+      }
+
+    }
+  );
+
+});
+
+
+// ============================================================
+// ADMIN — STATUS SUB NAVIGATION
+// ============================================================
+
+const statusNavButtons =
+  document.querySelectorAll(
+    '.status-nav-btn'
+  );
+
+
+const statusContents =
+  document.querySelectorAll(
+    '.status-content'
+  );
+
+
+statusNavButtons.forEach((button) => {
+
+  button.addEventListener(
+    'click',
+    () => {
+
+
+      const targetStatus =
+        button.dataset.statusTab;
+
+
+      statusNavButtons.forEach(item => {
+
+        item.classList.remove(
+          'active'
+        );
+
+      });
+
+
+      statusContents.forEach(tab => {
+
+        tab.classList.remove(
+          'active'
+        );
+
+      });
+
+
+      button.classList.add(
+        'active'
+      );
+
+
+      const selectedStatus =
+        document.getElementById(
+          targetStatus
+        );
+
+
+      if (selectedStatus) {
+
+        selectedStatus.classList.add(
           'active'
         );
 

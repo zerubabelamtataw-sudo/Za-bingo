@@ -2517,6 +2517,35 @@ opacity: 1;
   }
 }
 
+.tournament-title {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(85, 23, 23, .35) 0%,
+      transparent 25%,
+      transparent 75%,
+      rgba(85, 23, 23, .35) 100%
+    ),
+    #f3d58a;
+
+  border: 1px solid #551717;
+  color: #000000;
+
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+
+  transform: translateY(-20px);
+
+  box-shadow:
+    0 4px 0 #551717,
+    0 7px 15px rgba(100, 20, 20, .25),
+    inset 0 1px 3px rgba(255,255,255,.5);
+
+  padding: 10px 20px;
+  text-align: center;
+}
+
 .tournament-live {
   display: flex;
   align-items: center;
@@ -2536,7 +2565,7 @@ opacity: 1;
   width: 7px;
   height: 7px;
 
-  background: #551717;
+  background: #FF0000;
 
   border-radius: 50%;
 

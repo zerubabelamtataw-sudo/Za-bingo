@@ -1258,7 +1258,7 @@
         ${rows}
     
         <div class="bonus-note">
-          Rewards are based on leaderboard position.
+          የቦነስ ሽልማቶች በደረጃ ላይ ተመስርቶ የሚሰጥ ይሆናል ።.
         </div>
     
       `;

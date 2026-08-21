@@ -705,10 +705,41 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
   });
 }
 
+  // ── tournament leaderboard ────────────────────────────────────────────────
+
+  async getTournamentLeaderboard() {
+    if (!this.db) return [];
+
+    const snap = await this.db.ref('winners').once('value');
+    const data = snap.val() || {};
+
+    const leaderboard = {};
+
+    for (const winner of Object.values(data)) {
+      const playerId = String(winner.playerId);
+
+      if (!leaderboard[playerId]) {
+        leaderboard[playerId] = {
+          id: playerId,
+          name: winner.playerName || 'Player',
+          wins: 0
+        };
+      }
+
+      leaderboard[playerId].wins += 1;
+    }
+
+    return Object.values(leaderboard)
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, 10);
+  }
+
   // ── getters ───────────────────────────────────────────────────────────────
 
   getRoom(roomId)  { return this.rooms[roomId] || null; }
   getAllRooms()     { return Object.values(this.rooms).map(r => r.toJSON()); }
 }
+
+
 
 module.exports = { GamesManager, ROOMS_CONFIG };

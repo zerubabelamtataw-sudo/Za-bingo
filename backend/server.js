@@ -204,6 +204,22 @@ app.get('/api/rooms', (req, res) => {
   ok(res, { rooms: gm.getAllRooms() });
 });
 
+// GET /api/tournament/leaderboard
+app.get('/api/tournament/leaderboard', async (req, res) => {
+  try {
+    const leaderboard = await gm.getTournamentLeaderboard();
+
+    ok(res, {
+      leaderboard
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      error: e.message
+    });
+  }
+});
+
 // GET /api/rooms/:roomId — single room state
 app.get('/api/rooms/:roomId', (req, res) => {
   const room = gm.getRoom(req.params.roomId);

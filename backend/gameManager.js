@@ -27,7 +27,7 @@ const SIMULATED_PLAYERS = [
   'መካሽ',
   'cr7',
   'Dangote',
-  'Tafe',
+  '@mente',
   'Messi',
   'Runner',
   'Here we go'
@@ -239,9 +239,12 @@ return { id: playerId, ...player };
         // ONLY wins are counted.
         // Simulated games are NOT counted as gamesPlayed.
         if (historyEntry?.type === 'win') {
-          simPlayer.gamesWon =
-            Number(simPlayer.gamesWon || 0) + 1;
-        }
+  simPlayer.gamesWon =
+    Number(simPlayer.gamesWon || 0) + 1;
+
+  simPlayer.tournamentWins =
+    Math.floor(simPlayer.gamesWon / 3);
+}
 
         return {
           id: playerId,
@@ -708,31 +711,39 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
   // ── tournament leaderboard ────────────────────────────────────────────────
 
   async getTournamentLeaderboard() {
-    if (!this.db) return [];
+  if (!this.db) return [];
 
-    const snap = await this.db.ref('winners').once('value');
-    const data = snap.val() || {};
+  const snap = await this.db.ref('winners').once('value');
+  const data = snap.val() || {};
 
-    const leaderboard = {};
+  const leaderboard = {};
 
-    for (const winner of Object.values(data)) {
-      const playerId = String(winner.playerId);
+  for (const winner of Object.values(data)) {
+    const playerId = String(winner.playerId);
 
-      if (!leaderboard[playerId]) {
-        leaderboard[playerId] = {
-          id: playerId,
-          name: winner.playerName || 'Player',
-          wins: 0
-        };
-      }
-
-      leaderboard[playerId].wins += 1;
+    if (!leaderboard[playerId]) {
+      leaderboard[playerId] = {
+        id: playerId,
+        name: winner.playerName || 'Player',
+        wins: 0
+      };
     }
 
-    return Object.values(leaderboard)
-      .sort((a, b) => b.wins - a.wins)
-      .slice(0, 10);
+    leaderboard[playerId].wins += 1;
   }
+
+  // Sims: 3 actual wins = 1 leaderboard win
+  for (const player of Object.values(leaderboard)) {
+    if (String(player.id).startsWith('sim_')) {
+      player.wins = Math.floor(player.wins / 3);
+    }
+  }
+
+  return Object.values(leaderboard)
+    .filter(player => player.wins > 0)
+    .sort((a, b) => b.wins - a.wins)
+    .slice(0, 10);
+}
 
   // ── getters ───────────────────────────────────────────────────────────────
 

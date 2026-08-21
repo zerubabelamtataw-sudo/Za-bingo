@@ -2516,3 +2516,95 @@ opacity: 1;
     font-size: .95rem;
   }
 }
+
+.tournament-live {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+
+  color: #551717;
+
+  margin-bottom: 8px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+
+  background: #551717;
+
+  border-radius: 50%;
+
+  box-shadow: 0 0 6px rgba(85, 23, 23, .6);
+}
+
+.tournament-player-count {
+  text-align: center;
+
+  font-size: .65rem;
+  font-weight: 700;
+
+  color: #000;
+
+  margin-bottom: 12px;
+}
+
+.tournament-leaderboard {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+.tournament-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 48px;
+  padding: 8px 10px;
+
+  background: rgba(237, 224, 212, .82);
+
+  border: 1px solid #000;
+  border-radius: 8px;
+}
+
+.tournament-rank {
+  width: 30px;
+
+  font-size: .85rem;
+  font-weight: 900;
+
+  color: #551717;
+
+  text-align: center;
+}
+
+.tournament-player {
+  flex: 1;
+
+  font-size: .82rem;
+  font-weight: 800;
+
+  color: #000;
+
+  padding-left: 8px;
+}
+
+.tournament-wins {
+  font-size: .82rem;
+  font-weight: 900;
+
+  color: #000;
+
+  white-space: nowrap;
+}

@@ -1106,3 +1106,53 @@ statusNavButtons.forEach((button) => {
   );
 
 });
+document
+  .getElementById('saveSimSettingsBtn')
+  .addEventListener('click', async () => {
+
+    const settings = {
+      '5br': Number(document.getElementById('sim5br').value),
+      '10br': Number(document.getElementById('sim10br').value),
+      '20br': Number(document.getElementById('sim20br').value)
+    };
+
+    try {
+      const response = await fetch('/api/admin/sim-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ settings })
+      });
+
+      const data = await response.json();
+
+      document.getElementById('simSettingsMessage').textContent =
+        data.success
+          ? '✅ Sim settings saved'
+          : '❌ Failed to save settings';
+
+    } catch (error) {
+      console.error(error);
+
+      document.getElementById('simSettingsMessage').textContent =
+        '❌ Failed to save settings';
+    }
+  });
+  async function loadSimSettings() {
+  try {
+    const response = await fetch('/api/admin/sim-settings');
+    const data = await response.json();
+
+    if (!data.success) return;
+
+    document.getElementById('sim5br').value = data.settings['5br'];
+    document.getElementById('sim10br').value = data.settings['10br'];
+    document.getElementById('sim20br').value = data.settings['20br'];
+
+  } catch (error) {
+    console.error('❌ Failed to load sim settings:', error);
+  }
+}
+
+loadSimSettings();

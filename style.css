@@ -2138,3 +2138,30 @@ opacity: 1;
 
   margin-top: 20px;
 }
+/* BONUS PAGE */
+.bonus-section {
+  padding: 20px;
+}
+
+.bonus-card {
+  background: var(--room-bg);
+  color: #000;
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+}
+
+.bonus-title {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.bonus-amount {
+  font-size: 32px;
+  font-weight: 900;
+  margin: 12px 0;
+}
+
+.bonus-text {
+  font-size: 14px;
+}

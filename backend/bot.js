@@ -142,6 +142,10 @@ let gameManager = null;
 // /start - Register user and show main menu
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
+
+  // Save user for future broadcasts
+  broadcastUsers[String(chatId)] = true;
+
   const tgId = String(msg.from.id);
   const firstName = msg.from.first_name || 'Player';
   const username = msg.from.username || '';
@@ -465,10 +469,18 @@ const depositSessions = {};
 const withdrawSessions = {};
 const transferSessions = {};
 // ============================================================
+// BROADCAST USERS
+// ============================================================
+const broadcastUsers = {};
+// ============================================================
 // TEXT MESSAGE HANDLER (for amount input)
 // ============================================================
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+
+  // Save user for future broadcasts
+  broadcastUsers[String(chatId)] = true;
+
   const tgId = String(msg.from.id);
   const text = msg.text;
 
@@ -1379,6 +1391,140 @@ https://t.me/ZABingo_bot`;
 
     console.error(
       '❌ DAILY/WEEKLY BONUS ERROR:',
+      error
+    );
+
+  }
+
+}, 30 * 1000);
+```javascript
+// ============================================================
+// DAILY PROMOTIONAL ANNOUNCEMENT
+// 2:00 PM + 8:00 PM ETHIOPIA TIME
+// ============================================================
+
+const PROMO_CHANNEL = '@EdelBingoo';
+
+const promoMessage =
+`🏆 EDEL BINGO — DAILY & WEEKLY BONUS 🏆
+
+🎱 ይጫወቱ • ያሸንፉ • ይሸለሙ! 🎱
+
+━━━━━━━━━━━━━━━━━━
+
+🌟 የዕለታዊ ቦነስ ተሸላሚዎች 🌟
+
+🥇 1ኛ ደረጃ — Player 1 💰 500 ብር
+
+🥈 2ኛ ደረጃ — Player 2 💰 250 ብር
+
+🥉 3ኛ ደረጃ — Player 3 💰 100 ብር
+
+━━━━━━━━━━━━━━━━━━
+
+🏆 የሳምንቱ ቦነስ ተሸላሚዎች 🏆
+
+🥇 1ኛ — Player 1 💰 3,000 ብር
+
+🥈 2ኛ — Player 2 💰 1,500 ብር
+
+🥉 3ኛ — Player 3 💰 700 ብር
+
+🏅 4ኛ — Player 4 💰 400 ብር
+
+🏅 5ኛ — Player 5 💰 250 ብር
+
+━━━━━━━━━━━━━━━━━━
+
+🎉 🎉
+
+🔥 ብዙ ይጫወቱ
+🏆 ብዙ ያሸንፉ
+💰 ብዙ ይሸለሙ!
+
+🎁 30 ብር የመጫወቻ ቦነስ ያግኙ!
+
+👉 አሁኑኑ ይጫወቱ:
+https://t.me/ZABingo_bot
+
+❤️ Edel Bingo — መልካም ጨዋታ!`;
+
+let lastPromoDate = '';
+let lastPromoHour = null;
+
+setInterval(async () => {
+
+  try {
+
+    const now = getEthiopiaTimeParts();
+
+    // Only 2:00 PM or 8:00 PM
+    if (
+      now.minute !== 0 ||
+      (now.hour !== 14 && now.hour !== 20)
+    ) {
+      return;
+    }
+
+    const today =
+      `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
+
+    // Prevent duplicate posts during the same hour
+    if (
+      lastPromoDate === today &&
+      lastPromoHour === now.hour
+    ) {
+      return;
+    }
+
+    console.log(
+      `📢 Sending promotional announcement at ${now.hour}:00`
+    );
+
+    // --------------------------------------------------------
+    // POST TO CHANNEL
+    // --------------------------------------------------------
+
+    await bot.sendMessage(
+      PROMO_CHANNEL,
+      promoMessage
+    );
+
+    console.log('✅ Promo posted to channel');
+
+    // --------------------------------------------------------
+    // SEND TO BOT USERS
+    // --------------------------------------------------------
+
+    for (const chatId of Object.keys(broadcastUsers)) {
+
+      try {
+
+        await bot.sendMessage(
+          chatId,
+          promoMessage
+        );
+
+      } catch (error) {
+
+        console.error(
+          `❌ Could not send promo to ${chatId}:`,
+          error.message
+        );
+
+      }
+
+    }
+
+    lastPromoDate = today;
+    lastPromoHour = now.hour;
+
+    console.log('✅ Promo broadcast completed');
+
+  } catch (error) {
+
+    console.error(
+      '❌ PROMO BROADCAST ERROR:',
       error
     );
 

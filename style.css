@@ -2522,125 +2522,173 @@ opacity: 1;
   }
 }
 
-.tournament-title {
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(85, 23, 23, .35) 0%,
-      transparent 25%,
-      transparent 75%,
-      rgba(85, 23, 23, .35) 100%
-    ),
-    #f3d58a;
+/* ============================================================
+   TOURNAMENT BONUS — DAILY / WEEKLY
+   Matches the existing Tournament design
+   ============================================================ */
 
-  border: 1px solid #551717;
-  color: #000000;
-
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  letter-spacing: 2px;
-
-  transform: translateY(0);
-  margin-top: 15px;
+.tournament-bonus {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
   margin-bottom: 15px;
-
-  box-shadow:
-    0 4px 0 #551717,
-    0 7px 15px rgba(100, 20, 20, .25),
-    inset 0 1px 3px rgba(255,255,255,.5);
-
-  padding: 10px 20px;
-  text-align: center;
 }
 
-.tournament-live {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+/* ── DAILY / WEEKLY BUTTONS ───────────────────────────────── */
 
-  font-size: .7rem;
+.tournament-period-buttons {
+  display: flex;
+  width: 100%;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.tournament-period-btn {
+  flex: 1;
+
+  padding: 9px 10px;
+
+  background: #f3d58a;
+  color: #000;
+
+  border: 1px solid #551717;
+  border-radius: 8px;
+
+  font-family: var(--font-display);
+  font-size: .72rem;
   font-weight: 900;
   letter-spacing: 1px;
 
+  box-shadow:
+    0 3px 0 #551717,
+    0 5px 10px rgba(100, 20, 20, .18),
+    inset 0 1px 3px rgba(255,255,255,.5);
+
+  cursor: pointer;
+
+  transition:
+    transform .15s ease,
+    background .15s ease,
+    box-shadow .15s ease;
+}
+
+.tournament-period-btn:active {
+  transform: translateY(2px);
+
+  box-shadow:
+    0 1px 0 #551717,
+    0 3px 6px rgba(100, 20, 20, .15);
+}
+
+/* ACTIVE BUTTON */
+
+.tournament-period-btn.active {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(85, 23, 23, .25) 0%,
+      transparent 30%,
+      transparent 70%,
+      rgba(85, 23, 23, .25) 100%
+    ),
+    #f3d58a;
+
   color: #551717;
 
-  margin-bottom: 8px;
+  border-color: #551717;
+
+  box-shadow:
+    0 3px 0 #551717,
+    0 6px 12px rgba(100, 20, 20, .25),
+    inset 0 1px 3px rgba(255,255,255,.5);
 }
 
-.live-dot {
-  width: 7px;
-  height: 7px;
+/* ── BONUS DISPLAY ────────────────────────────────────────── */
 
-  background: #FF0000;
-
-  border-radius: 50%;
-
-  box-shadow: 0 0 6px rgba(85, 23, 23, .6);
-}
-
-.tournament-player-count {
-  text-align: center;
-
-  font-size: .65rem;
-  font-weight: 700;
-
-  color: #000;
-
-  margin-bottom: 12px;
-}
-
-.tournament-leaderboard {
+.tournament-bonus-card {
   width: 100%;
+  box-sizing: border-box;
 
-  display: flex;
-  flex-direction: column;
+  padding: 10px;
 
-  gap: 7px;
-}
-.tournament-row {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  min-height: 48px;
-  padding: 8px 10px;
+  margin-bottom: 10px;
 
   background: rgba(237, 224, 212, .82);
 
   border: 1px solid #000;
   border-radius: 8px;
-}
-
-.tournament-rank {
-  width: 30px;
-
-  font-size: .85rem;
-  font-weight: 900;
-
-  color: #551717;
 
   text-align: center;
 }
 
-.tournament-player {
-  flex: 1;
+.tournament-bonus-label {
+  display: block;
 
-  font-size: .82rem;
-  font-weight: 800;
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: 1px;
 
-  color: #000;
+  color: #551717;
 
-  padding-left: 8px;
+  margin-bottom: 3px;
 }
 
-.tournament-wins {
-  font-size: .82rem;
+.tournament-bonus-amount {
+  display: block;
+
+  font-size: 1.05rem;
   font-weight: 900;
 
   color: #000;
+}
+
+/* ── LEADERBOARD ROW BONUS ────────────────────────────────── */
+
+.tournament-row-bonus {
+  font-size: .78rem;
+  font-weight: 900;
+
+  color: #551717;
 
   white-space: nowrap;
+}
+
+/* ── EMPTY LEADERBOARD ────────────────────────────────────── */
+
+.tournament-empty {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 12px;
+
+  background: rgba(237, 224, 212, .82);
+
+  border: 1px solid #000;
+  border-radius: 8px;
+
+  text-align: center;
+
+  font-size: .7rem;
+  font-weight: 700;
+
+  color: #551717;
+}
+
+/* ── MOBILE ───────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+
+  .tournament-period-btn {
+    padding: 8px 6px;
+
+    font-size: .68rem;
+  }
+
+  .tournament-bonus-card {
+    padding: 9px;
+  }
+
+  .tournament-bonus-amount {
+    font-size: 1rem;
+  }
 }

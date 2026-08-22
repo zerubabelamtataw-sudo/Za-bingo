@@ -104,7 +104,6 @@
   $('navTabs').style.display = 'flex';
   $('playerHud').style.display = 'flex';
   await loadCartelas();
-  loadTournamentLeaderboard();
   showPage('lobby');
   startLobbyPoll();
 }
@@ -1262,6 +1261,7 @@
         </div>
     
       `;
+      loadTournamentLeaderboard(type);
     }
     
     
@@ -1298,7 +1298,7 @@
       );
     
     }
-function renderTournamentLeaderboard(players = []) {
+function renderTournamentLeaderboard(players = [], type = 'daily') {
 
   const leaderboard =
     document.getElementById('tournamentLeaderboard');
@@ -1311,33 +1311,62 @@ function renderTournamentLeaderboard(players = []) {
   playerCount.textContent =
     `${players.length} PLAYERS`;
 
-  const top10 = players
-    .sort((a, b) => b.wins - a.wins)
-    .slice(0, 10);
+  const limit = type === 'weekly' ? 5 : 3;
 
-  leaderboard.innerHTML = top10.map((player, index) => `
-    <div class="tournament-row">
+  const topPlayers = players
+    .sort((a, b) => Number(b.wins || 0) - Number(a.wins || 0))
+    .slice(0, limit);
 
-      <div class="tournament-rank">
-        ${index + 1}
+  leaderboard.innerHTML = topPlayers.map((player, index) => {
+
+    const place = index + 1;
+
+    let medal = place;
+
+    if (place === 1) medal = '🥇';
+    if (place === 2) medal = '🥈';
+    if (place === 3) medal = '🥉';
+
+    return `
+      <div class="tournament-row">
+
+        <div class="tournament-rank">
+          ${medal}
+        </div>
+
+        <div class="tournament-player">
+          ${player.name || 'Player'}
+        </div>
+
+        <div class="tournament-wins">
+          ${Number(player.wins || 0)} wins
+        </div>
+
       </div>
+    `;
 
-      <div class="tournament-player">
-        ${player.name}
-      </div>
+  }).join('');
+}
+async function loadTournamentLeaderboard(type = 'daily') {
 
-      <div class="tournament-wins">
-        ${player.wins} wins
-      </div>
-
-    </div>
-  `).join('');
-}    
-async function loadTournamentLeaderboard() {
   try {
-    const data = await apiFetch('/api/tournament/leaderboard');
-    renderTournamentLeaderboard(data.leaderboard || []);
+
+    const data = await apiFetch(
+      `/api/tournament/leaderboard?type=${type}`
+    );
+
+    renderTournamentLeaderboard(
+      data.leaderboard || [],
+      type
+    );
+
   } catch (e) {
-    console.error('Tournament leaderboard error:', e);
+
+    console.error(
+      `${type} leaderboard error:`,
+      e
+    );
+
   }
+
 }

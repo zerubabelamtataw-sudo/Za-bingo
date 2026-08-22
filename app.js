@@ -1308,14 +1308,26 @@ function renderTournamentLeaderboard(players = [], type = 'daily') {
 
   if (!leaderboard || !playerCount) return;
 
+  const topPlayers = Array.isArray(players)
+    ? players
+        .filter(player => player && Number(player.wins || 0) > 0)
+        .sort((a, b) =>
+          Number(b.wins || 0) - Number(a.wins || 0)
+        )
+        .slice(0, 10)
+    : [];
+
   playerCount.textContent =
-    `${players.length} PLAYERS`;
+    `${topPlayers.length} PLAYERS`;
 
-  const limit = 10;
-
-  const topPlayers = players
-    .sort((a, b) => Number(b.wins || 0) - Number(a.wins || 0))
-    .slice(0, limit);
+  if (topPlayers.length === 0) {
+    leaderboard.innerHTML = `
+      <div class="tournament-empty">
+        NO PLAYERS YET
+      </div>
+    `;
+    return;
+  }
 
   leaderboard.innerHTML = topPlayers.map((player, index) => {
 

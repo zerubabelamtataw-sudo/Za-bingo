@@ -872,7 +872,7 @@
     
       $('popupWinnerName').textContent = winner.playerName;
       $('popupCartelaDetail').textContent =
-        `Cartela #${winner.cartelaNumber} · ${winner.calledCount} numbers called`;
+  `Cartela #${winner.cartelaNumber}`;
        // Show winning cartela
     const winnerGrid = $('winnerCartelaGrid');
     

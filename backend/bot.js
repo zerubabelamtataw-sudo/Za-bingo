@@ -1397,7 +1397,6 @@ https://t.me/ZABingo_bot`;
   }
 
 }, 30 * 1000);
-```javascript
 // ============================================================
 // DAILY PROMOTIONAL ANNOUNCEMENT
 // 2:00 PM + 8:00 PM ETHIOPIA TIME

@@ -753,9 +753,12 @@ async getDailyLeaderboard() {
   const leaderboard = {};
 
   for (const winner of Object.values(data)) {
-    if (!winner.date) continue;
+
+    if (!winner.date || !winner.playerId) continue;
 
     const winnerDate = new Date(winner.date);
+
+    if (isNaN(winnerDate.getTime())) continue;
 
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Africa/Addis_Ababa',
@@ -793,7 +796,8 @@ async getDailyLeaderboard() {
 
   // SIM PLAYERS: 3 actual wins = 1 leaderboard win
   for (const player of Object.values(leaderboard)) {
-    if (String(player.id).startsWith('sim_')) {
+
+    if (player.id.startsWith('sim_')) {
       player.wins = Math.floor(player.actualWins / 3);
     } else {
       player.wins = player.actualWins;

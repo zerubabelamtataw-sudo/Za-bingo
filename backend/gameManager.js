@@ -737,47 +737,194 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
 
   // ── tournament leaderboard ────────────────────────────────────────────────
 
-  async getTournamentLeaderboard() {
+ // ── DAILY + WEEKLY LEADERBOARDS ─────────────────────────────────────────
+
+async getDailyLeaderboard() {
   if (!this.db) return [];
 
   const snap = await this.db.ref('winners').once('value');
   const data = snap.val() || {};
 
+  const now = getEthiopiaTimeParts();
+
+  const today =
+    `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
+
   const leaderboard = {};
 
   for (const winner of Object.values(data)) {
+    if (!winner.date) continue;
+
+    const winnerDate = new Date(winner.date);
+
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Africa/Addis_Ababa',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(winnerDate);
+
+    const dateParts = {};
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        dateParts[part.type] = Number(part.value);
+      }
+    }
+
+    const winnerDay =
+      `${dateParts.year}-${String(dateParts.month).padStart(2, '0')}-${String(dateParts.day).padStart(2, '0')}`;
+
+    if (winnerDay !== today) continue;
+
     const playerId = String(winner.playerId);
 
     if (!leaderboard[playerId]) {
       leaderboard[playerId] = {
         id: playerId,
         name: winner.playerName || 'Player',
-        wins: 0
+        wins: 0,
+        actualWins: 0
       };
     }
 
-    leaderboard[playerId].wins += 1;
+    leaderboard[playerId].actualWins += 1;
   }
 
-  // Sims: 3 actual wins = 1 leaderboard win
+  // SIM PLAYERS: 3 actual wins = 1 leaderboard win
   for (const player of Object.values(leaderboard)) {
     if (String(player.id).startsWith('sim_')) {
-      player.wins = Math.floor(player.wins / 3);
+      player.wins = Math.floor(player.actualWins / 3);
+    } else {
+      player.wins = player.actualWins;
     }
+
+    delete player.actualWins;
   }
 
   return Object.values(leaderboard)
     .filter(player => player.wins > 0)
     .sort((a, b) => b.wins - a.wins)
-    .slice(0, 10);
-}
-
-  // ── getters ───────────────────────────────────────────────────────────────
-
-  getRoom(roomId)  { return this.rooms[roomId] || null; }
-  getAllRooms()     { return Object.values(this.rooms).map(r => r.toJSON()); }
+    .slice(0, 3);
 }
 
 
+async getWeeklyLeaderboard() {
+  if (!this.db) return [];
+
+  const snap = await this.db.ref('winners').once('value');
+  const data = snap.val() || {};
+
+  const now = getEthiopiaTimeParts();
+
+  // Ethiopia week: Monday → Sunday
+  const currentDate = new Date(
+    Date.UTC(now.year, now.month - 1, now.day)
+  );
+
+  const day = currentDate.getUTCDay();
+
+  // Sunday = 0, Monday = 1
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+
+  const weekStart = new Date(currentDate);
+  weekStart.setUTCDate(
+    currentDate.getUTCDate() - daysFromMonday
+  );
+
+  const leaderboard = {};
+
+  for (const winner of Object.values(data)) {
+    if (!winner.date) continue;
+
+    const winnerDate = new Date(winner.date);
+
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Africa/Addis_Ababa',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(winnerDate);
+
+    const dateParts = {};
+
+    for (const part of parts) {
+      if (part.type !== 'literal') {
+        dateParts[part.type] = Number(part.value);
+      }
+    }
+
+    const winnerDay = new Date(
+      Date.UTC(
+        dateParts.year,
+        dateParts.month - 1,
+        dateParts.day
+      )
+    );
+
+    const diff =
+      winnerDay.getTime() - weekStart.getTime();
+
+    const daysDifference =
+      diff / (1000 * 60 * 60 * 24);
+
+    // Only this Monday → Sunday
+    if (daysDifference < 0 || daysDifference > 6) {
+      continue;
+    }
+
+    const playerId = String(winner.playerId);
+
+    if (!leaderboard[playerId]) {
+      leaderboard[playerId] = {
+        id: playerId,
+        name: winner.playerName || 'Player',
+        wins: 0,
+        actualWins: 0
+      };
+    }
+
+    leaderboard[playerId].actualWins += 1;
+  }
+
+  // SIM PLAYERS: 3 actual wins = 1 leaderboard win
+  for (const player of Object.values(leaderboard)) {
+    if (String(player.id).startsWith('sim_')) {
+      player.wins = Math.floor(player.actualWins / 3);
+    } else {
+      player.wins = player.actualWins;
+    }
+
+    delete player.actualWins;
+  }
+
+  return Object.values(leaderboard)
+    .filter(player => player.wins > 0)
+    .sort((a, b) => b.wins - a.wins)
+    .slice(0, 5);
+}
+
+   // ── TOURNAMENT LEADERBOARD ──────────────────────────────────────────────
+
+  async getTournamentLeaderboard(type = 'daily') {
+
+    if (type === 'weekly') {
+      return await this.getWeeklyLeaderboard();
+    }
+
+    return await this.getDailyLeaderboard();
+  }
+
+  // ── getters ─────────────────────────────────────────────────────────────
+
+  getRoom(roomId) {
+    return this.rooms[roomId] || null;
+  }
+
+  getAllRooms() {
+    return Object.values(this.rooms).map(r => r.toJSON());
+  }
+
+}
 
 module.exports = { GamesManager, ROOMS_CONFIG };

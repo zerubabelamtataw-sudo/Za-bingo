@@ -216,7 +216,7 @@ app.post('/api/admin/sim-settings', (req, res) => {
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
-// GET /api/cartelas — return all 150 cartelas
+// GET /api/cartelas — return all 300 cartelas
 app.get('/api/cartelas', async (req, res) => {
   try {
     const cartelas = await gm.getCartelas();
@@ -232,16 +232,26 @@ app.get('/api/rooms', (req, res) => {
 // GET /api/tournament/leaderboard
 app.get('/api/tournament/leaderboard', async (req, res) => {
   try {
-    const leaderboard = await gm.getTournamentLeaderboard();
+
+    const type = req.query.type === 'weekly'
+      ? 'weekly'
+      : 'daily';
+
+    const leaderboard =
+      await gm.getTournamentLeaderboard(type);
 
     ok(res, {
-      leaderboard
+      leaderboard,
+      type
     });
+
   } catch (e) {
+
     res.status(500).json({
       success: false,
       error: e.message
     });
+
   }
 });
 

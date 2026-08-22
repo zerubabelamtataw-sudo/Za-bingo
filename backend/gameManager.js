@@ -745,40 +745,37 @@ async getDailyLeaderboard() {
   const snap = await this.db.ref('winners').once('value');
   const data = snap.val() || {};
 
-  const now = getEthiopiaTimeParts();
-
-  const today =
-    `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Addis_Ababa',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
 
   const leaderboard = {};
 
   for (const winner of Object.values(data)) {
 
-    if (!winner.date || !winner.playerId) continue;
+    if (!winner || !winner.date || !winner.playerId) {
+      continue;
+    }
 
     const winnerDate = new Date(winner.date);
 
-    if (Number.isNaN(winnerDate.getTime())) continue;
+    if (Number.isNaN(winnerDate.getTime())) {
+      continue;
+    }
 
-    const parts = new Intl.DateTimeFormat('en-US', {
+    const winnerDay = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Africa/Addis_Ababa',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
-    }).formatToParts(winnerDate);
+    }).format(winnerDate);
 
-    const dateParts = {};
-
-    for (const part of parts) {
-      if (part.type !== 'literal') {
-        dateParts[part.type] = part.value;
-      }
+    if (winnerDay !== today) {
+      continue;
     }
-
-    const winnerDay =
-      `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
-
-    if (winnerDay !== today) continue;
 
     const playerId = String(winner.playerId);
 
@@ -790,7 +787,7 @@ async getDailyLeaderboard() {
       };
     }
 
-    leaderboard[playerId].actualWins += 1;
+    leaderboard[playerId].actualWins++;
   }
 
   const players = Object.values(leaderboard);
@@ -798,10 +795,8 @@ async getDailyLeaderboard() {
   for (const player of players) {
 
     if (player.id.startsWith('sim_')) {
-      // Simulated players: 3 real wins = 1 leaderboard win
       player.wins = Math.floor(player.actualWins / 3);
     } else {
-      // Real players: every win counts
       player.wins = player.actualWins;
     }
 

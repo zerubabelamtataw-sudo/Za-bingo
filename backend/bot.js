@@ -906,7 +906,7 @@ function handleProfile(chatId, player) {
     `Phone: ${player.phone || 'Not set'}\n` +
     `Balance: ${player.balance} Br\n` +
     `Games Played: ${player.games_played}\n` +
-    `Games Won: ${player.gameswon}\n` +
+    `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
     `Joined: ${player.registration_date}`,
     { parse_mode: 'Markdown' }
   );

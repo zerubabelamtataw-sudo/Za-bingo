@@ -577,7 +577,7 @@ if (
   if (!official || official.status !== 'available') {
     bot.sendMessage(
       chatId,
-      '⏳ We could not find this payment yet. Please make sure the official payment SMS has arrived and try again.'
+      '⏳ ይህን ክፍያ እስካሁን ማግኘት አልተቻለም። እባክዎ ትክክለኛውን የክፍያ SMS መልዕክት መድረሱን ያረጋግጡና እንደገና ይላኩ።'
     );
     return;
   }
@@ -906,7 +906,7 @@ function handleProfile(chatId, player) {
     `Phone: ${player.phone || 'Not set'}\n` +
     `Balance: ${player.balance} Br\n` +
     `Games Played: ${player.games_played}\n` +
-    `Games Won: ${player.games_won}\n` +
+    `Games Won: ${player.gameswon}\n` +
     `Joined: ${player.registration_date}`,
     { parse_mode: 'Markdown' }
   );

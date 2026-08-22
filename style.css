@@ -2706,7 +2706,15 @@ opacity: 1;
 
   padding: 12px;
 
-  background: #f3d58a;
+  background:
+  linear-gradient(
+    to bottom,
+    rgba(85, 23, 23, .35) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(85, 23, 23, .35) 100%
+  ),
+  #f3d58a;
 
   border: 1px solid #551717;
   border-radius: 10px;

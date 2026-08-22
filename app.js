@@ -1355,18 +1355,24 @@ async function loadTournamentLeaderboard(type = 'daily') {
       `/api/tournament/leaderboard?type=${type}`
     );
 
+    if (!data || !data.success) {
+      console.error('Leaderboard API failed:', data);
+      return;
+    }
+
     renderTournamentLeaderboard(
-      data.leaderboard || [],
+      Array.isArray(data.leaderboard)
+        ? data.leaderboard
+        : [],
       type
     );
 
   } catch (e) {
 
     console.error(
-      `${type} leaderboard error:`,
+      'Leaderboard loading error:',
       e
     );
 
   }
-
 }

@@ -2523,23 +2523,173 @@ opacity: 1;
 }
 
 /* ============================================================
-   TOURNAMENT BONUS — DAILY / WEEKLY
-   Matches the existing Tournament design
+   TOURNAMENT TITLE
+   ============================================================ */
+
+.tournament-title {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(85, 23, 23, .35) 0%,
+      transparent 25%,
+      transparent 75%,
+      rgba(85, 23, 23, .35) 100%
+    ),
+    #f3d58a;
+
+  border: 1px solid #551717;
+  color: #000000;
+
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+
+  transform: translateY(0);
+  margin-top: 15px;
+  margin-bottom: 15px;
+
+  box-shadow:
+    0 4px 0 #551717,
+    0 7px 15px rgba(100, 20, 20, .25),
+    inset 0 1px 3px rgba(255,255,255,.5);
+
+  padding: 10px 20px;
+  text-align: center;
+}
+
+
+/* ============================================================
+   TOURNAMENT LIVE
+   ============================================================ */
+
+.tournament-live {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+
+  color: #551717;
+
+  margin-bottom: 8px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+
+  background: #FF0000;
+
+  border-radius: 50%;
+
+  box-shadow: 0 0 6px rgba(85, 23, 23, .6);
+}
+
+
+/* ============================================================
+   PLAYER COUNT
+   ============================================================ */
+
+.tournament-player-count {
+  text-align: center;
+
+  font-size: .65rem;
+  font-weight: 700;
+
+  color: #000;
+
+  margin-bottom: 12px;
+}
+
+
+/* ============================================================
+   LEADERBOARD
+   ============================================================ */
+
+.tournament-leaderboard {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.tournament-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 48px;
+  padding: 8px 10px;
+
+  background: rgba(237, 224, 212, .82);
+
+  border: 1px solid #000;
+  border-radius: 8px;
+}
+
+.tournament-rank {
+  width: 30px;
+
+  font-size: .85rem;
+  font-weight: 900;
+
+  color: #551717;
+
+  text-align: center;
+}
+
+.tournament-player {
+  flex: 1;
+
+  font-size: .82rem;
+  font-weight: 800;
+
+  color: #000;
+
+  padding-left: 8px;
+}
+
+.tournament-wins {
+  font-size: .82rem;
+  font-weight: 900;
+
+  color: #000;
+
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   TOURNAMENT BONUS
    ============================================================ */
 
 .tournament-bonus {
   width: 100%;
   box-sizing: border-box;
+
   margin-top: 10px;
   margin-bottom: 15px;
 }
 
-/* ── DAILY / WEEKLY BUTTONS ───────────────────────────────── */
+
+/* ============================================================
+   DAILY / WEEKLY BUTTONS
+   ============================================================ */
 
 .tournament-period-buttons {
   display: flex;
+
   width: 100%;
+
   gap: 7px;
+
   margin-bottom: 10px;
 }
 
@@ -2580,8 +2730,6 @@ opacity: 1;
     0 3px 6px rgba(100, 20, 20, .15);
 }
 
-/* ACTIVE BUTTON */
-
 .tournament-period-btn.active {
   background:
     linear-gradient(
@@ -2603,7 +2751,10 @@ opacity: 1;
     inset 0 1px 3px rgba(255,255,255,.5);
 }
 
-/* ── BONUS DISPLAY ────────────────────────────────────────── */
+
+/* ============================================================
+   BONUS DISPLAY
+   ============================================================ */
 
 .tournament-bonus-card {
   width: 100%;
@@ -2642,7 +2793,10 @@ opacity: 1;
   color: #000;
 }
 
-/* ── LEADERBOARD ROW BONUS ────────────────────────────────── */
+
+/* ============================================================
+   BONUS INSIDE LEADERBOARD
+   ============================================================ */
 
 .tournament-row-bonus {
   font-size: .78rem;
@@ -2653,7 +2807,10 @@ opacity: 1;
   white-space: nowrap;
 }
 
-/* ── EMPTY LEADERBOARD ────────────────────────────────────── */
+
+/* ============================================================
+   EMPTY LEADERBOARD
+   ============================================================ */
 
 .tournament-empty {
   width: 100%;
@@ -2674,7 +2831,10 @@ opacity: 1;
   color: #551717;
 }
 
-/* ── MOBILE ───────────────────────────────────────────────── */
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
 
 @media (max-width: 480px) {
 

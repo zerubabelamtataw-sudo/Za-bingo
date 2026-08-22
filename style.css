@@ -473,6 +473,7 @@ header {
   flex: 1;
   min-height: 0;
   width: 100%;
+  column-gap: 5px;
 }
 
 /* Status bar stays across the full top */
@@ -694,7 +695,7 @@ header {
   grid-template-columns: repeat(5, 1fr);
 
   width: 90%;
-  margin: 0;
+  margin: 0 auto;
 
   padding: 2px;
   gap: 2px;
@@ -765,7 +766,6 @@ header {
   border-color: var(--gold) !important;
   color: var(--gold) !important;
 
-  animation: bingoCell .5s ease infinite alternate;
 }
 
 @keyframes bingoCell {
@@ -831,7 +831,6 @@ header {
 
   display: none;
 
-  animation: glowPulse 1s ease infinite alternate;
 }
 
 .claim-bingo-btn.burned {
@@ -862,7 +861,6 @@ header {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.30);
-  backdrop-filter: blur(8px);
   z-index: 200;
   display: none;
   align-items: center;
@@ -2058,7 +2056,6 @@ opacity: 1;
 
   cursor: pointer;
 
-  animation: glowPulse 1s ease infinite alternate;
 }
 .sapphire-gem {
   display: inline-flex;

@@ -1311,7 +1311,7 @@ function renderTournamentLeaderboard(players = [], type = 'daily') {
   playerCount.textContent =
     `${players.length} PLAYERS`;
 
-  const limit = type === 'weekly' ? 5 : 3;
+  const limit = 10;
 
   const topPlayers = players
     .sort((a, b) => Number(b.wins || 0) - Number(a.wins || 0))

@@ -758,7 +758,7 @@ async getDailyLeaderboard() {
 
     const winnerDate = new Date(winner.date);
 
-    if (isNaN(winnerDate.getTime())) continue;
+    if (Number.isNaN(winnerDate.getTime())) continue;
 
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Africa/Addis_Ababa',
@@ -771,12 +771,12 @@ async getDailyLeaderboard() {
 
     for (const part of parts) {
       if (part.type !== 'literal') {
-        dateParts[part.type] = Number(part.value);
+        dateParts[part.type] = part.value;
       }
     }
 
     const winnerDay =
-      `${dateParts.year}-${String(dateParts.month).padStart(2, '0')}-${String(dateParts.day).padStart(2, '0')}`;
+      `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 
     if (winnerDay !== today) continue;
 
@@ -786,7 +786,6 @@ async getDailyLeaderboard() {
       leaderboard[playerId] = {
         id: playerId,
         name: winner.playerName || 'Player',
-        wins: 0,
         actualWins: 0
       };
     }
@@ -794,22 +793,25 @@ async getDailyLeaderboard() {
     leaderboard[playerId].actualWins += 1;
   }
 
-  // SIM PLAYERS: 3 actual wins = 1 leaderboard win
-  for (const player of Object.values(leaderboard)) {
+  const players = Object.values(leaderboard);
+
+  for (const player of players) {
 
     if (player.id.startsWith('sim_')) {
+      // Simulated players: 3 real wins = 1 leaderboard win
       player.wins = Math.floor(player.actualWins / 3);
     } else {
+      // Real players: every win counts
       player.wins = player.actualWins;
     }
 
     delete player.actualWins;
   }
 
-  return Object.values(leaderboard)
+  return players
     .filter(player => player.wins > 0)
     .sort((a, b) => b.wins - a.wins)
-    .slice(0, 3);
+    .slice(0, 10);
 }
 
 

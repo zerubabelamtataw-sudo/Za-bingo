@@ -469,7 +469,7 @@ header {
 }
 .game-layout {
   display: grid;
-  grid-template-columns: 40% 60%;
+  grid-template-columns: 45% 55%;
   flex: 1;
   min-height: 0;
   width: 100%;

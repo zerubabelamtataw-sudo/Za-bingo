@@ -159,6 +159,7 @@
     // ── Rooms ─────────────────────────────────────────────────────────────────────
     let lobbyPollInterval = null;
     let cartelaCountdownTimer = null;
+    let popupCountdownTimer = null;
     
     function startCartelaCountdown(room) {
       if (cartelaCountdownTimer) {

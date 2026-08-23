@@ -763,37 +763,66 @@ $('joinBtn').addEventListener('click', async () => {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
       
-      // 30 SECOND POPUP COUNTDOWN
+// ── 30 SECOND POPUP COUNTDOWN ────────────────────────────────
 const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
 const popupPlayerCount = $('popupPlayerCount');
 const popupPrize = $('popupPrize');
 
-if (game.status === 'countdown' && game.countdownEnd) {
-
-  const remaining = Math.max(
-    0,
-    (game.countdownEnd - Date.now()) / 1000
-  );
+if (game.status === 'countdown' && game.countdownStart) {
 
   countdownOverlay?.classList.add('visible');
 
-  if (popupCountdown) {
-    popupCountdown.textContent = Math.ceil(remaining);
-  }
+  // App.js controls the DISPLAY timer
+  if (!popupCountdownTimer) {
 
-  if (popupPlayerCount) {
-    popupPlayerCount.textContent = game.playerCount || 0;
-  }
+    const countdownStart = game.countdownStart;
+    const countdownDuration = 30000;
 
-  if (popupPrize) {
-    popupPrize.textContent = (game.pot || 0) * 0.85;
+    const updateCountdown = () => {
+
+      const elapsed = Date.now() - countdownStart;
+
+      const remaining = Math.max(
+        0,
+        Math.ceil((countdownDuration - elapsed) / 1000)
+      );
+
+      if (popupCountdown) {
+        popupCountdown.textContent = remaining;
+      }
+
+      if (popupPlayerCount) {
+        popupPlayerCount.textContent = game.playerCount || 0;
+      }
+
+      if (popupPrize) {
+        popupPrize.textContent =
+          `${((game.pot || 0) * 0.85).toFixed(2)} Br`;
+      }
+
+      if (remaining <= 0) {
+        clearInterval(popupCountdownTimer);
+        popupCountdownTimer = null;
+      }
+    };
+
+    updateCountdown();
+
+    popupCountdownTimer = setInterval(
+      updateCountdown,
+      250
+    );
   }
 
 } else {
 
-  countdownOverlay?.classList.remove('visible');
+  if (popupCountdownTimer) {
+    clearInterval(popupCountdownTimer);
+    popupCountdownTimer = null;
+  }
 
+  countdownOverlay?.classList.remove('visible');
 }
     
     if (cancelCountdownBtn) {
@@ -854,7 +883,7 @@ if (game.status === 'countdown' && game.countdownEnd) {
       // Status bar
       $('infoRoomName').textContent = game.name;
       $('infoStatus').textContent = {
-        waiting: 'Waiting', countdown: 'Starting…', playing: 'Playing', winner: 'Winner!'
+        waiting: 'Waiting', own: 'Starting…', playing: 'Playing', winner: 'Winner!'
       }[game.status] || game.status;
       $('infoPot').textContent = `${game.pot} Br`;
       $('infoPlayers').textContent = game.playerCount;

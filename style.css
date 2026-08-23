@@ -51,7 +51,7 @@ header {
     transparent 75%,
     rgba(85, 23, 23, .35) 100%
   ),
-  #4B1F6F;
+  #DECADB;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -1370,9 +1370,9 @@ margin: 0 1.5%;
 }
 
 /* scrollbar */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 1px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 1px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
 
 /* ──────────────── RESPONSIVE HEADER ──────────────── */
@@ -1410,7 +1410,7 @@ margin: 0 1.5%;
     transparent 75%,
     rgba(85, 23, 23, .35) 100%
   ),
-  #4B1F6F;
+  #DECADB;
   border-top: 2px
 
   padding-bottom: 0;

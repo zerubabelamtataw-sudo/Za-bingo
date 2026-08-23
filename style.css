@@ -661,7 +661,7 @@ header {
 
 .cartela-card {
   flex: 0 0 auto;
-  width: 90%;
+  width: 100%;
 
   background: #DECAD6;
   border: 1px solid var(--border);

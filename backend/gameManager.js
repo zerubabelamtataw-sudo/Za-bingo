@@ -340,65 +340,91 @@ return { id: playerId, ...player };
 
   throw new Error(`Player ${playerId} not found`);
 }
-  // ── join ──────────────────────────────────────────────────────────────────
-
-  async joinRoom(roomId, player, cartelaIds) {
-    const room = this.rooms[roomId];
-    if (!room) throw new Error('Room not found');
-    if (room.status !== 'waiting' && room.status !== 'countdown') {
-      throw new Error('Room is not accepting players right now');
-    }
-    if (room.players.find(p => p.id === player.id)) {
-      throw new Error('Already in this room');
-    }
-    if (cartelaIds.length === 0 || cartelaIds.length > 4) {
-      throw new Error('Select 1–4 cartelas');
-    }
-
-    // Reserve cartelas
-    const cartelas = await this.getCartelas();
-    const selected = [];
-    for (const cid of cartelaIds) {
-      if (room.reservedCartelas.has(cid)) throw new Error(`Cartela ${cid} already taken`);
-      const c = cartelas.find(x => x.id === cid);
-      if (!c) throw new Error(`Cartela ${cid} not found`);
-      selected.push(c);
-    }
-    for (const c of selected) room.reservedCartelas.add(c.id);
-
-    // Deduct fee (per cartela)
-    const totalFee = room.entryFee * cartelaIds.length;
-    if (player.balance < totalFee) throw new Error('Insufficient balance');
-
-    await this.updatePlayerBalance(player.id, -totalFee, {
-      type: 'join', roomId, amount: -totalFee, date: new Date().toISOString(),
-    });
-
-    room.players.push({
-  id: String(player.id),
-  name: player.name || `Player ${player.id}`,
-  username: player.username || '',
-  balance: player.balance - totalFee
-});
-    room.playerCartelas[player.id] = selected;
-    room.pot += totalFee;
-
-    // Start the 30-second countdown when the second player joins
-if (room.players.length === 2 && room.status === 'waiting') {
-  this._startCountdown(room);
-}
-
-return room.toJSON();
+// ── Join ──────────────────────────────────────────────────────────────────────
+$('joinBtn').addEventListener('click', async () => {
+  if (!state.selectedRoom) {
+    toast('Select a room', 'error');
+    return;
   }
 
-async addSimulatedPlayers(roomId = '5br') {
-  const room = this.rooms[roomId];
-  if (!room) throw new Error('Room not found');
+  if (state.selectedCartelas.length === 0) {
+    toast('Select at least 1 cartela', 'error');
+    return;
+  }
 
-  if (room.status !== 'waiting') return;
+  const btn = $('joinBtn');
 
-  const cartelas = await this.getCartelas();
+  // Save selections BEFORE anything changes
+  const roomId = state.selectedRoom;
+  const cartelaIds = [...state.selectedCartelas];
 
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
+
+  state.activeRoomId = roomId;
+
+  try {
+    const data = await apiFetch(`/api/rooms/${roomId}/join`, {
+      method: 'POST',
+      body: JSON.stringify({
+        playerId: state.player.id,
+        cartelaIds
+      }),
+    });
+
+    // Server accepted the join
+    const room = data.room;
+
+    showPage('game');
+    buildCalledGrid();
+
+    // Update balance
+    const fee = room.entryFee * cartelaIds.length;
+    state.player.balance -= fee;
+    updateHUD();
+
+    // Set game state
+    applyGameState(room);
+
+    // Get player's cartelas
+    state.myCartelas = state.allCartelas.filter(
+      c => cartelaIds.includes(c.id)
+    );
+
+    state.markedCells = {};
+    state.bingoDetected = {};
+
+    for (const c of state.myCartelas) {
+      state.markedCells[c.id] = new Set(['FREE']);
+    }
+
+    // Render cartelas
+    renderMyCartelas();
+
+    toast(`Joined ${room.name}! Good luck 🍀`, 'success');
+
+    // Stop lobby polling
+    if (lobbyPollInterval) {
+      clearInterval(lobbyPollInterval);
+      lobbyPollInterval = null;
+    }
+
+    // Start game polling
+    startGamePoll();
+
+  } catch (e) {
+
+    // Join failed — return player to cartela screen
+    state.activeRoomId = null;
+
+    showPage('cartelas');
+
+    btn.disabled = false;
+    btn.textContent = 'Join Room →';
+
+    toast(e.message, 'error');
+  }
+});
   // ─────────────────────────────────────────────
   // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
   // ─────────────────────────────────────────────

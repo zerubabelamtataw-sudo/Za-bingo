@@ -663,7 +663,7 @@ header {
   flex: 0 0 auto;
   width: 100%;
 
-  background: #2D2D34;
+  background: #DECAD6;
   border: 1px solid var(--border);
   border-radius: 8px;
 
@@ -746,14 +746,14 @@ header {
 /* Marked + Auto-marked */
 .bingo-cell.marked,
 .bingo-cell.auto-marked {
-  background: #edb967;
+  background: #32104F;
   border-color: #475b57;
-  color: #3c3c45;
+  color: #EDE0D4;
 }
 
 /* Free */
 .bingo-cell.free {
-  background: #edb967;
+  background: #32104F;
   border-color: var(--gold);
   color: #3c3c45;
 

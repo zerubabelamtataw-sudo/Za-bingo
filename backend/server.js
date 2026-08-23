@@ -327,6 +327,26 @@ app.post('/api/rooms/:roomId/cancel-countdown', async (req, res) => {
   }
 });
 
+// POST /api/rooms/:roomId/start-game
+app.post('/api/rooms/:roomId/start-game', async (req, res) => {
+  const { playerId } = req.body || {};
+
+  if (!playerId) {
+    return err(res, 'playerId required');
+  }
+
+  try {
+    const game = await gm.startGameFromClient(
+      req.params.roomId,
+      playerId
+    );
+
+    ok(res, { game });
+  } catch (e) {
+    err(res, e.message);
+  }
+});
+
 // GET /api/game/:roomId — alias for room state (frontend polling)
 app.get('/api/game/:roomId', (req, res) => {
   const room = gm.getRoom(req.params.roomId);

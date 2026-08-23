@@ -572,6 +572,40 @@ room.pot -= refundAmount;
 
   return room.toJSON();
 }
+async startGameFromClient(roomId, playerId) {
+  const room = this.rooms[roomId];
+
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  if (room.status !== 'countdown') {
+    throw new Error('Game is not in countdown');
+  }
+
+  const player = room.players.find(
+    p => String(p.id) === String(playerId)
+  );
+
+  if (!player) {
+    throw new Error('You are not in this room');
+  }
+
+  // Make sure the full 30 seconds has actually passed
+  if (Date.now() < room.countdownEnd) {
+    throw new Error('Countdown has not finished');
+  }
+
+  // Prevent the original server timer from starting the game twice
+  if (room._countdownTimer) {
+    clearTimeout(room._countdownTimer);
+    room._countdownTimer = null;
+  }
+
+  this._startGame(room);
+
+  return room.toJSON();
+}
 
 _startGame(room) {
   room.status = 'playing';

@@ -340,54 +340,94 @@
       $('joinBtn').disabled = true;
     }
     
-    // ── Join ──────────────────────────────────────────────────────────────────────
-    $('joinBtn').addEventListener('click', async () => {
-      if (!state.selectedRoom) { toast('Select a room', 'error'); return; }
-      if (state.selectedCartelas.length === 0) { toast('Select at least 1 cartela', 'error'); return; }
-    
-      const btn = $('joinBtn');
-      btn.disabled = true;
-      btn.textContent = 'Joining…';
-    
-      try {
-        const data = await apiFetch(`/api/rooms/${state.selectedRoom}/join`, {
-          method: 'POST',
-          body: JSON.stringify({
-            playerId:   state.player.id,
-            cartelaIds: state.selectedCartelas,
-          }),
-        });
-    
-        // Deduct balance locally (backend already did it)
-        const fee = data.room.entryFee * state.selectedCartelas.length;
-        state.player.balance -= fee;
-        updateHUD();
-    
-        state.activeRoomId = state.selectedRoom;
-    
-    applyGameState(data.room);
-    
-    state.myCartelas = state.allCartelas.filter(
-      c => state.selectedCartelas.includes(c.id)
-    );
-        state.markedCells  = {};
-        state.bingoDetected= {};
-        for (const c of state.myCartelas) {
-          state.markedCells[c.id] = new Set(['FREE']);
-        }
-    
-        toast(`Joined ${data.room.name}! Good luck 🍀`, 'success');
-        if (lobbyPollInterval) clearInterval(lobbyPollInterval);
-        buildCalledGrid();
-        renderMyCartelas();
-        showPage('game');
-        startGamePoll();
-      } catch (e) {
-        toast(e.message, 'error');
-        btn.disabled = false;
-        btn.textContent = 'Join Room →';
-      }
+// ── Join ──────────────────────────────────────────────────────────────────────
+$('joinBtn').addEventListener('click', async () => {
+  if (!state.selectedRoom) {
+    toast('Select a room', 'error');
+    return;
+  }
+
+  if (state.selectedCartelas.length === 0) {
+    toast('Select at least 1 cartela', 'error');
+    return;
+  }
+
+  const btn = $('joinBtn');
+
+  // Save selections BEFORE anything changes
+  const roomId = state.selectedRoom;
+  const cartelaIds = [...state.selectedCartelas];
+
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
+
+  // Show game UI immediately
+  showPage('game');
+
+  // Build the static UI immediately
+  buildCalledGrid();
+
+  state.activeRoomId = roomId;
+
+  try {
+    const data = await apiFetch(`/api/rooms/${roomId}/join`, {
+      method: 'POST',
+      body: JSON.stringify({
+        playerId: state.player.id,
+        cartelaIds
+      }),
     });
+
+    // Server accepted the join
+    const room = data.room;
+
+    // Update balance
+    const fee = room.entryFee * cartelaIds.length;
+    state.player.balance -= fee;
+    updateHUD();
+
+    // Set game state
+    applyGameState(room);
+
+    // Get player's cartelas
+    state.myCartelas = state.allCartelas.filter(
+      c => cartelaIds.includes(c.id)
+    );
+
+    state.markedCells = {};
+    state.bingoDetected = {};
+
+    for (const c of state.myCartelas) {
+      state.markedCells[c.id] = new Set(['FREE']);
+    }
+
+    // Render cartelas
+    renderMyCartelas();
+
+    toast(`Joined ${room.name}! Good luck 🍀`, 'success');
+
+    // Stop lobby polling
+    if (lobbyPollInterval) {
+      clearInterval(lobbyPollInterval);
+      lobbyPollInterval = null;
+    }
+
+    // Start game polling
+    startGamePoll();
+
+  } catch (e) {
+
+    // Join failed — return player to cartela screen
+    state.activeRoomId = null;
+
+    showPage('cartelas');
+
+    btn.disabled = false;
+    btn.textContent = 'Join Room →';
+
+    toast(e.message, 'error');
+  }
+});
     
     // ── Called-numbers grid — 5 vertical BINGO columns ─────────────────────────
     function toggleAutoMark() {

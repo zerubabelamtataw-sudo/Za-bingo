@@ -145,6 +145,7 @@ toJSON() {
     winner: this.winner,
     countdownStart: this.countdownStart,
     countdownSeconds: COUNTDOWN_SECONDS,
+    countdownEnd: this.countdownEnd,
   };
 }
 }
@@ -221,7 +222,7 @@ if (snap.exists()) {
 const player = {
   name,
   username: '',
-  balance: 100,
+  balance: 0,
   history: []
 };
 
@@ -382,7 +383,7 @@ return { id: playerId, ...player };
     room.playerCartelas[player.id] = selected;
     room.pot += totalFee;
 
-    // Start the 25-second countdown when the second player joins
+    // Start the 30-second countdown when the second player joins
 if (room.players.length === 2 && room.status === 'waiting') {
   this._startCountdown(room);
 }
@@ -490,7 +491,7 @@ const playerCount =
       selected.map(c => `#${c.number}`).join(', ')
     );
 
-    // Start 25-second countdown when second player joins
+    // Start 30-second countdown when second player joins
     if (
       room.players.length === 2 &&
       room.status === 'waiting'
@@ -508,11 +509,11 @@ const playerCount =
 _startCountdown(room) {
   room.status = 'countdown';
 
-  // Store the exact time the 25-second countdown begins
+  // One server-generated countdown timestamp
   room.countdownStart = Date.now();
+  room.countdownEnd = room.countdownStart + (COUNTDOWN_SECONDS * 1000);
 
   room._countdownTimer = setTimeout(() => {
-    // Make sure the room is still counting down
     if (room.status === 'countdown') {
       this._startGame(room);
     }

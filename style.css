@@ -405,7 +405,7 @@ header {
 }
 
 .cartela-item {
-  background: #c0c4c7;
+  background: #EDE0D4;
   color: #111;
 
   border: none;
@@ -428,14 +428,14 @@ header {
 }
 
 .cartela-item.selected {
-  background: #2D2D34;
+  background: #32104F;
   border: none;
-  color: #fff;
+  color: #EDE0D4;
   font-weight: 600;
 }
 
 .cartela-item.reserved {
-  background: #d65e69;
+  background: #f59e0b;
   border: none;
   color: #fff;
   cursor: not-allowed;
@@ -1894,7 +1894,7 @@ opacity: 1;
 
 #page-cartelas {
   padding-top: 0;
-  background: #EDE0D4;
+  background: #DECADB;
   position: relative;
   min-height: 100vh;
   max-width: none;

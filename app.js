@@ -763,7 +763,7 @@ $('joinBtn').addEventListener('click', async () => {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
       
-// ── 30 SECOND POPUP COUNTDOWN ────────────────────────────────
+// ── THE TIME: CLIENT 30-SECOND COUNTDOWN ─────────────────
 const countdownOverlay = $('countdownOverlay');
 const popupCountdown = $('popupCountdown');
 const popupPlayerCount = $('popupPlayerCount');
@@ -773,14 +773,12 @@ if (game.status === 'countdown' && game.countdownStart) {
 
   countdownOverlay?.classList.add('visible');
 
-  // App.js controls the DISPLAY timer
   if (!popupCountdownTimer) {
 
     const countdownStart = game.countdownStart;
     const countdownDuration = 30000;
 
     const updateCountdown = () => {
-
       const elapsed = Date.now() - countdownStart;
 
       const remaining = Math.max(
@@ -804,15 +802,33 @@ if (game.status === 'countdown' && game.countdownStart) {
       if (remaining <= 0) {
         clearInterval(popupCountdownTimer);
         popupCountdownTimer = null;
+        if (remaining <= 0) {
+  clearInterval(popupCountdownTimer);
+  popupCountdownTimer = null;
+
+  // Tell server countdown reached 0
+  fetch(`${API}/api/rooms/${state.activeRoomId}/start-game`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      playerId: state.player.id
+    })
+  }).catch(error => {
+    console.error('Start game request failed:', error);
+  });
+}
+
+        // Step 3 comes here.
+        // app.js will tell the server:
+        // "30 seconds finished — start the game."
       }
     };
 
     updateCountdown();
 
-    popupCountdownTimer = setInterval(
-      updateCountdown,
-      250
-    );
+    popupCountdownTimer = setInterval(updateCountdown, 250);
   }
 
 } else {

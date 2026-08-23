@@ -153,7 +153,7 @@ header {
   width: 100%;
   margin: 0;
   padding: 0;
-  background: #EDE0D4;
+  background: #DECADB;
 }
 
 #page-bonus .bonus-page {
@@ -166,7 +166,7 @@ header {
   display: block;
 }
 #page-lobby {
-  background: #EDE0D4;
+  background: #DECADB;
   max-width: none;
   margin: 0;
   width: 100%;
@@ -645,7 +645,7 @@ header {
   flex-direction: column;
   gap: 10px;
 
-  width: 100%;
+  width: 90%;
   margin: 0;
 
   height: auto;
@@ -755,7 +755,7 @@ header {
 .bingo-cell.free {
   background: #32104F;
   border-color: var(--gold);
-  color: #3c3c45;
+  color: #f59e0b;
 
   font-size: .85rem;
   font-weight: 700;
@@ -810,11 +810,11 @@ header {
 
   background: linear-gradient(
     135deg,
-    #f5c842,
-    #d4a017
+    #DECAD6,
+    #4B1F6F
   );
 
-  color: #111;
+  color: #EDE0D4;
 
   font-weight: 800;
   font-family: var(--font-display);
@@ -1541,7 +1541,7 @@ header {
     min-width: 140px;
   }
 }
-/* ── 25 SECOND COUNTDOWN POPUP ── */
+/* ── 30 SECOND COUNTDOWN POPUP ── */
 
 .countdown-popup {
 background: var(--surface);

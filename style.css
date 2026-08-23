@@ -645,7 +645,7 @@ header {
   flex-direction: column;
   gap: 10px;
 
-  width: 90%;
+  width: 100%;
   margin: 0;
 
   height: auto;
@@ -814,7 +814,7 @@ header {
     #4B1F6F
   );
 
-  color: #000;
+  color: #f59e0b;
 
   font-weight: 800;
   font-family: var(--font-display);
@@ -2037,11 +2037,11 @@ opacity: 1;
 
   background: linear-gradient(
     135deg,
-    #f5c842,
-    #d4a017
+    #DECADB,
+    #4B1F6F
   );
 
-  color: #111;
+  color: #f59e0b;
 
   font-weight: 800;
   font-family: var(--font-display);

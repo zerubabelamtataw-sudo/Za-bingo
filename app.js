@@ -732,54 +732,38 @@
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
       
-      // ── 25 SECOND POPUP COUNTDOWN ───────────────────────────────
-    const countdownOverlay = $('countdownOverlay');
-    const popupCountdown = $('popupCountdown');
-    const popupPlayerCount = $('popupPlayerCount');
-    const popupPrize = $('popupPrize');
-    const cancelCountdownBtn = $('cancelCountdownBtn');
-    if (
-      game.status === 'countdown' &&
-      game.countdownStart
-    ) {
-    
-    const COUNTDOWN_SECONDS = 30;
-    
-    let remaining = 30;
-    
-    if (game.status === 'countdown' && game.countdownStart) {
-    const elapsed = (Date.now() - game.countdownStart) / 1000;
-    remaining = Math.max(
+      // 30 SECOND POPUP COUNTDOWN
+const countdownOverlay = $('countdownOverlay');
+const popupCountdown = $('popupCountdown');
+const popupPlayerCount = $('popupPlayerCount');
+const popupPrize = $('popupPrize');
+
+if (game.status === 'countdown' && game.countdownEnd) {
+
+  const remaining = Math.max(
     0,
-    COUNTDOWN_SECONDS - elapsed
-    );
-    }
-    
-    if (countdownOverlay) {
-    countdownOverlay.classList.add('visible');
-    }
-    
-    if (popupCountdown) {
+    (game.countdownEnd - Date.now()) / 1000
+  );
+
+  countdownOverlay?.classList.add('visible');
+
+  if (popupCountdown) {
     popupCountdown.textContent = Math.ceil(remaining);
-    }
-    
-    // Live player count
-    if (popupPlayerCount) {
+  }
+
+  if (popupPlayerCount) {
     popupPlayerCount.textContent = game.playerCount || 0;
-    }
-    console.log("GAME DATA:", game);
-    // Live prize
-    if (popupPrize) {
+  }
+
+  if (popupPrize) {
     popupPrize.textContent = (game.pot || 0) * 0.85;
-    }
-    
-    } else {
-    
-    if (countdownOverlay) {
-    countdownOverlay.classList.remove('visible');
-    }
-    
-    }
+  }
+
+} else {
+
+  countdownOverlay?.classList.remove('visible');
+
+}
     
     if (cancelCountdownBtn) {
       cancelCountdownBtn.onclick = async () => {

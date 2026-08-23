@@ -645,7 +645,7 @@ header {
   flex-direction: column;
   gap: 10px;
 
-  width: 100%;
+  width: 90%;
   margin: 0;
 
   height: auto;
@@ -725,7 +725,7 @@ margin: 0 1.5%;
   align-items: center;
   justify-content: center;
 
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 600;
 
   border-radius: 5px;
@@ -761,12 +761,7 @@ margin: 0 1.5%;
   font-weight: 700;
 }
 
-.bingo-cell.bingo-hit {
-  background: rgba(245,200,66,.4) !important;
-  border-color: var(--gold) !important;
-  color: var(--gold) !important;
 
-}
 
 @keyframes bingoCell {
   from {
@@ -942,7 +937,7 @@ margin: 0 1.5%;
   radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
   radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
   radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  #ef44;
+  #DECADB;
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 22px;
@@ -1435,7 +1430,7 @@ margin: 0 1.5%;
   radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
   radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
   radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  #ef44;
+  #DECADB;
 
   border: 1.5px solid #000;
   border-radius: 10px;

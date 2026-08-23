@@ -51,7 +51,7 @@ header {
     transparent 75%,
     rgba(85, 23, 23, .35) 100%
   ),
-  #f3d58a;
+  #4B1F6F;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -1402,8 +1402,16 @@ margin: 0 1.5%;
   align-items: stretch;
 
   /* NAV BAR STAYS THE SAME */
-  background: #EDE0D4;
-  border-top: 0px
+  background:
+  linear-gradient(
+    to bottom,
+    rgba(85, 23, 23, .35) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(85, 23, 23, .35) 100%
+  ),
+  #4B1F6F;
+  border-top: 2px
 
   padding-bottom: 0;
   gap: 4px;

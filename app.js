@@ -771,7 +771,6 @@ $('joinBtn').addEventListener('click', async () => {
 // ── THE TIME: CLIENT 30-SECOND COUNTDOWN ─────────────────
 if (game.status === 'countdown' && game.countdownStart) {
 
-  countdownOverlay?.classList.add('visible');
 
   if (!popupCountdownTimer) {
 
@@ -872,7 +871,6 @@ if (game.status === 'countdown' && game.countdownStart) {
     showPage('lobby');
     refreshRooms();
     
-          countdownOverlay.classList.remove('visible');
     
     state.activeRoomId = null;
     state.selectedRoom = null;

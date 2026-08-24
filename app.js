@@ -181,7 +181,7 @@
         const elapsed = (Date.now() - room.countdownStart) / 1000;
         const remaining = Math.max(
           0,
-          (room.countdownSeconds || 30) - elapsed
+          30 - elapsed
         );
     
         $('cartelaCountdown').textContent =
@@ -264,7 +264,7 @@
     
           const remaining = Math.max(
             0,
-            (room.countdownSeconds || 30) - elapsed
+            30 - elapsed
           );
     
           statusText = `ሊጀመር · ${remaining}s`;

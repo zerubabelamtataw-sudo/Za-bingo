@@ -654,7 +654,7 @@ header {
   background: #E0C7F5;
   height: auto;
   max-height: calc(100vh - 120px);
-  padding: 20px;
+  padding: 10px;
 
   overflow-y: auto;
   overflow-x: hidden;

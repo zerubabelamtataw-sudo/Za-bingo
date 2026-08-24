@@ -768,77 +768,7 @@ $('joinBtn').addEventListener('click', async () => {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
       
-// ── THE TIME: CLIENT 30-SECOND COUNTDOWN ─────────────────
-if (game.status === 'countdown' && game.countdownStart) {
 
-
-  if (!popupCountdownTimer) {
-
-    const countdownStart = game.countdownStart;
-    const countdownDuration = 30000;
-
-    const updateCountdown = () => {
-      const elapsed = Date.now() - countdownStart;
-
-      const remaining = Math.max(
-        0,
-        Math.ceil((countdownDuration - elapsed) / 1000)
-      );
-
-      if (popupCountdown) {
-        popupCountdown.textContent = remaining;
-      }
-
-      if (popupPlayerCount) {
-        popupPlayerCount.textContent = game.playerCount || 0;
-      }
-
-      if (popupPrize) {
-        popupPrize.textContent =
-          `${((game.pot || 0) * 0.85).toFixed(2)} Br`;
-      }
-
-      if (remaining <= 0) {
-        clearInterval(popupCountdownTimer);
-        popupCountdownTimer = null;
-        if (remaining <= 0) {
-  clearInterval(popupCountdownTimer);
-  popupCountdownTimer = null;
-
-  // Tell server countdown reached 0
-  fetch(`${API}/api/rooms/${state.activeRoomId}/start-game`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      playerId: state.player.id
-    })
-  }).catch(error => {
-    console.error('Start game request failed:', error);
-  });
-}
-
-        // Step 3 comes here.
-        // app.js will tell the server:
-        // "30 seconds finished — start the game."
-      }
-    };
-
-    updateCountdown();
-
-    popupCountdownTimer = setInterval(updateCountdown, 250);
-  }
-
-} else {
-
-  if (popupCountdownTimer) {
-    clearInterval(popupCountdownTimer);
-    popupCountdownTimer = null;
-  }
-
-  countdownOverlay?.classList.remove('visible');
-}
     
     if (cancelCountdownBtn) {
       cancelCountdownBtn.onclick = async () => {
@@ -907,9 +837,19 @@ if (game.status === 'countdown' && game.countdownStart) {
     $('infoStatus').textContent = `Starting… ${remaining}s`;
 
     if (remaining <= 0) {
-      clearInterval(statusCountdownTimer);
-      statusCountdownTimer = null;
-    }
+  clearInterval(statusCountdownTimer);
+  statusCountdownTimer = null;
+
+  fetch(`${API}/api/rooms/${state.activeRoomId}/start-game`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      playerId: state.player.id
+    })
+  });
+}
   };
 
   updateStatusCountdown();

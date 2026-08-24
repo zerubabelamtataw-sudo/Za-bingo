@@ -555,7 +555,7 @@ $('joinBtn').addEventListener('click', async () => {
     
           if (val === 'FREE') {
             cell.classList.add('free', 'marked');
-            cell.textContent = 'FREE';
+            cell.textContent = '⭐';
           } else {
             cell.textContent = val;
             cell.addEventListener('click', () => toggleCell(cartela.id, cell, val));

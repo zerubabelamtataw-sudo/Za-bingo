@@ -651,9 +651,10 @@ header {
 
   width: 90%;
   margin: 0;
-
+  background: #E0C7F5;
   height: auto;
   max-height: calc(100vh - 120px);
+  padding: 20px;
 
   overflow-y: auto;
   overflow-x: hidden;
@@ -667,9 +668,9 @@ header {
   flex: 0 0 auto;
   width: 100%;
 
-  background: #C99DE9;
+  background: #f5eeff;
   border: 0px solid var(--border);
-  border-radius: 8px;
+  border-radius: 20px;
 
   overflow: hidden;
   min-width: 0;
@@ -759,7 +760,7 @@ header {
 .bingo-cell.auto-marked {
   background: #1D4A28;
   border-color: #475b57;
-  color: #32104F;
+  color: #f59e0b;
 }
 
 /* Free */

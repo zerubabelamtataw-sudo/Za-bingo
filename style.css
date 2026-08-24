@@ -589,7 +589,7 @@ header {
   height: 85px;
   min-height: 85px;
 
-  background: #111;
+  background: #DECADB;
   border: 1px solid #444;
   border-radius: 10px;
 
@@ -667,7 +667,7 @@ header {
   flex: 0 0 auto;
   width: 100%;
 
-  background: #DECAD6;
+  background: #6A2C91;
   border: 0px solid var(--border);
   border-radius: 8px;
 
@@ -764,9 +764,9 @@ header {
 
 /* Free */
 .bingo-cell.free {
-  background: #f59e0b;
+  background: #32104F;
   border-color: var(--gold);
-  color: #32104F;
+  color: #f59e0b;
 
   font-size: .85rem;
   font-weight: 700;

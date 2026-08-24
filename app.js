@@ -164,6 +164,7 @@
     let lobbyPollInterval = null;
     let cartelaCountdownTimer = null;
     let popupCountdownTimer = null;
+    let statusCountdownTimer = null;
     
     function startCartelaCountdown(room) {
       if (cartelaCountdownTimer) {
@@ -768,11 +769,6 @@ $('joinBtn').addEventListener('click', async () => {
       state.calledNumbers = game.calledNumbers || [];
       
 // ── THE TIME: CLIENT 30-SECOND COUNTDOWN ─────────────────
-const countdownOverlay = $('countdownOverlay');
-const popupCountdown = $('popupCountdown');
-const popupPlayerCount = $('popupPlayerCount');
-const popupPrize = $('popupPrize');
-
 if (game.status === 'countdown' && game.countdownStart) {
 
   countdownOverlay?.classList.add('visible');
@@ -900,14 +896,49 @@ if (game.status === 'countdown' && game.countdownStart) {
       };
     }
     
-      // Status bar
       $('infoRoomName').textContent = game.name;
-      $('infoStatus').textContent = {
-        waiting: 'Waiting', own: 'Starting…', playing: 'Playing', winner: 'Winner!'
-      }[game.status] || game.status;
-      $('infoPot').textContent = `${game.pot} Br`;
-      $('infoPlayers').textContent = game.playerCount;
-      $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
+      if (game.status === 'countdown' && game.countdownStart) {
+  if (statusCountdownTimer) {
+    clearInterval(statusCountdownTimer);
+  }
+
+  const updateStatusCountdown = () => {
+    const elapsed = Date.now() - game.countdownStart;
+    const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
+
+    $('infoStatus').textContent = `Starting… ${remaining}s`;
+
+    if (remaining <= 0) {
+      clearInterval(statusCountdownTimer);
+      statusCountdownTimer = null;
+    }
+  };
+
+  updateStatusCountdown();
+  statusCountdownTimer = setInterval(updateStatusCountdown, 250);
+}
+      
+
+if (game.status === 'countdown' && game.countdownStart) {
+  const elapsed = Date.now() - game.countdownStart;
+  const remaining = Math.max(
+    0,
+    Math.ceil((30000 - elapsed) / 1000)
+  );
+
+  $('infoStatus').textContent = `Starting… ${remaining}s`;
+} else {
+  $('infoStatus').textContent = {
+    waiting: 'Waiting',
+    own: 'Starting…',
+    playing: 'Playing',
+    winner: 'Winner!'
+  }[game.status] || game.status;
+}
+
+$('infoPot').textContent = `${game.pot} Br`;
+$('infoPlayers').textContent = game.playerCount;
+$('infoCalled').textContent = `${game.calledNumbers.length}/75`;
     
       // Player chips
       const list = $('gamePlayersList');

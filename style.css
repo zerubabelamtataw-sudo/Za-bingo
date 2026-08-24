@@ -739,8 +739,8 @@ header {
 
   border-radius: 5px;
   color: #000000;
-  background: #EDE0D4;
-  border: 1px solid var(--border);
+  background: #E9D6FA;
+  border: 0px solid var(--border);
 
   box-sizing: border-box;
 

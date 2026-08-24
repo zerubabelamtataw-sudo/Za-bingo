@@ -757,16 +757,16 @@ header {
 /* Marked + Auto-marked */
 .bingo-cell.marked,
 .bingo-cell.auto-marked {
-  background: #32104F;
+  background: #f59e0b;
   border-color: #475b57;
-  color: #EDE0D4;
+  color: #32104F;
 }
 
 /* Free */
 .bingo-cell.free {
-  background: #32104F;
+  background: #f59e0b;
   border-color: var(--gold);
-  color: #f59e0b;
+  color: #32104F;
 
   font-size: .85rem;
   font-weight: 700;
@@ -1807,11 +1807,11 @@ opacity: 1;
   font-weight: 900;
 }
 
-.cn-cell.called.B { background: #ffd24d; border-color: #ffd24d; }
-.cn-cell.called.I { background: #ffd24d; border-color: #ffd24d; }
-.cn-cell.called.N { background: #ffd24d; border-color: #ffd24d; }
-.cn-cell.called.G { background: #ffd24d; border-color: #ffd24d; }
-.cn-cell.called.O { background: #ffd24d; border-color: #ffd24d; }
+.cn-cell.called.B { background: #f59e0b; border-color: #f59e0b; }
+.cn-cell.called.I { background: #f59e0b; border-color: #f59e0b; }
+.cn-cell.called.N { background: #f59e0b; border-color: #f59e0b; }
+.cn-cell.called.G { background: #f59e0b; border-color: #f59e0b; }
+.cn-cell.called.O { background: #f59e0b; border-color: #f59e0b; }
 
 /* PHONE */
 @media (max-width: 600px) {

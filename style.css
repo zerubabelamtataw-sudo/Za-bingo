@@ -678,7 +678,7 @@ header {
 
   padding: 6px 8px;
 
-  background: #f59e0b;
+  background: #32104F;
   border-bottom: 1px solid var(--border);
 }
 
@@ -805,11 +805,11 @@ margin: 0 1.5%;
 
   background: linear-gradient(
     135deg,
-    #DECAD6,
+    #f59e0b,
     #f59e0b
   );
 
-  color: #4B1F6F;
+  color: #32104F;
 
   font-weight: 800;
   font-family: var(--font-display);
@@ -1780,13 +1780,13 @@ opacity: 1;
   align-items: center;
   justify-content: center;
 
-  background: #DECADB;
-  border: 1px solid #292929;
+  background: #EDE0D4;
+  border: 1.5px solid #292929;
   border-radius: 3px;
 
-  color: #777;
+  color: #000;
   font-family: Arial Black, Arial, sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -1847,7 +1847,7 @@ opacity: 1;
   border-radius: 4px;
 }
 .bingo-partition {
-  width: 100%;
+  width: 90%;
   margin: 0 auto;
   display: flex;
   flex-direction: row;
@@ -2040,11 +2040,11 @@ opacity: 1;
 
   background: linear-gradient(
     135deg,
-    #DECADB,
-    #4B1F6F
+    #f59e0b,
+    #f59e0b
   );
 
-  color: #f59e0b;
+  color: #32104F;
 
   font-weight: 800;
   font-family: var(--font-display);

@@ -757,7 +757,7 @@ header {
 /* Marked + Auto-marked */
 .bingo-cell.marked,
 .bingo-cell.auto-marked {
-  background: #72B584;
+  background: #1D4A28;
   border-color: #475b57;
   color: #32104F;
 }

@@ -767,62 +767,7 @@ $('joinBtn').addEventListener('click', async () => {
     function applyGameState(game) {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
-      
-
     
-    if (cancelCountdownBtn) {
-      cancelCountdownBtn.onclick = async () => {
-        try {
-          cancelCountdownBtn.disabled = true;
-    
-          const response = await fetch(
-      `${API}/api/rooms/${state.activeRoomId}/cancel-countdown`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                playerId: state.player.id
-              })
-            }
-          );
-    
-          const data = await response.json();
-    
-          if (!data.success) {
-            throw new Error(data.error || 'Failed to cancel countdown');
-          }
-          state.activeRoomId = null;
-    state.selectedRoom = null;
-    state.selectedCartelas = [];
-    
-    await refreshPlayer();
-    showPage('lobby');
-    refreshRooms();
-    
-    
-    state.activeRoomId = null;
-    state.selectedRoom = null;
-    state.selectedCartelas = [];
-    state.myCartelas = [];
-    
-    clearInterval(state.pollTimer);
-    
-    await refreshPlayer();
-    
-    showPage('lobby');
-    startLobbyPoll();
-    renderCartelaGrid();
-    
-    cancelCountdownBtn.disabled = false;
-    
-        } catch (error) {
-          console.error('Cancel countdown error:', error);
-          cancelCountdownBtn.disabled = false;
-        }
-      };
-    }
     
       $('infoRoomName').textContent = game.name;
       if (game.status === 'countdown' && game.countdownStart) {

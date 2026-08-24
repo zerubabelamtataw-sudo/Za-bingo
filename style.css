@@ -455,7 +455,7 @@ header {
 /* ───────── BIG GAME CONTAINER ───────── */
 
 .game-container {
-  width: 95%;
+  width: 100%;
   height: 100vh;
   background: #DECAD6;
   display: flex;

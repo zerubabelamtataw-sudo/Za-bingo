@@ -802,22 +802,7 @@ $('joinBtn').addEventListener('click', async () => {
 }
       
 
-if (game.status === 'countdown' && game.countdownStart) {
-  const elapsed = Date.now() - game.countdownStart;
-  const remaining = Math.max(
-    0,
-    Math.ceil((30000 - elapsed) / 1000)
-  );
 
-  $('infoStatus').textContent = `Starting… ${remaining}s`;
-} else {
-  $('infoStatus').textContent = {
-    waiting: 'Waiting',
-    own: 'Starting…',
-    playing: 'Playing',
-    winner: 'Winner!'
-  }[game.status] || game.status;
-}
 
 $('infoPot').textContent = `${game.pot} Br`;
 $('infoPlayers').textContent = game.playerCount;

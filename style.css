@@ -469,11 +469,12 @@ header {
 }
 .game-layout {
   display: grid;
-  grid-template-columns: 45% 55%;
+  grid-template-columns: 45% 1fr;
   flex: 1;
   min-height: 0;
   width: 100%;
-  column-gap: 5px;
+  gap: 5px;
+  box-sizing: border-box;
 }
 
 /* Status bar stays across the full top */

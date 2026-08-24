@@ -103,9 +103,13 @@
   updateHUD();
   $('navTabs').style.display = 'flex';
   $('playerHud').style.display = 'flex';
-  await loadCartelas();
+
+  // Show lobby immediately
   showPage('lobby');
   startLobbyPoll();
+
+  // Load cartelas after the lobby is visible
+  loadCartelas();
 }
     
     function updateHUD() {

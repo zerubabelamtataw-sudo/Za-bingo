@@ -1423,9 +1423,9 @@ header {
   gap: 2px;
 
   /* BUTTON BACKGROUND = MAIN BACKGROUND */
-  background:#DECADB;
+  background: transparent;
 
-  border: 1.5px solid #000;
+  border: 0px ;
   border-radius: 10px;
 
   font-family: var(--font-body);

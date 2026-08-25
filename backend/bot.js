@@ -300,9 +300,9 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
-  return;
-}
+  if (!forwardedText.match(/^From:\s*\d+/i)) {
+    return;
+  }
 
   console.log('\n📩 Forwarded SMS received:');
   console.log(forwardedText);
@@ -313,7 +313,7 @@ bot.on('message', async (msg) => {
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
 
-    const senderMatch = forwardedText.match(/^From:\s*(\d+)/i);
+    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBE)/i);
 
     if (!senderMatch) {
       console.log('❌ SMS sender not found');
@@ -1242,7 +1242,7 @@ async function approveWithdrawal(query, txnId) {
       `✅ *Withdrawal approved!*\n\n` +
       `Amount: ${amount} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining balance: ${Number(player.balance || 0)} Br`,
+      `💰 Remaining balance: ${currentBalance} Br`,
       { parse_mode: 'Markdown' }
     );
 

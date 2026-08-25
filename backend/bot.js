@@ -300,9 +300,9 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*\d+/i)) {
-    return;
-  }
+  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
+  return;
+}
 
   console.log('\n📩 Forwarded SMS received:');
   console.log(forwardedText);
@@ -337,9 +337,9 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // --------------------------------------------------------
 
     const smsText = forwardedText
-      .replace(/^From:\s*\d+\s*/i, '')
-      .replace(/^Time:\s*[^\n\r]*/i, '')
-      .trim();
+  .replace(/^From:\s*(?:\d+|CBE)\s*/i, '')
+  .replace(/^Time:\s*[^\n\r]*/i, '')
+  .trim();
 
     console.log('\n📨 Actual SMS:');
     console.log(smsText);
@@ -1242,7 +1242,7 @@ async function approveWithdrawal(query, txnId) {
       `✅ *Withdrawal approved!*\n\n` +
       `Amount: ${amount} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining balance: ${currentBalance} Br`,
+      `💰 Remaining balance: ${Number(player.balance || 0)} Br`,
       { parse_mode: 'Markdown' }
     );
 

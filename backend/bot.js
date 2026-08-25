@@ -69,11 +69,11 @@ function parseWithdrawalSMS(text) {
 }
 function parseCBEWithdrawalSMS(text) {
   const amountMatch = text.match(
-    /A debit transaction of ETB\s*([\d,]+(?:\.\d+)?)/
+    /successfully transferred ETB\s*([\d,]+(?:\.\d{2})?)/i
   );
 
   const receiptMatch = text.match(
-    /https:\/\/mbreciept\.cbe\.com\.et\/([A-Za-z0-9_-]+)/
+    /https:\/\/mbreciept\.cbe\.com\.et\/([A-Za-z0-9_-]+)/i
   );
 
   if (!amountMatch || !receiptMatch) {
@@ -828,7 +828,7 @@ else if (data.startsWith('deposit_method_')) {
   else if (data.startsWith('withdraw_method_')) {
     const method = data.replace('withdraw_method_', '');
     bot.sendMessage(chatId,
-      ` *በ${method === 'telebirr' ? 'ቴሌ ብር' : 'CBE Birr'} ለማውጣት*\n\n` +
+      ` *በ${method === 'telebirr' ? 'ቴሌ ብር' : 'CBE'} ለማውጣት*\n\n` +
 `ማውጣት የፈለጉትን መጠን ያስገቡ 👇`,
       { parse_mode: 'Markdown' }
     );
@@ -1100,7 +1100,9 @@ if (withdrawSessions[chatId]) {
 
     await bot.sendMessage(
       chatId,
-      `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+      session.method === 'cbe'
+  ? `🍂 ገንዘቡን የሚቀበሉበትን አካውንት ቁጥር ያስገቡ 👇`
+  : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
     );
 
     return;
@@ -1545,7 +1547,7 @@ function handleWithdrawMenu(chatId, player) {
       reply_markup: {
         inline_keyboard: [
           [{ text: ' Telebirr', callback_data: 'withdraw_method_telebirr' }],
-          [{ text: ' CBE Birr', callback_data: 'withdraw_method_cbe' }],
+          [{ text: ' CBE', callback_data: 'withdraw_method_cbe' }],
           [{ text: '🔙 Back', callback_data: 'back_to_menu' }],
         ]
       }

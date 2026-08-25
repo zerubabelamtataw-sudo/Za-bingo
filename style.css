@@ -688,7 +688,7 @@ header {
 
   width: 97%;
   margin: 0 1.5%;
-  background: #dcc7ee;
+  background: #E9D6FA;
   padding: 2px;
   gap: 2px;
 
@@ -797,9 +797,9 @@ header {
 /* ───────── CLAIM BINGO ───────── */
 
 .claim-bingo-btn {
-  margin: 0 12px 0;
+  margin: 0 ;
 
-  width: calc(100% - 24px);
+  width:100%;
 
   background: linear-gradient(
     135deg,
@@ -811,7 +811,7 @@ header {
 
   font-weight: 800;
   font-family: var(--font-display);
-  font-size: .9rem;
+  font-size: 1rem;
   letter-spacing: 2px;
 
   padding: 8px 12px;

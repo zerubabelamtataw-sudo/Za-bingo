@@ -300,9 +300,9 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*\d+/i)) {
-    return;
-  }
+  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
+  return;
+}
 
   console.log('\n📩 Forwarded SMS received:');
   console.log(forwardedText);

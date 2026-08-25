@@ -745,16 +745,15 @@ header {
 /* Marked + Auto-marked */
 .bingo-cell.marked,
 .bingo-cell.auto-marked {
-  background: #1D4A28;
+  background: #00B606;
   border-color: #475b57;
   color: #f59e0b;
 }
 
 /* Free */
 .bingo-cell.free {
-  background: #f59e0b;
+  background: #00B606;
   border-color: var(--gold);
-  color: #32104F;
 
   font-size: .85rem;
   font-weight: 700;

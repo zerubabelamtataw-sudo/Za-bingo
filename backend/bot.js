@@ -1116,8 +1116,27 @@ if (withdrawSessions[chatId]) {
 
     const phone = text.trim();
 
-    // Basic Ethiopian phone validation
-    const normalizedPhone = phone.replace(/\D/g, '');
+    if (session.step === 'phone') {
+
+  const input = text.trim();
+
+  // CBE → account number
+  if (session.method === 'cbe') {
+
+    if (!/^\d+$/.test(input)) {
+      await bot.sendMessage(
+        chatId,
+        `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
+      );
+      return;
+    }
+
+    session.phone = input;
+
+  } else {
+
+    // Telebirr → phone number
+    const normalizedPhone = input.replace(/\D/g, '');
 
     if (
       !(
@@ -1129,13 +1148,18 @@ if (withdrawSessions[chatId]) {
         normalizedPhone.length === 12
       )
     ) {
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
         `❌ የተሳሳተ የስልክ ቁጥር ነው።\n\n` +
         `ለምሳሌ፦ 09XXXXXXXX`
       );
       return;
     }
+
+    session.phone = input;
+  }
+
+  // Continue with your existing CREATE PENDING WITHDRAWAL code...
 
     // Save withdrawal phone
     session.phone = phone;

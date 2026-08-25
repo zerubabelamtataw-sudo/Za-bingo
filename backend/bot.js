@@ -67,6 +67,25 @@ function parseWithdrawalSMS(text) {
     transactionId: transactionMatch[1].toUpperCase()
   };
 }
+function parseCBEWithdrawalSMS(text) {
+  const amountMatch = text.match(
+    /A debit transaction of ETB\s*([\d,]+(?:\.\d+)?)/
+  );
+
+  const receiptMatch = text.match(
+    /https:\/\/mbreciept\.cbe\.com\.et\/([A-Za-z0-9_-]+)/
+  );
+
+  if (!amountMatch || !receiptMatch) {
+    return null;
+  }
+
+  return {
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: receiptMatch[1],
+    bank: 'CBE'
+  };
+}
 
 async function findPendingTransaction(type, amount, transactionId) {
   const snapshot = await db.ref('transactions').once('value');
@@ -371,6 +390,26 @@ bot.on('message', async (msg) => {
 
       return;
     }
+    // --------------------------------------------------------
+// CBE BANK WITHDRAWAL SMS
+// --------------------------------------------------------
+
+if (
+  smsText.includes('A debit transaction of ETB') &&
+  smsText.includes('mbreciept.cbe.com.et')
+) {
+
+  const smsData = parseCBEWithdrawalSMS(smsText);
+
+  if (!smsData) {
+    console.log('❌ Could not parse CBE withdrawal SMS');
+    return;
+  }
+
+  await processWithdrawal(smsText, smsData);
+
+  return;
+}
 
     console.log('ℹ️ SMS format not recognized');
 
@@ -888,10 +927,13 @@ if (
   const sms = text.trim();
 
   // Parse the SMS pasted by the player
-  const amountMatch = sms.match(/([\d,]+\.\d{2})\s*ብር/);
-  const transactionMatch = sms.match(
-    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
-  );
+  const amountMatch = sms.match(
+  /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
+);
+
+const transactionMatch = sms.match(
+  /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
+);
 
   if (!amountMatch || !transactionMatch) {
     bot.sendMessage(
@@ -1117,6 +1159,16 @@ if (withdrawSessions[chatId]) {
       withdrawalPhone: phone,
       createdAt: new Date().toISOString()
     });
+    
+   // --------------------------------------------------------
+// DEDUCT BALANCE IMMEDIATELY
+// --------------------------------------------------------
+
+const balanceRef = db.ref(`players/${tgId}/balance`);
+
+await balanceRef.transaction(
+  balance => Number(balance || 0) - Number(session.amount)
+); 
 
     const ADMIN_ID =
       process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
@@ -1182,11 +1234,7 @@ async function approveWithdrawal(query, txnId) {
       return;
     }
 
-    const currentBalance = Number(player.balance || 0);
-
-    await playerRef.update({
-      balance: currentBalance - amount
-    });
+  
 
     await transactionRef.update({
       status: 'approved',
@@ -1199,7 +1247,7 @@ async function approveWithdrawal(query, txnId) {
       `✅ *Withdrawal approved!*\n\n` +
       `Amount: ${amount} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining balance: ${currentBalance - amount} Br`,
+      `💰 Remaining balance: ${currentBalance} Br`,
       { parse_mode: 'Markdown' }
     );
 

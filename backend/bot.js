@@ -267,11 +267,6 @@ async function processWithdrawal(text, smsData) {
     return false;
   }
 
-  const newBalance = currentBalance - amount;
-
-  await playerRef.update({
-    balance: newBalance
-  });
 
   await transactionRef.update({
     status: 'approved',
@@ -285,7 +280,7 @@ async function processWithdrawal(text, smsData) {
     `🧾 *ያዘዙት ወጪ ተረጋግጧል 💯*\n\n` +
     `Amount: ${amount} Br\n` +
     `Transaction ID: ${smsData.transactionId}\n\n` +
-    `💰 Remaining balance: ${newBalance} Br`,
+    `💰 Remaining balance: ${currentBalance} Br`,
     {
       parse_mode: 'Markdown'
     }
@@ -327,15 +322,15 @@ bot.on('message', async (msg) => {
 
     const sender = senderMatch[1];
 
-    // ONLY TRUST TELEBIRR SENDER 127
-    if (sender !== '127') {
-      console.log(
-        `❌ Unauthorized SMS sender: ${sender}`
-      );
-      return;
-    }
+   // TRUST TELEBIRR + CBE SMS SENDERS
+if (sender !== '127' && sender.toUpperCase() !== 'CBE') {
+  console.log(
+    `❌ Unauthorized SMS sender: ${sender}`
+  );
+  return;
+}
 
-    console.log('✅ Authorized SMS sender: 127');
+console.log(`✅ Authorized SMS sender: ${sender}`);
 
     // --------------------------------------------------------
     // REMOVE FORWARDER HEADER
@@ -1247,7 +1242,7 @@ async function approveWithdrawal(query, txnId) {
       `✅ *Withdrawal approved!*\n\n` +
       `Amount: ${amount} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining balance: ${currentBalance} Br`,
+      `💰 Remaining balance: ${Number(player.balance || 0)} Br`,
       { parse_mode: 'Markdown' }
     );
 

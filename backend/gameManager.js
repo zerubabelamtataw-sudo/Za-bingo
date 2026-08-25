@@ -1,5 +1,9 @@
 'use strict';
+let recordWeeklyWin = null;
 
+function setRecordWeeklyWin(fn) {
+  recordWeeklyWin = fn;
+}
 /**
  * gamesManager.js
  * Manages all 3 Bingo room states: waiting → countdown → playing → winner
@@ -749,6 +753,13 @@ if (this.db) {
     pot: room.pot,
     date: new Date().toISOString()
   });
+
+  if (recordWeeklyWin) {
+    await recordWeeklyWin(
+      playerId,
+      playerName
+    );
+  }
 }
 
     return room.toJSON();

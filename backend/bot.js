@@ -1557,6 +1557,18 @@ function setGameManager(gm) {
 
 let lastDailyBonusDate = null;
 let lastWeeklyBonusDate = null;
+async function recordWeeklyWin(playerId, playerName) {
+  const ref = db.ref(`leaderboards/weekly/${playerId}`);
+  const snapshot = await ref.once('value');
+  const current = snapshot.val() || {};
+
+  await ref.set({
+    playerId: String(playerId),
+    playerName: playerName || 'Player',
+    actualWins: Number(current.actualWins || 0) + 1,
+    updatedAt: new Date().toISOString()
+  });
+}
 
 
 // ============================================================

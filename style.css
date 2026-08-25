@@ -333,14 +333,6 @@ header {
   background: #E9D6FA;
 }
 
-.room-card:hover {
-  box-shadow:
-    rgba(45, 35, 66, 0.4) 0 4px 8px,
-    rgba(45, 35, 66, 0.3) 0 7px 13px -3px,
-    #D6D6E7 0 -5px 0 inset;
-
-  transform: translateY(-2px);
-}
 
 .room-card:active {
   box-shadow: #D6D6E7 0 4px 8px inset;
@@ -1409,15 +1401,7 @@ header {
   align-items: stretch;
 
   /* NAV BAR STAYS THE SAME */
-  background:
-  linear-gradient(
-    to bottom,
-    rgba(85, 23, 23, .35) 0%,
-    transparent 25%,
-    transparent 75%,
-    rgba(85, 23, 23, .35) 100%
-  ),
-  #DECADB;
+  background:#DECADB;
   border-top: 2px
 
   padding-bottom: 0;
@@ -1440,12 +1424,7 @@ header {
   gap: 2px;
 
   /* BUTTON BACKGROUND = MAIN BACKGROUND */
-  background:
-  radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  #DECADB;
+  background:#DECADB;
 
   border: 1.5px solid #000;
   border-radius: 10px;
@@ -1497,12 +1476,7 @@ header {
 /* ── ACTIVE BUTTON ── */
 
 .nav-tab.active {
-  background:
-  radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
-  #ef44;
+  background: #ef44;
 
   color: #000;
 
@@ -1621,13 +1595,13 @@ opacity: 1;
 
 /* LEFT 75-NUMBER DISPLAY */
 .called-board {
-  width: 100%;
+  width: 90%;
   max-width: 280px;
-  margin: 0 auto;
+  margin: 0 0 0 auto;
   padding: 8px;
   background: #000;
   border: 2px solid #333;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 /* ───────── CURRENT NUMBER + HISTORY CONTAINER ───────── */

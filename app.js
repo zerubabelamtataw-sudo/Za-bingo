@@ -256,25 +256,7 @@ activeCountdownStart = countdownStart;
   );
 }
     
-      const update = () => {
-        const elapsed = (Date.now() - room.countdownStart) / 1000;
-        const remaining = Math.max(
-          0,
-          30 - elapsed
-        );
-    
-        $('cartelaCountdown').textContent =
-          `${Math.ceil(remaining)}s`;
-    
-        if (remaining <= 0) {
-          clearInterval(cartelaCountdownTimer);
-          cartelaCountdownTimer = null;
-        }
-      };
-    
-      update();
-      cartelaCountdownTimer = setInterval(update, 250);
-    }
+      
     
     function startLobbyPoll() {
       refreshRooms();

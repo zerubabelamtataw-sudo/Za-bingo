@@ -1073,7 +1073,6 @@ if (withdrawSessions[chatId]) {
     // ADMIN NOTIFICATION
     // --------------------------------------------------------
 
-const ADMIN_ID = process.env.ADMIN_ID;
 
 function isAdmin(telegramId) {
   return String(telegramId) === String(ADMIN_ID);

@@ -104,11 +104,58 @@
   $('navTabs').style.display = 'flex';
   $('playerHud').style.display = 'flex';
 
-  // Show lobby immediately
+  // Check if player was already inside a game
+  const activeGame = loadLocal('activeGame');
+
+  if (activeGame?.roomId && activeGame?.cartelaIds?.length) {
+    try {
+      const data = await apiFetch(`/api/game/${activeGame.roomId}`);
+      const game = data.game;
+      // Make sure cartelas are loaded before restoring
+if (!state.allCartelas.length) {
+  await loadCartelas();
+}
+
+      // Player is still inside this game
+      const me = (game.players || []).find(
+        p => String(p.id) === String(state.player.id)
+      );
+
+      if (me) {
+        state.activeRoomId = activeGame.roomId;
+        state.selectedRoom = activeGame.roomId;
+
+        state.myCartelas = state.allCartelas.filter(
+          c => activeGame.cartelaIds.includes(c.id)
+        );
+
+        state.markedCells = {};
+        state.bingoDetected = {};
+
+        for (const c of state.myCartelas) {
+          state.markedCells[c.id] = new Set(['FREE']);
+        }
+
+        showPage('game');
+        buildCalledGrid();
+        renderMyCartelas();
+        applyGameState(game);
+        startGamePoll();
+
+        return;
+      }
+    } catch (e) {
+      console.log('No active game to restore');
+    }
+
+    // Saved game is no longer active
+    localStorage.removeItem('bingo_activeGame');
+  }
+
+  // Normal lobby
   showPage('lobby');
   startLobbyPoll();
 
-  // Load cartelas after the lobby is visible
   loadCartelas();
 }
     
@@ -395,6 +442,11 @@ $('joinBtn').addEventListener('click', async () => {
     });
 
     const room = data.room;
+    // Save active game so refresh can restore it
+saveLocal('activeGame', {
+  roomId,
+  cartelaIds
+});
 
     const fee = room.entryFee * cartelaIds.length;
     state.player.balance -= fee;
@@ -889,6 +941,7 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
         state.selectedCartelas = [];
         state.selectedRoom     = null;
         state.lastCalledCount  = 0;
+        localStorage.removeItem('bingo_activeGame');
     
         clearInterval(state.pollTimer);
     

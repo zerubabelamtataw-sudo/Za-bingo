@@ -130,14 +130,20 @@ async function storeOfficialDeposit(text, smsData) {
     return false;
   }
 
-  await officialRef.set({
-    type: 'deposit',
-    amount: smsData.amount,
-    transactionId: smsData.transactionId,
-    sms: text,
-    status: 'available',
-    receivedAt: new Date().toISOString()
-  });
+  const receivedAt = new Date();
+const expiresAt = new Date(
+  receivedAt.getTime() + 3 * 24 * 60 * 60 * 1000
+);
+
+await officialRef.set({
+  type: 'deposit',
+  amount: smsData.amount,
+  transactionId: smsData.transactionId,
+  sms: text,
+  status: 'available',
+  receivedAt: receivedAt.toISOString(),
+  expiresAt: expiresAt.toISOString()
+});
 
   console.log(
     `✅ Official deposit SMS saved: ${smsData.amount} Br → ${smsData.transactionId}`
@@ -145,6 +151,45 @@ async function storeOfficialDeposit(text, smsData) {
 
   return true;
 }
+
+// ============================================================
+// EXPIRE OLD OFFICIAL DEPOSITS
+// ============================================================
+
+setInterval(async () => {
+  try {
+    const snapshot = await db.ref('officialDeposits').once('value');
+    const deposits = snapshot.val() || {};
+
+    const now = Date.now();
+
+    for (const [transactionId, deposit] of Object.entries(deposits)) {
+      if (!deposit) continue;
+
+      if (
+        deposit.status === 'available' &&
+        deposit.expiresAt &&
+        now > new Date(deposit.expiresAt).getTime()
+      ) {
+        await db.ref(`officialDeposits/${transactionId}`).update({
+          status: 'expired',
+          expiredAt: new Date().toISOString()
+        });
+
+        console.log(
+          `⏰ Official deposit expired: ${transactionId}`
+        );
+      }
+    }
+
+  } catch (error) {
+    console.error(
+      '❌ Deposit expiration error:',
+      error
+    );
+  }
+
+}, 60 * 60 * 1000);
 
 async function processWithdrawal(text, smsData) {
   const transaction = await findPendingTransaction(
@@ -899,22 +944,29 @@ if (
     return;
   }
 
-  // Compare player's SMS with official SMS
-  const normalizeSMS = value =>
-    String(value || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-  if (
-    normalizeSMS(official.sms) !==
-    normalizeSMS(sms)
-  ) {
+  // Check 3-day expiration
+if (official.expiresAt) {
+  if (Date.now() > new Date(official.expiresAt).getTime()) {
     bot.sendMessage(
       chatId,
-      '❌ The SMS does not match the official payment record.'
+      '❌ This payment SMS has expired.'
     );
     return;
   }
+}
+
+// Compare amount + transaction ID
+if (
+  Number(official.amount) !== smsAmount ||
+  String(official.transactionId).toUpperCase() !==
+    transactionId.toUpperCase()
+) {
+  bot.sendMessage(
+    chatId,
+    '❌ The SMS does not match the official payment record.'
+  );
+  return;
+}
 
   // Create approved transaction
   const transactionRef =

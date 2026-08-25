@@ -209,20 +209,52 @@ if (!state.allCartelas.length) {
     
     // ── Rooms ─────────────────────────────────────────────────────────────────────
     let lobbyPollInterval = null;
-    let cartelaCountdownTimer = null;
-    let popupCountdownTimer = null;
-    let statusCountdownTimer = null;
+    let countdownTimer = null;
+    let activeCountdownStart = null;
+    
+    function startSharedCountdown(countdownStart, seconds = 30) { 
+    if (activeCountdownStart === countdownStart && countdownTimer) {
+  return;
+}
+
+activeCountdownStart = countdownStart;
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  const update = () => {
+    const elapsed = (Date.now() - countdownStart) / 1000;
+    const remaining = Math.max(0, seconds - elapsed);
+    const display = `${Math.ceil(remaining)}s`;
+
+    const cartela = $('cartelaCountdown');
+    if (cartela) cartela.textContent = display;
+
+    const status = $('infoStatus');
+    if (status) status.textContent = `Starting… ${display}`;
+
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+  };
+
+  update();
+  countdownTimer = setInterval(update, 250);
+}
     
     function startCartelaCountdown(room) {
-      if (cartelaCountdownTimer) {
-        clearInterval(cartelaCountdownTimer);
-        cartelaCountdownTimer = null;
-      }
-    
-      if (room.status !== 'countdown' || !room.countdownStart) {
-        $('cartelaCountdown').textContent = '—';
-        return;
-      }
+  if (room.status !== 'countdown' || !room.countdownStart) {
+    $('cartelaCountdown').textContent = '—';
+    return;
+  }
+
+  startSharedCountdown(
+    room.countdownStart,
+    room.countdownSeconds || 30
+  );
+}
     
       const update = () => {
         const elapsed = (Date.now() - room.countdownStart) / 1000;
@@ -822,35 +854,11 @@ saveLocal('activeGame', {
     
     
       $('infoRoomName').textContent = game.name;
-      if (game.status === 'countdown' && game.countdownStart) {
-  if (statusCountdownTimer) {
-    clearInterval(statusCountdownTimer);
-  }
-
-  const updateStatusCountdown = () => {
-    const elapsed = Date.now() - game.countdownStart;
-    const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
-
-    $('infoStatus').textContent = `Starting… ${remaining}s`;
-
-    if (remaining <= 0) {
-  clearInterval(statusCountdownTimer);
-  statusCountdownTimer = null;
-
-  fetch(`${API}/api/rooms/${state.activeRoomId}/start-game`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      playerId: state.player.id
-    })
-  });
-}
-  };
-
-  updateStatusCountdown();
-  statusCountdownTimer = setInterval(updateStatusCountdown, 250);
+if (game.status === 'countdown' && game.countdownStart) {
+  startSharedCountdown(
+    game.countdownStart,
+    game.countdownSeconds || 30
+  );
 }
       
 

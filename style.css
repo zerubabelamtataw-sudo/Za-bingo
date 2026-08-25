@@ -473,7 +473,7 @@ header {
   flex-direction: row;
   gap: 8px;
   align-items: stretch;
-  background: #4B1F6F;
+  background: #dcc7ee;
   margin-top: 8px;      /* top gap */
   margin-bottom: 8px;
 }
@@ -508,7 +508,7 @@ header {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f5e9fc;
+  background: ##ba8dc4;
 
   gap: 0;
 
@@ -657,7 +657,7 @@ header {
   width: 100%;
 
   background: #E9D6FA;
-  border-radius: 20px;
+  border-radius: 10px;
 
   overflow: hidden;
   min-width: 0;

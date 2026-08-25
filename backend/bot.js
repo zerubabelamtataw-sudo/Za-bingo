@@ -31,6 +31,314 @@ function getEthiopiaTimeParts() {
 
   return result;
 }
+
+// ============================================================
+// ADMIN — SMS PARSERS
+// ============================================================
+
+function parseDepositSMS(text) {
+  const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);
+  const transactionMatch = text.match(
+    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
+  );
+
+  if (!amountMatch || !transactionMatch) {
+    return null;
+  }
+
+  return {
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: transactionMatch[1].toUpperCase()
+  };
+}
+
+function parseWithdrawalSMS(text) {
+  const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);
+  const transactionMatch = text.match(
+    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
+  );
+
+  if (!amountMatch || !transactionMatch) {
+    return null;
+  }
+
+  return {
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: transactionMatch[1].toUpperCase()
+  };
+}
+
+async function findPendingTransaction(type, amount, transactionId) {
+  const snapshot = await db.ref('transactions').once('value');
+  const transactions = snapshot.val() || {};
+
+  // Check duplicate transaction ID first
+  for (const transaction of Object.values(transactions)) {
+    if (!transaction) continue;
+
+    if (
+      String(transaction.transactionId || '').toUpperCase() ===
+      String(transactionId || '').toUpperCase()
+    ) {
+      console.log('⚠️ Duplicate transaction ID:', transactionId);
+
+      if (transaction.telegramId) {
+        await bot.sendMessage(
+          transaction.telegramId,
+          `⚠️ *Duplicate ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}*\n\n` +
+          `This transaction has already been processed.\n` +
+          `No money was added to your balance.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      return null;
+    }
+  }
+
+  // Find pending transaction
+  for (const [key, transaction] of Object.entries(transactions)) {
+    if (!transaction) continue;
+
+    if (
+      transaction.type === type &&
+      transaction.status === 'pending' &&
+      Number(transaction.amount) === Number(amount)
+    ) {
+      return {
+        key,
+        ...transaction
+      };
+    }
+  }
+
+  return null;
+}
+
+async function storeOfficialDeposit(text, smsData) {
+  const officialRef = db.ref(
+    `officialDeposits/${smsData.transactionId}`
+  );
+
+  const existingSnapshot = await officialRef.once('value');
+  const existing = existingSnapshot.val();
+
+  if (existing) {
+    console.log(
+      `⚠️ Official deposit already stored: ${smsData.transactionId}`
+    );
+    return false;
+  }
+
+  await officialRef.set({
+    type: 'deposit',
+    amount: smsData.amount,
+    transactionId: smsData.transactionId,
+    sms: text,
+    status: 'available',
+    receivedAt: new Date().toISOString()
+  });
+
+  console.log(
+    `✅ Official deposit SMS saved: ${smsData.amount} Br → ${smsData.transactionId}`
+  );
+
+  return true;
+}
+
+async function processWithdrawal(text, smsData) {
+  const transaction = await findPendingTransaction(
+    'withdrawal',
+    smsData.amount,
+    smsData.transactionId
+  );
+
+  if (!transaction) {
+    console.log(
+      '⚠️ No matching pending withdrawal:',
+      smsData.amount,
+      smsData.transactionId
+    );
+    return false;
+  }
+
+  const transactionRef = db.ref(
+    `transactions/${transaction.key}`
+  );
+
+  const playerRef = db.ref(
+    `players/${transaction.telegramId}`
+  );
+
+  const playerSnapshot = await playerRef.once('value');
+  const player = playerSnapshot.val();
+
+  if (!player) {
+    console.log(
+      '❌ Player not found:',
+      transaction.telegramId
+    );
+    return false;
+  }
+
+  const currentBalance = Number(player.balance || 0);
+  const amount = Number(transaction.amount);
+
+  if (currentBalance < amount) {
+    console.log(
+      `❌ Insufficient balance for withdrawal: ${transaction.telegramId}`
+    );
+
+    await transactionRef.update({
+      status: 'failed',
+      failureReason: 'Insufficient balance',
+      updatedAt: new Date().toISOString()
+    });
+
+    await bot.sendMessage(
+      transaction.telegramId,
+      `❌ Withdrawal failed.\n\nInsufficient balance.`
+    );
+
+    return false;
+  }
+
+  const newBalance = currentBalance - amount;
+
+  await playerRef.update({
+    balance: newBalance
+  });
+
+  await transactionRef.update({
+    status: 'approved',
+    transactionId: smsData.transactionId,
+    confirmedAt: new Date().toISOString(),
+    confirmationSms: text
+  });
+
+  await bot.sendMessage(
+    transaction.telegramId,
+    `🧾 *ያዘዙት ወጪ ተረጋግጧል 💯*\n\n` +
+    `Amount: ${amount} Br\n` +
+    `Transaction ID: ${smsData.transactionId}\n\n` +
+    `💰 Remaining balance: ${newBalance} Br`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+
+  console.log(
+    `✅ Withdrawal approved: ${amount} Br → ${transaction.telegramId}`
+  );
+
+  return true;
+}
+
+bot.on('message', async (msg) => {
+
+  const forwardedText = msg.text;
+
+  if (!forwardedText) return;
+
+  // Only process forwarded SMS messages
+  if (!forwardedText.match(/^From:\s*\d+/i)) {
+    return;
+  }
+
+  console.log('\n📩 Forwarded SMS received:');
+  console.log(forwardedText);
+
+  try {
+
+    // --------------------------------------------------------
+    // CHECK SMS FORWARDER SENDER
+    // --------------------------------------------------------
+
+    const senderMatch = forwardedText.match(/^From:\s*(\d+)/i);
+
+    if (!senderMatch) {
+      console.log('❌ SMS sender not found');
+      return;
+    }
+
+    const sender = senderMatch[1];
+
+    // ONLY TRUST TELEBIRR SENDER 127
+    if (sender !== '127') {
+      console.log(
+        `❌ Unauthorized SMS sender: ${sender}`
+      );
+      return;
+    }
+
+    console.log('✅ Authorized SMS sender: 127');
+
+    // --------------------------------------------------------
+    // REMOVE FORWARDER HEADER
+    // --------------------------------------------------------
+
+    const smsText = forwardedText
+      .replace(/^From:\s*\d+\s*/i, '')
+      .replace(/^Time:\s*[^\n\r]*/i, '')
+      .trim();
+
+    console.log('\n📨 Actual SMS:');
+    console.log(smsText);
+
+    // --------------------------------------------------------
+    // DEPOSIT SMS
+    // --------------------------------------------------------
+
+    if (
+      smsText.includes('ተቀብለዋል') &&
+      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
+    ) {
+
+      const smsData = parseDepositSMS(smsText);
+
+      if (!smsData) {
+        console.log('❌ Could not parse deposit SMS');
+        return;
+      }
+
+      await storeOfficialDeposit(smsText, smsData);
+
+      return;
+    }
+
+    // --------------------------------------------------------
+    // WITHDRAWAL SMS
+    // --------------------------------------------------------
+
+    if (
+      smsText.includes('ልከዋል') &&
+      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
+    ) {
+
+      const smsData = parseWithdrawalSMS(smsText);
+
+      if (!smsData) {
+        console.log('❌ Could not parse withdrawal SMS');
+        return;
+      }
+
+      await processWithdrawal(smsText, smsData);
+
+      return;
+    }
+
+    console.log('ℹ️ SMS format not recognized');
+
+  } catch (error) {
+
+    console.error(
+      '❌ SMS processing error:',
+      error
+    );
+
+  }
+});
+
 bot.setMyCommands([
   { command: 'play', description: 'Play Now' },
   { command: 'deposit', description: 'Deposit' },
@@ -450,12 +758,12 @@ else if (data.startsWith('deposit_method_')) {
   
   // Admin: Approve withdrawal
   else if (data.startsWith('approve_withdraw_')) {
-    const txnId = parseInt(data.replace('approve_withdraw_', ''));
+    const txnId = data.replace('approve_withdraw_', '');
     approveWithdrawal(query, txnId);
   }
   // Admin: Reject withdrawal
   else if (data.startsWith('reject_withdraw_')) {
-    const txnId = parseInt(data.replace('reject_withdraw_', ''));
+    const txnId = data.replace('reject_withdraw_', '');
     rejectWithdrawal(query, txnId);
   }
 
@@ -564,7 +872,7 @@ if (
     return;
   }
 
-  // Check official SMS saved by adminBot.js
+// Check official SMS saved by the main bot
   const officialRef = db.ref(
     `officialDeposits/${transactionId}`
   );
@@ -661,79 +969,332 @@ if (
   return;
 }
 
-  // Handle withdraw amount
-if (
-  withdrawSessions[chatId] &&
-  withdrawSessions[chatId].step === 'amount'
-) {
-  const amount = parseFloat(text);
+ // ============================================================
+// HANDLE WITHDRAWAL
+// ============================================================
 
-  if (isNaN(amount) || amount <= 0) {
-    bot.sendMessage(
-      chatId,
-      '❌ Invalid amount. Enter amount:'
-    );
-    return;
-  }
-
-  const balance = Number(player.balance || 0);
-
-  if (amount > balance) {
-    bot.sendMessage(
-      chatId,
-      `❌ Insufficient balance. You have ${balance} Br.`
-    );
-    return;
-  }
+if (withdrawSessions[chatId]) {
 
   const session = withdrawSessions[chatId];
 
-  // Create pending withdrawal transaction
-  const transactionRef = db.ref('transactions').push();
+  // ----------------------------------------------------------
+  // STEP 1 — AMOUNT
+  // ----------------------------------------------------------
 
-  await transactionRef.set({
-    playerId: tgId,
-    telegramId: tgId,
-    type: 'withdrawal',
-    amount: amount,
-    status: 'pending',
-    paymentMethod: session.method,
-    createdAt: new Date().toISOString()
-  });
-  
-  // Deduct withdrawal amount immediately
-await db.ref(`players/${tgId}/balance`).transaction(
-  balance => Number(balance || 0) - amount
-);
+  if (session.step === 'amount') {
 
-  const ADMIN_ID =
-    process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+    const amount = parseFloat(text);
 
-  bot.sendMessage(
-    ADMIN_ID,
-    ` *New Withdrawal Request*\n\n` +
-    `Player: ${player.first_name || 'Player'}\n` +
-    `Username: @${player.username || 'N/A'}\n` +
-    `Amount: ${amount} Br\n` +
-    `Method: ${session.method}\n` +
-    `Phone: ${player.phone || 'Not set'}\n` +
-    `Date: ${new Date().toLocaleString()}`,
-    {
-      parse_mode: 'Markdown'
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(
+        chatId,
+        '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
+      );
+      return;
     }
-  );
 
-  bot.sendMessage(
-    chatId,
-    `🧾 *የገንዘብ ማውጣት ጥያቄ አስገብተዋል *\n\n` +
-`Amount:          ${amount.toFixed(2)} ETB\n` +
-`Payment method:  ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
-`Status:          Pending approval`
-  );
+    const balance = Number(player.balance || 0);
 
-        delete withdrawSessions[chatId];
+    if (amount > balance) {
+      bot.sendMessage(
+        chatId,
+        `❌ በቂ ቀሪ ሂሳብ የለዎትም።\n\n💰 ያለዎት ሂሳብ: ${balance} Br`
+      );
+      return;
+    }
+
+    // Save amount
+    session.amount = amount;
+
+    // Move to phone step
+    session.step = 'phone';
+
+    await bot.sendMessage(
+      chatId,
+      `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+    );
+
     return;
   }
+
+  // ----------------------------------------------------------
+  // STEP 2 — PHONE NUMBER
+  // ----------------------------------------------------------
+
+  if (session.step === 'phone') {
+
+    const phone = text.trim();
+
+    // Basic Ethiopian phone validation
+    const normalizedPhone = phone.replace(/\D/g, '');
+
+    if (
+      !(
+        normalizedPhone.startsWith('09') &&
+        normalizedPhone.length === 10
+      ) &&
+      !(
+        normalizedPhone.startsWith('2519') &&
+        normalizedPhone.length === 12
+      )
+    ) {
+      bot.sendMessage(
+        chatId,
+        `❌ የተሳሳተ የስልክ ቁጥር ነው።\n\n` +
+        `ለምሳሌ፦ 09XXXXXXXX`
+      );
+      return;
+    }
+
+    // Save withdrawal phone
+    session.phone = phone;
+
+    // --------------------------------------------------------
+    // CREATE PENDING WITHDRAWAL
+    // --------------------------------------------------------
+
+    const transactionRef = db.ref('transactions').push();
+
+    await transactionRef.set({
+      playerId: tgId,
+      telegramId: tgId,
+      type: 'withdrawal',
+      amount: session.amount,
+      status: 'pending',
+      paymentMethod: session.method,
+      withdrawalPhone: phone,
+      createdAt: new Date().toISOString()
+    });
+
+    const ADMIN_ID =
+      process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+
+    // --------------------------------------------------------
+    // ADMIN NOTIFICATION
+    // --------------------------------------------------------
+
+const ADMIN_ID = process.env.ADMIN_ID;
+
+function isAdmin(telegramId) {
+  return String(telegramId) === String(ADMIN_ID);
+}
+
+// ============================================================
+// ADMIN — APPROVE WITHDRAWAL
+// ============================================================
+
+async function approveWithdrawal(query, txnId) {
+  const chatId = query.message.chat.id;
+  const adminId = String(query.from.id);
+
+  if (!isAdmin(adminId)) {
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Admin only',
+      show_alert: true
+    });
+    return;
+  }
+
+  try {
+    const transactionRef = db.ref(`transactions/${txnId}`);
+    const snapshot = await transactionRef.once('value');
+    const transaction = snapshot.val();
+
+    if (!transaction) {
+      await bot.answerCallbackQuery(query.id, {
+        text: '❌ Transaction not found',
+        show_alert: true
+      });
+      return;
+    }
+
+    if (transaction.status !== 'pending') {
+      await bot.answerCallbackQuery(query.id, {
+        text: '⚠️ Already processed',
+        show_alert: true
+      });
+      return;
+    }
+
+    const playerId = String(transaction.telegramId);
+    const amount = Number(transaction.amount);
+
+    const playerRef = db.ref(`players/${playerId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
+
+    if (!player) {
+      await bot.answerCallbackQuery(query.id, {
+        text: '❌ Player not found',
+        show_alert: true
+      });
+      return;
+    }
+
+    const currentBalance = Number(player.balance || 0);
+
+    await playerRef.update({
+      balance: currentBalance - amount
+    });
+
+    await transactionRef.update({
+      status: 'approved',
+      approvedAt: new Date().toISOString(),
+      approvedBy: adminId
+    });
+
+    await bot.sendMessage(
+      playerId,
+      `✅ *Withdrawal approved!*\n\n` +
+      `Amount: ${amount} Br\n` +
+      `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
+      `💰 Remaining balance: ${currentBalance - amount} Br`,
+      { parse_mode: 'Markdown' }
+    );
+
+    await bot.answerCallbackQuery(query.id, {
+      text: '✅ Withdrawal approved'
+    });
+
+    await bot.editMessageReplyMarkup(
+      { inline_keyboard: [] },
+      {
+        chat_id: chatId,
+        message_id: query.message.message_id
+      }
+    );
+
+    await bot.sendMessage(
+      chatId,
+      `✅ Withdrawal approved.\n\n` +
+      `Player: ${player.first_name || 'Player'}\n` +
+      `Amount: ${amount} Br`
+    );
+
+  } catch (error) {
+    console.error('❌ Approve withdrawal error:', error);
+
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Approval failed',
+      show_alert: true
+    });
+  }
+}
+
+// ============================================================
+// ADMIN — REJECT WITHDRAWAL
+// ============================================================
+
+async function rejectWithdrawal(query, txnId) {
+  const chatId = query.message.chat.id;
+  const adminId = String(query.from.id);
+
+  if (!isAdmin(adminId)) {
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Admin only',
+      show_alert: true
+    });
+    return;
+  }
+
+  try {
+    const transactionRef = db.ref(`transactions/${txnId}`);
+    const snapshot = await transactionRef.once('value');
+    const transaction = snapshot.val();
+
+    if (!transaction) {
+      await bot.answerCallbackQuery(query.id, {
+        text: '❌ Transaction not found',
+        show_alert: true
+      });
+      return;
+    }
+
+    if (transaction.status !== 'pending') {
+      await bot.answerCallbackQuery(query.id, {
+        text: '⚠️ Already processed',
+        show_alert: true
+      });
+      return;
+    }
+
+    await transactionRef.update({
+      status: 'rejected',
+      rejectedAt: new Date().toISOString(),
+      rejectedBy: adminId
+    });
+
+    await bot.sendMessage(
+      transaction.telegramId,
+      `❌ *Withdrawal rejected.*\n\n` +
+      `Amount: ${transaction.amount} Br\n` +
+      `Phone: ${transaction.withdrawalPhone || 'N/A'}`,
+      { parse_mode: 'Markdown' }
+    );
+
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Withdrawal rejected'
+    });
+
+    await bot.editMessageReplyMarkup(
+      { inline_keyboard: [] },
+      {
+        chat_id: chatId,
+        message_id: query.message.message_id
+      }
+    );
+
+    await bot.sendMessage(
+      chatId,
+      `❌ Withdrawal rejected.\n\n` +
+      `Amount: ${transaction.amount} Br`
+    );
+
+  } catch (error) {
+    console.error('❌ Reject withdrawal error:', error);
+
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Rejection failed',
+      show_alert: true
+    });
+  }
+}
+
+    await bot.sendMessage(
+      ADMIN_ID,
+      `💰 *New Withdrawal Request*\n\n` +
+      `Player: ${player.first_name || 'Player'}\n` +
+      `Username: @${player.username || 'N/A'}\n` +
+      `Amount: ${session.amount} Br\n` +
+      `Method: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
+      `Phone: ${phone}\n` +
+      `Date: ${new Date().toLocaleString()}`,
+      {
+        parse_mode: 'Markdown'
+      }
+    );
+
+    // --------------------------------------------------------
+    // PLAYER CONFIRMATION
+    // --------------------------------------------------------
+
+    await bot.sendMessage(
+      chatId,
+      `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
+      `💰 መጠን: ${session.amount.toFixed(2)} Br\n` +
+      `💳 መንገድ: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
+      `📱 ስልክ: ${phone}\n\n` +
+      `⏳ ሁኔታ: Pending`,
+      {
+        parse_mode: 'Markdown'
+      }
+    );
+
+    delete withdrawSessions[chatId];
+
+    return;
+  }
+}
   // ============================================================
 // HANDLE PLAYER TRANSFER
 // ============================================================

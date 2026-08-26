@@ -739,7 +739,7 @@ header {
 .bingo-cell.auto-marked {
   background: #00B606;
   border-color: #475b57;
-  color: #f59e0b;
+  color: #4B0082;
 }
 
 /* Free */
@@ -789,9 +789,8 @@ header {
 /* ───────── CLAIM BINGO ───────── */
 
 .claim-bingo-btn {
-  margin: 0 ;
-
-  width:100%;
+  width: 95%;
+  margin: 0 auto;
 
   background: linear-gradient(
     135deg,
@@ -2122,6 +2121,13 @@ opacity: 1;
   width: auto;
   height: auto;
 }
+
+.select-room {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 #page-history {
   background: #EDE0D4;
   max-width: none;
@@ -2862,4 +2868,13 @@ opacity: 1;
   font-weight: 500;
   line-height: 1.5;
   color: #555;
+}
+header {
+  position: relative;
+}
+
+header .live-bingo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }

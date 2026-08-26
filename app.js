@@ -1153,28 +1153,7 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
         }
       ],
     
-      weekly: [
-        {
-          place: 1,
-          amount: 3000
-        },
-        {
-          place: 2,
-          amount: 1500
-        },
-        {
-          place: 3,
-          amount: 700
-        },
-        {
-          place: 4,
-          amount: 400
-        },
-        {
-          place: 5,
-          amount: 250
-        }
-      ]
+
     
     };
     
@@ -1209,12 +1188,9 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
     
       button.classList.add("active");
     
-      const list = bonuses[type];
+      const list = bonuses.daily;
     
-      const title =
-        type === "daily"
-          ? "DAILY BONUS"
-          : "WEEKLY BONUS";
+      const title = "DAILY BONUS";
     
       let rows = "";
     

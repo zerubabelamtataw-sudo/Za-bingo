@@ -10,6 +10,8 @@ const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const BONUS_CHANNEL = '@EdelBingoo';
+const ADMIN_ID =
+  process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
 function getEthiopiaTimeParts() {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Africa/Addis_Ababa',
@@ -1114,10 +1116,6 @@ if (withdrawSessions[chatId]) {
 
   if (session.step === 'phone') {
 
-    const phone = text.trim();
-
-    if (session.step === 'phone') {
-
   const input = text.trim();
 
   // CBE → account number
@@ -1161,6 +1159,8 @@ if (withdrawSessions[chatId]) {
 
   // Continue with your existing CREATE PENDING WITHDRAWAL code...
 
+  const phone = session.phone;
+
     // Save withdrawal phone
     session.phone = phone;
 
@@ -1180,6 +1180,19 @@ if (withdrawSessions[chatId]) {
       withdrawalPhone: phone,
       createdAt: new Date().toISOString()
     });
+    await bot.sendMessage(
+      ADMIN_ID,
+      `💰 *New Withdrawal Request*\n\n` +
+      `Player: ${player.first_name || 'Player'}\n` +
+      `Username: @${player.username || 'N/A'}\n` +
+      `Amount: ${session.amount} Br\n` +
+      `Method: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
+      `Phone: ${phone}\n` +
+      `Date: ${new Date().toLocaleString()}`,
+      {
+        parse_mode: 'Markdown'
+      }
+    );
     
    // --------------------------------------------------------
 // DEDUCT BALANCE IMMEDIATELY
@@ -1191,13 +1204,162 @@ await balanceRef.transaction(
   balance => Number(balance || 0) - Number(session.amount)
 ); 
 
-    const ADMIN_ID =
-      process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
 
     // --------------------------------------------------------
     // ADMIN NOTIFICATION
     // --------------------------------------------------------
 
+
+
+
+    // --------------------------------------------------------
+    // PLAYER CONFIRMATION
+    // --------------------------------------------------------
+
+    await bot.sendMessage(
+      chatId,
+      `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
+      `💰 መጠን: ${session.amount.toFixed(2)} Br\n` +
+      `💳 መንገድ: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
+      `📱 ስልክ: ${phone}\n\n` +
+      `⏳ ሁኔታ: Pending`,
+      {
+        parse_mode: 'Markdown'
+      }
+    );
+
+    delete withdrawSessions[chatId];
+
+    return;
+  }
+}
+  // ============================================================
+// HANDLE PLAYER TRANSFER
+// ============================================================
+
+if (transferSessions[chatId]) {
+  const session = transferSessions[chatId];
+
+  // Step 1: Phone number
+  if (session.step === 'phone') {
+    const phone = text.trim();
+
+    const playersSnapshot = await db.ref('players').once('value');
+    const players = playersSnapshot.val() || {};
+
+    let recipientId = null;
+    let recipient = null;
+
+    for (const [id, p] of Object.entries(players)) {
+      if (!p) continue;
+
+      const normalizePhone = (number) => {
+  let phone = String(number || '').replace(/\D/g, '');
+
+  if (phone.startsWith('251')) {
+    phone = phone.slice(3);
+  }
+
+  if (phone.startsWith('0')) {
+    phone = phone.slice(1);
+  }
+
+  return phone;
+};
+
+const savedPhone = normalizePhone(p.phone);
+const enteredPhone = normalizePhone(phone);
+
+if (savedPhone === enteredPhone) {
+  recipientId = id;
+  recipient = p;
+  break;
+}
+    }
+
+    if (!recipient) {
+      bot.sendMessage(
+        chatId,
+        '❌ No player was found with this phone number.'
+      );
+      return;
+    }
+
+    if (recipientId === tgId) {
+      bot.sendMessage(
+        chatId,
+        '❌ You cannot transfer money to yourself.'
+      );
+      return;
+    }
+
+    session.recipientId = recipientId;
+    session.recipient = recipient;
+    session.step = 'amount';
+
+    bot.sendMessage(
+      chatId,
+      `Recipient: ${recipient.first_name || 'Player'}\n\n` +
+      `Enter the amount to transfer:`
+    );
+
+    return;
+  }
+
+  // Step 2: Amount
+  if (session.step === 'amount') {
+    const amount = Number(text);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      bot.sendMessage(
+        chatId,
+        '❌ Invalid amount. Enter the amount again:'
+      );
+      return;
+    }
+
+    const balance = Number(player.balance || 0);
+
+    if (amount > balance) {
+      bot.sendMessage(
+        chatId,
+        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
+      );
+      return;
+    }
+
+    session.amount = amount;
+    session.step = 'confirm';
+
+    bot.sendMessage(
+      chatId,
+      `Transfer Confirmation\n\n` +
+      `To: ${session.recipient.first_name || 'Player'}\n` +
+      `Phone: ${session.recipient.phone}\n` +
+      `Amount: ${amount} Br\n\n` +
+      `Confirm this transfer?`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Confirm',
+                callback_data: 'transfer_confirm'
+              },
+              {
+                text: 'Cancel',
+                callback_data: 'transfer_cancel'
+              }
+            ]
+          ]
+        }
+      }
+    );
+
+    return;
+  }
+}
+});
 
 function isAdmin(telegramId) {
   return String(telegramId) === String(ADMIN_ID);
@@ -1380,169 +1542,7 @@ async function rejectWithdrawal(query, txnId) {
   }
 }
 
-    await bot.sendMessage(
-      ADMIN_ID,
-      `💰 *New Withdrawal Request*\n\n` +
-      `Player: ${player.first_name || 'Player'}\n` +
-      `Username: @${player.username || 'N/A'}\n` +
-      `Amount: ${session.amount} Br\n` +
-      `Method: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
-      `Phone: ${phone}\n` +
-      `Date: ${new Date().toLocaleString()}`,
-      {
-        parse_mode: 'Markdown'
-      }
-    );
-
-    // --------------------------------------------------------
-    // PLAYER CONFIRMATION
-    // --------------------------------------------------------
-
-    await bot.sendMessage(
-      chatId,
-      `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
-      `💰 መጠን: ${session.amount.toFixed(2)} Br\n` +
-      `💳 መንገድ: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
-      `📱 ስልክ: ${phone}\n\n` +
-      `⏳ ሁኔታ: Pending`,
-      {
-        parse_mode: 'Markdown'
-      }
-    );
-
-    delete withdrawSessions[chatId];
-
-    return;
-  }
-}
-  // ============================================================
-// HANDLE PLAYER TRANSFER
-// ============================================================
-
-if (transferSessions[chatId]) {
-  const session = transferSessions[chatId];
-
-  // Step 1: Phone number
-  if (session.step === 'phone') {
-    const phone = text.trim();
-
-    const playersSnapshot = await db.ref('players').once('value');
-    const players = playersSnapshot.val() || {};
-
-    let recipientId = null;
-    let recipient = null;
-
-    for (const [id, p] of Object.entries(players)) {
-      if (!p) continue;
-
-      const normalizePhone = (number) => {
-  let phone = String(number || '').replace(/\D/g, '');
-
-  if (phone.startsWith('251')) {
-    phone = phone.slice(3);
-  }
-
-  if (phone.startsWith('0')) {
-    phone = phone.slice(1);
-  }
-
-  return phone;
-};
-
-const savedPhone = normalizePhone(p.phone);
-const enteredPhone = normalizePhone(phone);
-
-if (savedPhone === enteredPhone) {
-  recipientId = id;
-  recipient = p;
-  break;
-}
-    }
-
-    if (!recipient) {
-      bot.sendMessage(
-        chatId,
-        '❌ No player was found with this phone number.'
-      );
-      return;
-    }
-
-    if (recipientId === tgId) {
-      bot.sendMessage(
-        chatId,
-        '❌ You cannot transfer money to yourself.'
-      );
-      return;
-    }
-
-    session.recipientId = recipientId;
-    session.recipient = recipient;
-    session.step = 'amount';
-
-    bot.sendMessage(
-      chatId,
-      `Recipient: ${recipient.first_name || 'Player'}\n\n` +
-      `Enter the amount to transfer:`
-    );
-
-    return;
-  }
-
-  // Step 2: Amount
-  if (session.step === 'amount') {
-    const amount = Number(text);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      bot.sendMessage(
-        chatId,
-        '❌ Invalid amount. Enter the amount again:'
-      );
-      return;
-    }
-
-    const balance = Number(player.balance || 0);
-
-    if (amount > balance) {
-      bot.sendMessage(
-        chatId,
-        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
-      );
-      return;
-    }
-
-    session.amount = amount;
-    session.step = 'confirm';
-
-    bot.sendMessage(
-      chatId,
-      `Transfer Confirmation\n\n` +
-      `To: ${session.recipient.first_name || 'Player'}\n` +
-      `Phone: ${session.recipient.phone}\n` +
-      `Amount: ${amount} Br\n\n` +
-      `Confirm this transfer?`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: 'Confirm',
-                callback_data: 'transfer_confirm'
-              },
-              {
-                text: 'Cancel',
-                callback_data: 'transfer_cancel'
-              }
-            ]
-          ]
-        }
-      }
-    );
-
-    return;
-  }
-}
-});
-
+    
 
 // ============================================================
 // HANDLERS

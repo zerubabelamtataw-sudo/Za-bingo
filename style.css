@@ -471,7 +471,7 @@ header {
   width: 100%;
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 3px;
   align-items: stretch;
   background: #dcc7ee;
   margin-top: 8px;      /* top gap */
@@ -531,7 +531,7 @@ header {
   text-transform: uppercase;
   letter-spacing: .2px;
 
-  color: #2b1b38;
+  color: #f59e0b;
 
   line-height: 1;
 
@@ -548,7 +548,7 @@ header {
   font-size: 10px;
   font-weight: 900;
 
-  color: #000;
+  color: #f59e0b;
 
   line-height: 1.1;
 
@@ -2839,7 +2839,7 @@ opacity: 1;
 .live-dot {
   width: 8px;
   height: 8px;
-  background: #000;
+  background: #ff0000;
   border-radius: 50%;
   display: inline-block;
 }
@@ -2853,13 +2853,13 @@ opacity: 1;
   margin: 18px 0 12px;
   padding: 14px 16px;
   border-radius: 14px;
-  background: #fff;
+  background: #E9D6FA;
   border: 1px solid rgba(0, 0, 0, .08);
   box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
 }
 
 .announcement-title {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 800;
   color: #111;
   margin-bottom: 7px;

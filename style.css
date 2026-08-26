@@ -2126,6 +2126,7 @@ opacity: 1;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  margin-top: 10px;
 }
 
 #page-history {
@@ -2817,7 +2818,7 @@ opacity: 1;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   padding: 0 4px;
 }
 

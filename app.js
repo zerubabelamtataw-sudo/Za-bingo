@@ -425,9 +425,16 @@ $('joinBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Joining…';
 
-  // Show game UI immediately
-  showPage('game');
-  buildCalledGrid();
+// Show game UI immediately
+showPage('game');
+
+state.calledNumbers = [];
+state.lastCalledCount = 0;
+
+$('lastCalledNum').textContent = '—';
+$('lastCalledHistory').innerHTML = '';
+
+buildCalledGrid();
 
   state.activeRoomId = roomId;
 

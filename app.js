@@ -260,7 +260,7 @@ activeCountdownStart = countdownStart;
     
     function startLobbyPoll() {
       refreshRooms();
-      lobbyPollInterval = setInterval(refreshRooms, 1000);
+      lobbyPollInterval = setInterval(refreshRooms, 4000);
     }
     
     async function refreshRooms() {

@@ -198,14 +198,10 @@ app.post('/api/admin/approve-transaction', async (req, res) => {
       transactionId
     } = req.body || {};
 
-    const adminPassword =
-      process.env.ADMIN_PASSWORD;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
     // Check admin password
-    if (
-      !adminPassword ||
-      password !== adminPassword
-    ) {
+    if (!adminPassword || password !== adminPassword) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized'
@@ -264,7 +260,10 @@ app.post('/api/admin/approve-transaction', async (req, res) => {
       });
     }
 
-    // Approve transaction
+    // ========================================================
+    // APPROVE TRANSACTION
+    // ========================================================
+
     await transactionRef.update({
 
       status: 'approved',
@@ -273,6 +272,64 @@ app.post('/api/admin/approve-transaction', async (req, res) => {
         new Date().toISOString()
 
     });
+
+    // ========================================================
+    // SEND TELEGRAM NOTIFICATION
+    // ========================================================
+
+    if (transaction.telegramId) {
+
+      try {
+
+        const playerRef =
+          db.ref(`players/${transaction.telegramId}`);
+
+        const playerSnapshot =
+          await playerRef.once('value');
+
+        const player =
+          playerSnapshot.val();
+
+        const remainingBalance =
+          Number(player?.balance || 0);
+
+        await bot.sendMessage(
+          String(transaction.telegramId),
+
+          `✅ *Withdrawal approved!*\n\n` +
+          `💰 Amount: ${Number(transaction.amount)} Br\n` +
+          `📱 Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
+          `💰 Remaining balance: ${remainingBalance} Br`,
+
+          {
+            parse_mode: 'Markdown'
+          }
+        );
+
+        console.log(
+          `📨 Withdrawal approval notification sent to ${transaction.telegramId}`
+        );
+
+      } catch (telegramError) {
+
+        console.error(
+          '⚠️ Transaction approved, but Telegram notification failed:',
+          telegramError
+        );
+
+      }
+
+    } else {
+
+      console.log(
+        '⚠️ Transaction has no telegramId — notification not sent'
+      );
+
+    }
+
+    // ========================================================
+    // RESPONSE
+    // ========================================================
 
     return res.json({
       success: true,

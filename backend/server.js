@@ -185,6 +185,116 @@ app.post('/api/admin/add-balance', async (req, res) => {
 
 });
 
+// ============================================================
+// ADMIN — APPROVE TRANSACTION
+// ============================================================
+
+app.post('/api/admin/approve-transaction', async (req, res) => {
+
+  try {
+
+    const {
+      password,
+      transactionId
+    } = req.body || {};
+
+    const adminPassword =
+      process.env.ADMIN_PASSWORD;
+
+    // Check admin password
+    if (
+      !adminPassword ||
+      password !== adminPassword
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    if (!transactionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction ID required'
+      });
+    }
+
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Firebase is not connected'
+      });
+    }
+
+    const transactionRef =
+      db.ref(`transactions/${transactionId}`);
+
+    const snapshot =
+      await transactionRef.once('value');
+
+    const transaction =
+      snapshot.val();
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    // Already approved
+    if (
+      String(transaction.status).toLowerCase() ===
+      'approved'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction already approved'
+      });
+    }
+
+    // Only pending transactions
+    if (
+      String(transaction.status).toLowerCase() !==
+      'pending'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pending transactions can be approved'
+      });
+    }
+
+    // Approve transaction
+    await transactionRef.update({
+
+      status: 'approved',
+
+      approvedAt:
+        new Date().toISOString()
+
+    });
+
+    return res.json({
+      success: true,
+      message: 'Transaction approved successfully'
+    });
+
+  } catch (error) {
+
+    console.error(
+      '❌ Approve transaction error:',
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+
+  }
+
+});
+
 // ── Helper ────────────────────────────────────────────────────────────────────
 const ok  = (res, data)  => res.json({ success: true,  ...data });
 const err = (res, msg, code = 400) => res.status(code).json({ success: false, error: msg });

@@ -43,15 +43,7 @@ header {
   align-items: center;
   justify-content: space-between;
   height: 64px;
-  background:
-  linear-gradient(
-    to bottom,
-    rgba(85, 23, 23, .35) 0%,
-    transparent 25%,
-    transparent 75%,
-    rgba(85, 23, 23, .35) 100%
-  ),
-  #DECADB;
+  background: #dcc7ee;
   position: sticky;
   top: 0;
   z-index: 100;

@@ -621,15 +621,29 @@ onValue(
           <br>
 
           Status:
-          ${
-            getStatusHTML(
-              transaction.status
-            )
-          }
+${
+  getStatusHTML(
+    transaction.status
+  )
+}
 
-          <br>
+${
+  String(transaction.status || '').toLowerCase() === 'pending'
+    ? `
+      <br><br>
+      <button
+        class="approve-transaction-btn"
+        data-transaction-id="${id}"
+        data-transaction-type="deposit">
+        ✅ Approve Deposit
+      </button>
+    `
+    : ''
+}
 
-          Transaction ID:
+<br>
+
+Transaction ID:
           <span class="copyable-player">
             ${
               transaction.transactionId ||
@@ -750,15 +764,29 @@ onValue(
           <br>
 
           Status:
-          ${
-            getStatusHTML(
-              transaction.status
-            )
-          }
+${
+  getStatusHTML(
+    transaction.status
+  )
+}
 
-          <br>
+${
+  String(transaction.status || '').toLowerCase() === 'pending'
+    ? `
+      <br><br>
+      <button
+        class="approve-transaction-btn"
+        data-transaction-id="${id}"
+        data-transaction-type="withdrawal">
+        ✅ Approve Withdrawal
+      </button>
+    `
+    : ''
+}
 
-          Transaction ID:
+<br>
+
+Transaction ID:
           <span class="copyable-player">
             ${
               transaction.transactionId ||
@@ -1156,3 +1184,81 @@ document
 }
 
 loadSimSettings();
+// ============================================================
+// ADMIN — APPROVE TRANSACTION BUTTON
+// ============================================================
+
+document.addEventListener('click', async (event) => {
+
+  const button =
+    event.target.closest('.approve-transaction-btn');
+
+  if (!button) return;
+
+  const transactionId =
+    button.dataset.transactionId;
+
+  const password =
+    document.getElementById('adminPassword').value;
+
+  if (!transactionId) return;
+
+  button.disabled = true;
+  button.textContent = 'Approving...';
+
+  try {
+
+    const response = await fetch(
+      '/api/admin/approve-transaction',
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+          password,
+          transactionId
+        })
+      }
+    );
+
+    const result =
+      await response.json();
+
+    if (!response.ok || !result.success) {
+
+      button.disabled = false;
+
+      button.textContent =
+        button.dataset.transactionType === 'withdrawal'
+          ? '✅ Approve Withdrawal'
+          : '✅ Approve Deposit';
+
+      alert(
+        result.message ||
+        'Failed to approve transaction.'
+      );
+
+      return;
+    }
+
+    button.textContent = '✅ Approved';
+
+  } catch (error) {
+
+    console.error(error);
+
+    button.disabled = false;
+
+    button.textContent =
+      button.dataset.transactionType === 'withdrawal'
+        ? '✅ Approve Withdrawal'
+        : '✅ Approve Deposit';
+
+    alert('Could not connect to server.');
+
+  }
+
+});

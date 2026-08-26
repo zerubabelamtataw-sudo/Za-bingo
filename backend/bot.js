@@ -2223,3 +2223,4 @@ setInterval(async () => {
   }
 
 }, 30 * 1000);
+module.exports = { bot };

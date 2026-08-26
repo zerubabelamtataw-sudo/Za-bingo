@@ -14,7 +14,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const { GamesManager, setRecordWeeklyWin } = require('./gameManager');
-require('./bot');
+const { bot } = require('./bot');
 // ── Firebase init (graceful if credentials missing) ───────────────────────────
 let db = null;
 try {

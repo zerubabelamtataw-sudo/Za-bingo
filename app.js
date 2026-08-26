@@ -266,7 +266,6 @@ activeCountdownStart = countdownStart;
     async function refreshRooms() {
       try {
         const data = await apiFetch('/api/rooms');
-        loadTournamentLeaderboard();
         renderRoomCards(data.rooms);
         // Update reserved cartelas for selected room
         if (state.selectedRoom) {

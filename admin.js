@@ -568,12 +568,16 @@ onValue(
 
 
         if (
-          transaction.type !==
-          'deposit'
-        ) return;
+  transaction.type !==
+  'deposit'
+) return;
 
-
-        count++;
+if (
+  String(transaction.status || '').toLowerCase() ===
+  'pending'
+) {
+  count++;
+}
 
 
         const div =
@@ -711,12 +715,16 @@ onValue(
 
 
         if (
-          transaction.type !==
-          'withdrawal'
-        ) return;
+  transaction.type !==
+  'withdrawal'
+) return;
 
-
-        count++;
+if (
+  String(transaction.status || '').toLowerCase() ===
+  'pending'
+) {
+  count++;
+}
 
 
         const div =

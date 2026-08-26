@@ -2812,3 +2812,62 @@ opacity: 1;
 
   white-space: nowrap;
 }
+/* ── LOBBY HEADER ── */
+
+.lobby-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.lobby-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: .5px;
+}
+
+.live-bingo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #000;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+
+/* ── ANNOUNCEMENT ── */
+
+.lobby-announcement {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 18px 0 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+}
+
+.announcement-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 7px;
+}
+
+.announcement-text {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #555;
+}

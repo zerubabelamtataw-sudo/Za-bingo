@@ -508,7 +508,7 @@ header {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: ##ba8dc4;
+  background: #4B0082;
 
   gap: 0;
 
@@ -670,7 +670,7 @@ header {
 
   padding: 4px 8px;
 
-  background: #bd93c9;
+  background: #4B0082;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1454,22 +1454,22 @@ header {
 
 /* ROOMS */
 .nav-tab:nth-child(2)::before {
-  content: "🏠";
+  content: "▲";
 }
 
-/* BONUS & TOURNAMENT */
+/* BONUS */
 .nav-tab:nth-child(3)::before {
-  content: "🏆";
+  content: "✴️";
 }
 
 /* HISTORY */
 .nav-tab:nth-child(4)::before {
-  content: "📜";
+  content: "▤";
 }
 
 /* INFO */
 .nav-tab:nth-child(5)::before {
-  content: "ℹ️";
+  content: "Ⓘ";
 }
 
 /* ── ACTIVE BUTTON ── */

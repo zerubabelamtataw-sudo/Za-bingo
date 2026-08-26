@@ -2130,7 +2130,7 @@ opacity: 1;
 }
 
 #page-history {
-  background: #EDE0D4;
+  background: #dcc7ee;
   max-width: none;
   margin: 0;
   width: 100%;
@@ -2141,7 +2141,7 @@ opacity: 1;
 .info-screen {
   width: 100%;
   min-height: 100vh;
-  background: #EDE0D4;
+  background: #dcc7ee;
 
   display: flex;
   flex-direction: column;
@@ -2187,7 +2187,7 @@ opacity: 1;
   max-width: none;
   margin: 0;
   width: 100%;
-  background: #EDE0D4;
+  background: #dcc7ee;
 }
 
 .info-content {

@@ -2090,20 +2090,17 @@ opacity: 1;
     0 7px 15px rgba(100, 20, 20, .25),
     inset 0 1px 3px rgba(255,255,255,.5);
 }
-.sapphire-gem.select-room {
-  font-size: 11px;
-  padding: 7px 12px;
+.select-join-room {
+  font-size: 12px;
+  padding: 8px 12px;
   width: fit-content;
   height: auto;
-  min-height: 26px;
+  min-height: 30px;
   box-sizing: border-box;
-}
 
-.select-room {
   position: static;
   margin: 0;
   transform: none;
-  width: fit-content;
   line-height: 1.1;
   display: flex;
   align-items: center;
@@ -2798,9 +2795,39 @@ opacity: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  padding: 0 4px;
+  gap: 10px;
+  margin-bottom: 0;
+  padding: 0 10px;
+}
+
+.play-bonus-challenge {
+  width: 65%;
+  min-height: 52px;
+  padding: 12px 10px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
+    #EDE0D4;
+
+  border: 1.5px solid #000;
+  border-radius: 10px;
+
+  color: #000;
+  font-size: .9rem;
+  font-weight: 900;
+
+  box-shadow:
+    rgba(45, 35, 66, .4) 0 2px 4px,
+    rgba(45, 35, 66, .3) 0 7px 13px -3px,
+    #D6D6E7 0 -5px 0 inset;
 }
 
 .lobby-title {

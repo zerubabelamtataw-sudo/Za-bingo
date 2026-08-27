@@ -37,6 +37,16 @@
       if (n <= 60) return 'G';
       return 'O';
     }
+    function playNumberSound(number) {
+  const letter = letterFor(number);
+  const audio = new Audio(`audio/${letter}${number}.mp3`);
+
+  audio.currentTime = 0;
+
+  audio.play().catch(error => {
+    console.log('Audio playback blocked:', error);
+  });
+}
     
     function uid() {
       return 'player_' + Math.random().toString(36).slice(2, 10);
@@ -555,6 +565,8 @@ saveLocal('activeGame', {
     
       if (calledNumbers.length > prev) {
         const latest = calledNumbers[calledNumbers.length - 1];
+        playNumberSound(latest);
+        
     
     $('lastCalledWrap').style.visibility = 'visible';
     

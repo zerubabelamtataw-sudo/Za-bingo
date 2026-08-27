@@ -2098,11 +2098,11 @@ opacity: 1;
 }
 
 .select-room {
-  position: relative;
+  position: static;
   left: auto;
   top: auto;
   transform: none;
-  margin: 8px auto 8px;
+  margin: 0;
   width: fit-content;
 }
 
@@ -2826,7 +2826,7 @@ opacity: 1;
 .lobby-announcement {
   width: 100%;
   box-sizing: border-box;
-  margin: 18px 0 12px;
+  margin: 0 0 12px;
   padding: 14px 16px;
   border-radius: 14px;
   background: #E9D6FA;

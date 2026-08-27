@@ -286,7 +286,7 @@ header {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 .room-card {
   align-items: center;
@@ -2842,6 +2842,11 @@ opacity: 1;
   display: flex;
   align-items: center;
   gap: 7px;
+
+  border: 1.5px solid #000;
+  border-radius: 10px;
+  padding: 2px 3px;
+  box-sizing: border-box;
 }
 
 .live-dot {
@@ -2858,12 +2863,12 @@ opacity: 1;
 .lobby-announcement {
   width: 100%;
   box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 14px 16px;
+  margin: 0;
+  padding: 0;
   border-radius: 14px;
   background: #E9D6FA;
   border: 1px solid rgba(0, 0, 0, .08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+  box-shadow: 0 4px 14px rgba(0, 0, .06);
 }
 
 .announcement-title {

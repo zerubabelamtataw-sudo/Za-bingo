@@ -921,9 +921,8 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
     if (winnerGrid && winner.cartelaGrid) {
       winnerGrid.innerHTML = '';
     
-      const called = new Set(
-  winner.calledNumbers || state.calledNumbers
-);
+      const called = new Set(state.calledNumbers);
+const winningMarked = state.markedCells[winner.cartelaId] || new Set();
     
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
@@ -938,9 +937,9 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
           } else {
             cell.textContent = value;
     
-            if (called.has(value)) {
-              cell.classList.add('marked');
-            }
+            if (called.has(value) || winningMarked.has(value)) {
+  cell.classList.add('marked');
+}
           }
     
           winnerGrid.appendChild(cell);

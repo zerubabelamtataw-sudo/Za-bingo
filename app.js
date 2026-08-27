@@ -915,37 +915,101 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
       $('popupWinnerName').textContent = winner.playerName;
       $('popupCartelaDetail').textContent =
         `Cartela #${winner.cartelaNumber} · ${winner.calledCount} numbers called`;
-       // Show winning cartela
-    const winnerGrid = $('winnerCartelaGrid');
-    
-    if (winnerGrid && winner.cartelaGrid) {
-      winnerGrid.innerHTML = '';
-    
-      const called = new Set(state.calledNumbers);
-const winningMarked = state.markedCells[winner.cartelaId] || new Set();
-    
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          const value = winner.cartelaGrid[r][c];
-    
-          const cell = document.createElement('div');
-          cell.className = 'winner-cartela-cell';
-    
-          if (value === 'FREE') {
-            cell.classList.add('free', 'marked');
-            cell.textContent = 'FREE';
-          } else {
-            cell.textContent = value;
-    
-            if (called.has(value) || winningMarked.has(value)) {
-  cell.classList.add('marked');
-}
-          }
-    
-          winnerGrid.appendChild(cell);
-        }
+       // ── Show winning cartela with actual winning cells highlighted ──
+const winnerGrid = $('winnerCartelaGrid');
+
+if (winnerGrid && winner.cartelaGrid) {
+  winnerGrid.innerHTML = '';
+
+  const called = new Set(state.calledNumbers);
+
+  // Determine which cells are marked on the winning cartela
+  const isMarked = (r, c) => {
+    const value = winner.cartelaGrid[r][c];
+
+    if (value === 'FREE') return true;
+
+    return called.has(value);
+  };
+
+  // Find the actual winning cells
+  const winningCells = new Set();
+
+  // Horizontal rows
+  for (let r = 0; r < 5; r++) {
+    if ([0, 1, 2, 3, 4].every(c => isMarked(r, c))) {
+      for (let c = 0; c < 5; c++) {
+        winningCells.add(`${r}-${c}`);
       }
     }
+  }
+
+  // Vertical columns
+  for (let c = 0; c < 5; c++) {
+    if ([0, 1, 2, 3, 4].every(r => isMarked(r, c))) {
+      for (let r = 0; r < 5; r++) {
+        winningCells.add(`${r}-${c}`);
+      }
+    }
+  }
+
+  // Diagonal ↘
+  if ([0, 1, 2, 3, 4].every(i => isMarked(i, i))) {
+    for (let i = 0; i < 5; i++) {
+      winningCells.add(`${i}-${i}`);
+    }
+  }
+
+  // Diagonal ↙
+  if ([0, 1, 2, 3, 4].every(i => isMarked(i, 4 - i))) {
+    for (let i = 0; i < 5; i++) {
+      winningCells.add(`${i}-${4 - i}`);
+    }
+  }
+
+  // Four corners
+  if (
+    isMarked(0, 0) &&
+    isMarked(0, 4) &&
+    isMarked(4, 0) &&
+    isMarked(4, 4)
+  ) {
+    winningCells.add('0-0');
+    winningCells.add('0-4');
+    winningCells.add('4-0');
+    winningCells.add('4-4');
+  }
+
+  // Build winner cartela
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const value = winner.cartelaGrid[r][c];
+
+      const cell = document.createElement('div');
+      cell.className = 'winner-cartela-cell';
+
+      // FREE cell
+      if (value === 'FREE') {
+        cell.classList.add('free', 'marked');
+        cell.textContent = 'FREE';
+      } else {
+        cell.textContent = value;
+
+        // Normal called/marked number
+        if (called.has(value)) {
+          cell.classList.add('marked');
+        }
+
+        // Actual cells that created the BINGO
+        if (winningCells.has(`${r}-${c}`)) {
+          cell.classList.add('winner-bingo-hit');
+        }
+      }
+
+      winnerGrid.appendChild(cell);
+    }
+  }
+}
       $('popupAmount').textContent =
         isMe
           ? `+${winner.amount} Br 🎉`

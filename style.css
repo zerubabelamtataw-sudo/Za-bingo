@@ -2877,9 +2877,9 @@ header .live-bingo {
 
   color: #32104F;
 
-  font-weight: 800;
+  font-weight: 500;
   font-family: var(--font-display);
-  font-size: .9rem;
+  font-size: .3rem;
   letter-spacing: 1px;
 
   padding: 8px 6px;
@@ -2888,4 +2888,20 @@ header .live-bingo {
   border-radius: 8px;
 
   cursor: pointer;
+}
+.winner-cartela-cell.winner-bingo-hit {
+  background: #edb967;
+  color: #000;
+  border: 2px solid #fff;
+  box-shadow: 0 0 10px rgba(237, 185, 103, 0.9);
+  transform: scale(1.04);
+  font-weight: 900;
+  z-index: 2;
+}
+.header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }

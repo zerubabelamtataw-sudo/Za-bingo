@@ -1947,7 +1947,7 @@ opacity: 1;
   min-height: calc(100vh - 64px);
 }
 #page-lobby .rooms-section {
-  padding-top: 24px;
+  padding-top: 4px;
 }
 /* ──────────────── WINNER CARTELA ──────────────── */
 
@@ -2936,4 +2936,17 @@ header .live-bingo {
   align-items: center;
   justify-content: center;
   gap: 4px;
+}
+.select-join-room {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  min-height: 40px;
+  box-sizing: border-box;
+
+  color: #000;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.1;
 }

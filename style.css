@@ -2845,7 +2845,7 @@ opacity: 1;
 
   border: 1.5px solid #000;
   border-radius: 10px;
-  padding: 2px 3px;
+  padding: 3px 4px;
   box-sizing: border-box;
 }
 
@@ -2861,9 +2861,9 @@ opacity: 1;
 /* ── ANNOUNCEMENT ── */
 
 .lobby-announcement {
-  width: 100%;
+  width: 95%;
   box-sizing: border-box;
-  margin: 0;
+  margin: 2px 0;
   padding: 0;
   border-radius: 14px;
   background: #E9D6FA;
@@ -2947,7 +2947,7 @@ header .live-bingo {
   align-items: center;
   justify-content: center;
   padding: 8px 12px;
-  min-height: 40px;
+  min-height: 35px;
   box-sizing: border-box;
 
   color: #000;

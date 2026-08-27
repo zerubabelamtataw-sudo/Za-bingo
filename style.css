@@ -2019,32 +2019,7 @@ opacity: 1;
   color: var(--gold);
   font-size: .55rem;
 }
-#autoMarkBtn {
-  margin: 12px 0;
-  width: calc(100% - 24px);
 
-  background: linear-gradient(
-    135deg,
-    #f59e0b,
-    #f59e0b
-  );
-
-  color: #32104F;
-
-  font-weight: 800;
-  font-family: var(--font-display);
-  font-size: .9rem;
-  letter-spacing: 2px;
-
-  padding: 8px 12px;
-
-  border: none;
-  border-radius: 8px;
-  border: 3px solid #000;
-
-  cursor: pointer;
-
-}
 .sapphire-gem {
   display: inline-flex;
   align-items: center;
@@ -2880,4 +2855,37 @@ header .live-bingo {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+}
+.game-controls {
+  margin: 12px 0;
+  width: calc(100% - 24px);
+  display: flex;
+  gap: 6px;
+}
+
+#autoMarkBtn,
+#soundToggleBtn {
+  flex: 1;
+  width: 50%;
+  margin: 0;
+
+  background: linear-gradient(
+    135deg,
+    #f59e0b,
+    #f59e0b
+  );
+
+  color: #32104F;
+
+  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: .9rem;
+  letter-spacing: 1px;
+
+  padding: 8px 6px;
+
+  border: 3px solid #000;
+  border-radius: 8px;
+
+  cursor: pointer;
 }

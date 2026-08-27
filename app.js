@@ -24,7 +24,8 @@
       pollTimer:        null,
       lastCalledCount:  0,
       bingoDetected:    {},          // { cartelaId: bool }
-      autoMark:         false,       // automatic marking OFF by default
+      autoMark: false,
+soundOn: true,       // automatic marking OFF by default
     };
     
     // ── Utils ──────────────────────────────────────────────────────────────────────
@@ -38,6 +39,8 @@
       return 'O';
     }
     function playNumberSound(number) {
+  if (!state.soundOn) return;
+
   const letter = letterFor(number);
   const audio = new Audio(`audio/${letter}${number}.mp3`);
 
@@ -47,6 +50,22 @@
     console.log('Audio playback blocked:', error);
   });
 }
+function toggleSound() {
+  state.soundOn = !state.soundOn;
+
+  const btn = $('soundToggleBtn');
+
+  if (btn) {
+    btn.textContent = state.soundOn
+      ? '🔊 SOUND: ON'
+      : '🔇 SOUND: OFF';
+
+    btn.classList.toggle('off', !state.soundOn);
+  }
+}
+
+window.toggleSound = toggleSound;
+
     
     function uid() {
       return 'player_' + Math.random().toString(36).slice(2, 10);
@@ -902,7 +921,9 @@ $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
     if (winnerGrid && winner.cartelaGrid) {
       winnerGrid.innerHTML = '';
     
-      const called = new Set(state.calledNumbers);
+      const called = new Set(
+  winner.calledNumbers || state.calledNumbers
+);
     
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {

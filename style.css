@@ -42,7 +42,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 70px;
   background: #dcc7ee;
   position: sticky;
   top: 0;
@@ -2099,11 +2099,10 @@ opacity: 1;
 
 .select-room {
   position: static;
-  left: auto;
-  top: auto;
-  transform: none;
   margin: 0;
+  transform: none;
   width: fit-content;
+  line-height: 1;
 }
 
 #page-history {
@@ -2804,6 +2803,7 @@ opacity: 1;
   font-weight: 800;
   color: #111;
   letter-spacing: .5px;
+  line-height: 1;
 }
 
 .live-bingo {

@@ -2905,12 +2905,3 @@ header .live-bingo {
   justify-content: center;
   gap: 4px;
 }
-.header-center .lobby-title {
-  transform: translateY(-10px);
-  width: 100%;
- text-align: center;
-}
-
-.header-center .select-room {
-  transform: translateY(8px);
-}

@@ -2906,9 +2906,11 @@ header .live-bingo {
   gap: 4px;
 }
 .header-center .lobby-title {
-  transform: translateY(-8px);
+  transform: translateY(-4px);
+  width: 100%;
+ text-align: center;
 }
 
 .header-center .select-room {
-  transform: translateY(8px);
+  transform: translateY(4px);
 }

@@ -1090,7 +1090,7 @@ if (
   return;
 }
 
- // ============================================================
+// ============================================================
 // HANDLE WITHDRAWAL
 // ============================================================
 
@@ -1106,8 +1106,8 @@ if (withdrawSessions[chatId]) {
 
     const amount = parseFloat(text);
 
-    if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await bot.sendMessage(
         chatId,
         '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
       );
@@ -1117,76 +1117,65 @@ if (withdrawSessions[chatId]) {
     const balance = Number(player.balance || 0);
 
     if (amount > balance) {
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
         `❌ በቂ ቀሪ ሂሳብ የለዎትም።\n\n💰 ያለዎት ሂሳብ: ${balance} Br`
       );
       return;
     }
 
-    // Save amount
     session.amount = amount;
-
-    // Move to phone step
     session.step = 'phone';
 
     await bot.sendMessage(
       chatId,
       session.method === 'cbe'
-  ? `🍂 ገንዘቡን የሚቀበሉበትን አካውንት ቁጥር ያስገቡ 👇`
-  : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+        ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
+        : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
     );
 
     return;
   }
 
+
   // ----------------------------------------------------------
-  // STEP 2 — PHONE NUMBER
+  // STEP 2 — PHONE / CBE ACCOUNT
   // ----------------------------------------------------------
 
   if (session.step === 'phone') {
 
-  const input = text.trim();
+    const input = text.trim();
 
-  // CBE → account number
-  if (session.method === 'cbe') {
+    // --------------------------------------------------------
+    // CBE → ACCOUNT NUMBER
+    // --------------------------------------------------------
 
-  if (!/^\d+$/.test(input)) {
-    await bot.sendMessage(
-      chatId,
-      `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
-    );
-    return;
-  }
-  // CBE → first name
-if (session.method === 'cbe' && session.step === 'firstName') {
+    if (session.method === 'cbe') {
 
-  const firstName = text.trim();
+      if (!/^\d+$/.test(input)) {
+        await bot.sendMessage(
+          chatId,
+          `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
+        );
+        return;
+      }
 
-  if (!firstName) {
-    await bot.sendMessage(
-      chatId,
-      `❌ እባክዎ የመጀመሪያ ስም ያስገቡ።`
-    );
-    return;
-  }
+      session.phone = input;
+      session.step = 'firstName';
 
-  session.firstName = firstName;
+      await bot.sendMessage(
+        chatId,
+        `👤 የመጀመሪያ ስምዎን ያስገቡ 👇`
+      );
 
-  // Continue with withdrawal request creation
-}
-  session.phone = input;
-  session.step = 'firstName';
+      return;
+    }
 
-  await bot.sendMessage(
-    chatId,
-    `👤 የመጀመሪያ ስምዎን ያስገቡ 👇`
-  );
 
-  return;
-} else {
+    // --------------------------------------------------------
+    // TELEBIRR → PHONE NUMBER
+    // --------------------------------------------------------
 
-    // Telebirr → phone number
     const normalizedPhone = input.replace(/\D/g, '');
 
     if (
@@ -1208,84 +1197,165 @@ if (session.method === 'cbe' && session.step === 'firstName') {
     }
 
     session.phone = input;
+
+    // Telebirr does not need first name.
+    // Create the pending withdrawal below.
   }
 
-  // Continue with your existing CREATE PENDING WITHDRAWAL code...
+
+  // ----------------------------------------------------------
+  // STEP 3 — CBE FIRST NAME
+  // ----------------------------------------------------------
+
+  if (session.step === 'firstName') {
+
+    const firstName = text.trim();
+
+    if (!firstName) {
+      await bot.sendMessage(
+        chatId,
+        `❌ እባክዎ የመጀመሪያ ስምዎን ያስገቡ።`
+      );
+      return;
+    }
+
+    session.firstName = firstName;
+  }
+
+
+  // ----------------------------------------------------------
+  // ONLY CREATE REQUEST AFTER ALL REQUIRED INFORMATION
+  // ----------------------------------------------------------
+
+  if (
+    session.method === 'cbe' &&
+    (!session.phone || !session.firstName)
+  ) {
+    return;
+  }
+
+  if (
+    session.method === 'telebirr' &&
+    !session.phone
+  ) {
+    return;
+  }
+
 
   const phone = session.phone;
 
-    // Save withdrawal phone
-    session.phone = phone;
 
-    // --------------------------------------------------------
-    // CREATE PENDING WITHDRAWAL
-    // --------------------------------------------------------
+  // ----------------------------------------------------------
+  // CREATE PENDING WITHDRAWAL
+  // ----------------------------------------------------------
 
-    const transactionRef = db.ref('transactions').push();
+  const transactionRef =
+    db.ref('transactions').push();
 
-    await transactionRef.set({
-      playerId: tgId,
-      telegramId: tgId,
-      type: 'withdrawal',
-      amount: session.amount,
-      status: 'pending',
-      paymentMethod: session.method,
-      withdrawalPhone: phone,
-      firstName: session.firstName,
-      createdAt: new Date().toISOString()
-    });
-    await bot.sendMessage(
-      ADMIN_ID,
-      `💰 *New Withdrawal Request*\n\n` +
-      `Player: ${player.first_name || 'Player'}\n` +
-      `Username: @${player.username || 'N/A'}\n` +
-      `Amount: ${session.amount} Br\n` +
-      `Method: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
-      `Phone: ${phone}\n` +
-      `Date: ${new Date().toLocaleString()}`,
-      {
-        parse_mode: 'Markdown'
-      }
-    );
-    
-   // --------------------------------------------------------
-// DEDUCT BALANCE IMMEDIATELY
-// --------------------------------------------------------
+  await transactionRef.set({
+    playerId: tgId,
+    telegramId: tgId,
 
-const balanceRef = db.ref(`players/${tgId}/balance`);
+    type: 'withdrawal',
 
-await balanceRef.transaction(
-  balance => Number(balance || 0) - Number(session.amount)
-); 
+    amount: Number(session.amount),
+
+    status: 'pending',
+
+    paymentMethod: session.method,
+
+    withdrawalPhone: phone,
+
+    firstName:
+      session.method === 'cbe'
+        ? session.firstName
+        : '',
+
+    createdAt: new Date().toISOString()
+  });
 
 
-    // --------------------------------------------------------
-    // ADMIN NOTIFICATION
-    // --------------------------------------------------------
+  // ----------------------------------------------------------
+  // DEDUCT BALANCE IMMEDIATELY
+  // ----------------------------------------------------------
 
+  const balanceRef =
+    db.ref(`players/${tgId}/balance`);
 
-
-
-    // --------------------------------------------------------
-    // PLAYER CONFIRMATION
-    // --------------------------------------------------------
-
-    await bot.sendMessage(
-      chatId,
-      `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
-      `💰 መጠን: ${session.amount.toFixed(2)} Br\n` +
-      `💳 መንገድ: ${session.method === 'telebirr' ? 'Telebirr' : 'CBE Birr'}\n` +
-      `📱 ስልክ: ${phone}\n\n` +
-      `⏳ ሁኔታ: Pending`,
-      {
-        parse_mode: 'Markdown'
-      }
+  const balanceResult =
+    await balanceRef.transaction(
+      balance =>
+        Number(balance || 0) -
+        Number(session.amount)
     );
 
-    delete withdrawSessions[chatId];
+  const newBalance =
+    Number(
+      balanceResult.snapshot.val() || 0
+    );
 
-    return;
-  }
+
+  // ----------------------------------------------------------
+  // ADMIN NOTIFICATION
+  // ----------------------------------------------------------
+
+  await bot.sendMessage(
+    ADMIN_ID,
+    `💰 *New Withdrawal Request*\n\n` +
+    `Player: ${player.first_name || 'Player'}\n` +
+    `Username: @${player.username || 'N/A'}\n` +
+    `Amount: ${Number(session.amount).toFixed(2)} Br\n` +
+    `Method: ${
+      session.method === 'telebirr'
+        ? 'Telebirr'
+        : 'CBE Birr'
+    }\n` +
+    `Phone/Account: ${phone}\n` +
+    `${
+      session.method === 'cbe'
+        ? `First Name: ${session.firstName}\n`
+        : ''
+    }` +
+    `Date: ${new Date().toLocaleString()}`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+
+
+  // ----------------------------------------------------------
+  // PLAYER CONFIRMATION
+  // ----------------------------------------------------------
+
+  await bot.sendMessage(
+    chatId,
+    `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
+    `💰 መጠን: ${Number(session.amount).toFixed(2)} Br\n` +
+    `💳 መንገድ: ${
+      session.method === 'telebirr'
+        ? 'Telebirr'
+        : 'CBE Birr'
+    }\n` +
+    `📱 ${
+      session.method === 'cbe'
+        ? 'አካውንት'
+        : 'ስልክ'
+    }: ${phone}\n\n` +
+    `⏳ ሁኔታ: Pending\n` +
+    `💰 ቀሪ ሂሳብ: ${newBalance.toFixed(2)} Br`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+
+
+  // ----------------------------------------------------------
+  // CLEAR SESSION
+  // ----------------------------------------------------------
+
+  delete withdrawSessions[chatId];
+
+  return;
 }
   // ============================================================
 // HANDLE PLAYER TRANSFER
@@ -2079,30 +2149,7 @@ weeklyLeaderboard[playerId].actualWins++;
       }
 
 
-      // ======================================================
-      // WEEKLY ANNOUNCEMENT
-      // ======================================================
 
-      const weeklyMessage =
-`🏆 የሳምንቱ ተሸላሚዎች 🏆
-
-🥇 1ኛ — ${weeklyNames[0]} 💰 3,000 ብር
-
-🥈 2ኛ — ${weeklyNames[1]} 💰 1,500 ብር
-
-🥉 3ኛ — ${weeklyNames[2]} 💰 700 ብር
-
-🏅 4ኛ — ${weeklyNames[3]} 💰 400 ብር
-
-🏅 5ኛ — ${weeklyNames[4]} 💰 250 ብር
-
-🎉 የሳምንቱ አሸናፊዎች እንኳን ደስ አላችሁ!
-
-🎱 Edel Bingo
-
-🎁 30 ብር የመጫወቻ ቦነስ
-
-https://t.me/ZABingo_bot`;
 
 
       // ------------------------------------------------------

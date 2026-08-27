@@ -2091,10 +2091,12 @@ opacity: 1;
     inset 0 1px 3px rgba(255,255,255,.5);
 }
 .sapphire-gem.select-room {
-  font-size: inherit;
-  padding: inherit;
-  width: auto;
+  font-size: 22px;
+  padding: 14px 24px;
+  width: fit-content;
   height: auto;
+  min-height: 52px;
+  box-sizing: border-box;
 }
 
 .select-room {
@@ -2102,7 +2104,10 @@ opacity: 1;
   margin: 0;
   transform: none;
   width: fit-content;
-  line-height: 1;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #page-history {

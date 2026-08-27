@@ -272,7 +272,7 @@ header {
 
 #page-lobby .room-cards {
   width: 100%;
-  margin-top: 10px;
+  margin: 0;
   padding: 0;
 }
 
@@ -2123,10 +2123,12 @@ opacity: 1;
 }
 
 .select-room {
-  position: absolute;
-  left: 50%;
-  top: 10px;
-  transform: translateX(-50%);
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin: 28px auto 20px;
+  width: fit-content;
 }
 
 #page-history {

@@ -74,17 +74,26 @@ function parseCBEWithdrawalSMS(text) {
     /successfully transferred ETB\s*([\d,]+(?:\.\d{2})?)/i
   );
 
+  const receiverMatch = text.match(
+    /to account\s+\d+\*+\d+\s+\(([^)]+)\)/i
+  );
+
   const receiptMatch = text.match(
     /https:\/\/mbreciept\.cbe\.com\.et\/([A-Za-z0-9_-]+)/i
   );
 
-  if (!amountMatch || !receiptMatch) {
+  if (!amountMatch || !receiverMatch || !receiptMatch) {
     return null;
   }
+
+  const receiverName = receiverMatch[1].trim();
+  const firstName = receiverName.split(/\s+/)[0];
 
   return {
     amount: Number(amountMatch[1].replace(/,/g, '')),
     transactionId: receiptMatch[1],
+    receiverName,
+    receiverFirstName: firstName,
     bank: 'CBE'
   };
 }
@@ -227,6 +236,27 @@ async function processWithdrawal(text, smsData) {
     );
     return false;
   }
+
+// CBE → match amount + first name
+if (smsData.bank === 'CBE') {
+
+  const requestName =
+    String(transaction.firstName || '')
+      .trim()
+      .toLowerCase();
+
+  const smsName =
+    String(smsData.receiverFirstName || '')
+      .trim()
+      .toLowerCase();
+
+  if (requestName !== smsName) {
+    console.log(
+      `❌ CBE name mismatch: ${requestName} ≠ ${smsName}`
+    );
+    return false;
+  }
+}
 
   const transactionRef = db.ref(
     `transactions/${transaction.key}`
@@ -1121,17 +1151,40 @@ if (withdrawSessions[chatId]) {
   // CBE → account number
   if (session.method === 'cbe') {
 
-    if (!/^\d+$/.test(input)) {
-      await bot.sendMessage(
-        chatId,
-        `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
-      );
-      return;
-    }
+  if (!/^\d+$/.test(input)) {
+    await bot.sendMessage(
+      chatId,
+      `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
+    );
+    return;
+  }
+  // CBE → first name
+if (session.method === 'cbe' && session.step === 'firstName') {
 
-    session.phone = input;
+  const firstName = text.trim();
 
-  } else {
+  if (!firstName) {
+    await bot.sendMessage(
+      chatId,
+      `❌ እባክዎ የመጀመሪያ ስም ያስገቡ።`
+    );
+    return;
+  }
+
+  session.firstName = firstName;
+
+  // Continue with withdrawal request creation
+}
+  session.phone = input;
+  session.step = 'firstName';
+
+  await bot.sendMessage(
+    chatId,
+    `👤 የመጀመሪያ ስምዎን ያስገቡ 👇`
+  );
+
+  return;
+} else {
 
     // Telebirr → phone number
     const normalizedPhone = input.replace(/\D/g, '');
@@ -1178,6 +1231,7 @@ if (withdrawSessions[chatId]) {
       status: 'pending',
       paymentMethod: session.method,
       withdrawalPhone: phone,
+      firstName: session.firstName,
       createdAt: new Date().toISOString()
     });
     await bot.sendMessage(

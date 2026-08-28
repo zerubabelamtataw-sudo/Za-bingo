@@ -2942,6 +2942,7 @@ header .live-bingo {
   justify-content: center;
   gap: 4px;
 }
+
 .select-join-room {
   display: flex;
   align-items: center;
@@ -2950,7 +2951,7 @@ header .live-bingo {
   min-height: 35px;
   box-sizing: border-box;
 
-  color: #000
+  color: #000;
   font-size: 14px;
   font-weight: 900;
   line-height: 1.1;

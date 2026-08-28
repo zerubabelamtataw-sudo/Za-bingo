@@ -1915,7 +1915,19 @@ function handleWithdrawMenu(chatId, player) {
 }
 
 function handleProfile(chatId, player) {
-  bot.sendMessage(chatId,
+  const referralLink =
+    `https://t.me/ZABingo_bot?startapp=ref${player.telegram_id}`;
+
+  const shareText =
+    `🎱 Join Edel Bingo and get your bonus!\n\n` +
+    `👉 ${referralLink}`;
+
+  const shareLink =
+    `https://t.me/share/url?url=${encodeURIComponent(referralLink)}` +
+    `&text=${encodeURIComponent(shareText)}`;
+
+  bot.sendMessage(
+    chatId,
     `*Profile*\n\n` +
     `Name: ${player.first_name}\n` +
     `Username: @${player.username || 'N/A'}\n` +
@@ -1924,9 +1936,21 @@ function handleProfile(chatId, player) {
     `Games Played: ${player.games_played}\n` +
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
     `Joined: ${player.registration_date}\n\n` +
-    `🔗 Referral link:\n` +
-    `[👉 የሬፈራል ሊንክዎን ይጫኑ](https://t.me/ZABingo_bot?startapp=ref${player.telegram_id})`,
-    { parse_mode: 'Markdown' }
+    `🔗 *Referral link:*\n` +
+    `[👉 የሬፈራል ሊንክዎን ይጫኑ](${referralLink})`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '📤 Share Referral Link',
+              url: shareLink
+            }
+          ]
+        ]
+      }
+    }
   );
 }
 

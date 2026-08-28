@@ -61,6 +61,62 @@ function parseDepositSMS(text) {
     transactionId: transactionMatch[1].toUpperCase()
   };
 }
+function parseCBEBirrDepositSMS(text) {
+  // Amount + sender + sender name + date + time + Txn ID
+  const receivedMatch = text.match(
+    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+from\s+(\d+)\s+-\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
+  );
+
+  if (!receivedMatch) {
+    return null;
+  }
+
+  const amount = Number(
+    receivedMatch[1].replace(/,/g, '')
+  );
+
+  const senderPhone = receivedMatch[2];
+
+  const senderName = receivedMatch[3].trim();
+
+  const date = receivedMatch[4];
+
+  const time = receivedMatch[5];
+
+  const transactionId =
+    receivedMatch[6].toUpperCase();
+
+  // CBE invoice TID
+  const invoiceMatch = text.match(
+    /[?&]TID=([A-Z0-9]+)/i
+  );
+
+  const invoiceTid = invoiceMatch
+    ? invoiceMatch[1].toUpperCase()
+    : null;
+
+  // Extra security check:
+  // If the SMS contains an invoice TID,
+  // it must match the transaction ID.
+  if (
+    invoiceTid &&
+    invoiceTid !== transactionId
+  ) {
+    return null;
+  }
+
+  return {
+    amount,
+    transactionId,
+    senderPhone,
+    senderName,
+    date,
+    time,
+    invoiceTid,
+    bank: 'CBE',
+    type: 'received'
+  };
+}
 
 function parseWithdrawalSMS(text) {
   const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);
@@ -388,22 +444,46 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // DEPOSIT SMS
     // --------------------------------------------------------
 
-    if (
-      smsText.includes('ተቀብለዋል') &&
-      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
-    ) {
+    // --------------------------------------------------------
+// DEPOSIT SMS — EXISTING FORMAT
+// --------------------------------------------------------
+if (
+  smsText.includes('ተቀብለዋል') &&
+  smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
+) {
 
-      const smsData = parseDepositSMS(smsText);
+  const smsData = parseDepositSMS(smsText);
 
-      if (!smsData) {
-        console.log('❌ Could not parse deposit SMS');
-        return;
-      }
+  if (!smsData) {
+    console.log('❌ Could not parse deposit SMS');
+    return;
+  }
 
-      await storeOfficialDeposit(smsText, smsData);
+  await storeOfficialDeposit(smsText, smsData);
 
-      return;
-    }
+  return;
+}
+
+// --------------------------------------------------------
+// CBE BIRR DEPOSIT SMS
+// --------------------------------------------------------
+if (
+  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
+  /Txn ID\s+[A-Z0-9]+/i.test(smsText) &&
+  /cbepay1\.cbe\.com\.et/i.test(smsText)
+) {
+
+  const smsData = parseCBEBirrDepositSMS(smsText);
+
+  if (!smsData) {
+    console.log('❌ Could not parse CBE Birr deposit SMS');
+    return;
+  }
+
+  await storeOfficialDeposit(smsText, smsData);
+
+  return;
+}
 
     // --------------------------------------------------------
     // WITHDRAWAL SMS
@@ -1075,29 +1155,51 @@ if (
   const sms = text.trim();
 
   // Parse the SMS pasted by the player
+let smsData = null;
+
+// CBE Birr
+if (
+  method === 'cbe' &&
+  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
+  /Txn ID\s+[A-Z0-9]+/i.test(sms)
+) {
+  smsData = parseCBEBirrDepositSMS(sms);
+}
+
+// Existing deposit format
+else {
   const amountMatch = sms.match(
-  /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
-);
-
-const transactionMatch = sms.match(
-  /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
-);
-
-  if (!amountMatch || !transactionMatch) {
-    bot.sendMessage(
-  chatId,
-  'ያስገቡት የትራንዛክሽን ቁጥር የተሳሳተ ነው። እባክዎ ሲከፍሉ የደረስዎትን የጹሁፍ መልክት(sms) ሙሉውን ኮፒ አርገው እዚህ ላይ ፔስት ያርጉት።'
-);
-    return;
-  }
-
-  const smsAmount = Number(
-    amountMatch[1].replace(/,/g, '')
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
   );
 
-  const transactionId =
-    transactionMatch[1].toUpperCase();
+  const transactionMatch = sms.match(
+    /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
+  );
 
+  if (amountMatch && transactionMatch) {
+    smsData = {
+      amount: Number(
+        amountMatch[1].replace(/,/g, '')
+      ),
+      transactionId:
+        transactionMatch[1].toUpperCase()
+    };
+  }
+}
+
+// Reject if parsing failed
+if (!smsData) {
+  bot.sendMessage(
+    chatId,
+    'ያስገቡት የትራንዛክሽን ቁጥር የተሳሳተ ነው። እባክዎ ሲከፍሉ የደረስዎትን የጹሁፍ መልዕክት(sms) ሙሉውን ኮፒ አርገው እዚህ ላይ ፔስት ያርጉት።'
+  );
+  return;
+}
+
+const smsAmount = Number(smsData.amount);
+
+const transactionId =
+  String(smsData.transactionId).toUpperCase();
   // Check that SMS amount matches the amount entered
   if (smsAmount !== amount) {
     bot.sendMessage(

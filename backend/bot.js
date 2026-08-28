@@ -1916,16 +1916,16 @@ function handleWithdrawMenu(chatId, player) {
 
 function handleProfile(chatId, player) {
   bot.sendMessage(chatId,
-    ` *Profile*\n\n` +
+    `*Profile*\n\n` +
     `Name: ${player.first_name}\n` +
     `Username: @${player.username || 'N/A'}\n` +
     `Phone: ${player.phone || 'Not set'}\n` +
     `Balance: ${player.balance} Br\n` +
     `Games Played: ${player.games_played}\n` +
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
-   `Joined: ${player.registration_date}\n\n` +
-`🔗 Referral link:\n` +
-`[👉 የሬፈራል ሊንክዎን ይጫኑ](https://t.me/ZABingobot?startapp=ref${player.telegram_id})`,
+    `Joined: ${player.registration_date}\n\n` +
+    `🔗 Referral link:\n` +
+    `[👉 የሬፈራል ሊንክዎን ይጫኑ](https://t.me/ZABingo_bot?startapp=ref${player.telegram_id})`,
     { parse_mode: 'Markdown' }
   );
 }

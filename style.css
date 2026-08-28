@@ -41,7 +41,8 @@ header {
   padding: 0 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 5px;
   height: 70px;
   background: #dcc7ee;
   position: sticky;

@@ -1896,8 +1896,7 @@ async function hasMadeDeposit(telegramId) {
   );
 }
 
-function 
-(chatId, player) {
+function handleWithdrawMenu(chatId, player) {
   bot.sendMessage(chatId,
     ` *ገንዘብ ለማውጣት*\n\n` +
 `ቀሪ ሂሳብዎ: ${player.balance} Br\n` +

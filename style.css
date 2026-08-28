@@ -64,9 +64,9 @@ header {
 }
 .new-header-text {
   font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 900;
-  letter-spacing: 1px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
   color: #000;
   text-align: center;
@@ -123,7 +123,7 @@ header {
   border-radius: 20px;
   padding: 6px 14px;
   font-family: var(--font-display);
-  font-size: .70rem;
+  font-size: .60rem;
   color: var(--gold);
 }
 

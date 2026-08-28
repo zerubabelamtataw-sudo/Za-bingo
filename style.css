@@ -37,16 +37,43 @@ body {
 /* ──────────────── HEADER ──────────────── */
 
 header {
-  border-bottom: 1.5px solid #000;
-  padding: 0 24px;
+  width: 100%;
+  height: 60px;
+  min-height: 60px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
-  background: #dcc7ee;
+  gap: 8px;
+
+  background:
+    radial-gradient(circle at 0% 0%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 100% 0%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 0% 100%, rgba(90, 45, 20, .35), transparent 35%),
+    radial-gradient(circle at 100% 100%, rgba(90, 45, 20, .35), transparent 35%),
+    #EDE0D4;
+
+  border: 1.5px solid #000;
+  border-radius: 10px;
+
+  box-shadow:
+    rgba(45, 35, 66, .4) 0 2px 4px,
+    rgba(45, 35, 66, .3) 0 7px 13px -3px,
+    #D6D6E7 0 -5px 0 inset;
+
   position: sticky;
   top: 0;
   z-index: 100;
+}
+.new-header-text {
+  flex: 1;
+  text-align: center;
+  color: #000;
+  font-size: .85rem;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .logo {
@@ -2934,26 +2961,4 @@ header .live-bingo {
   transform: scale(1.04);
   font-weight: 900;
   z-index: 2;
-}
-.header-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.select-join-room {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  min-height: 35px;
-  box-sizing: border-box;
-
-  color: #000;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.1;
-  text-align: center;
 }

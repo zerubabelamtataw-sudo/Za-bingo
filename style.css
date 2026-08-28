@@ -2907,26 +2907,6 @@ opacity: 1;
   line-height: 1;
 }
 
-.live-bingo {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  border: 1.5px solid #000;
-  border-radius: 10px;
-  padding: 3px 4px;
-  box-sizing: border-box;
-}
-
-.live-dot {
-  width: 8px;
-  height: 8px;
-  background: #ff0000;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-
 /* ── ANNOUNCEMENT ── */
 
 .lobby-announcement {

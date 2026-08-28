@@ -2411,8 +2411,8 @@ weeklyLeaderboard[playerId].actualWins++;
 
 const PROMO_CHANNEL = '@EdelBingoo';
 
-const promoMessage =
-🏆 EDEL BINGO — DAILY  BONUS 🏆
+const promoMessage = `
+🏆 EDEL BINGO — DAILY BONUS 🏆
 🎱 ይጫወቱ • ያሸንፉ • ይሸለሙ! 🎱
 ━━━━━━━━━━━━━━━━━━
 🌟 የዕለታዊ ቦነስ ተሸላሚዎች 🌟
@@ -2427,20 +2427,22 @@ const promoMessage =
 🎁 30 ብር የመጫወቻ ቦነስ ያግኙ!
 ━━━━━━━━━━━━━━━━━━
 🔥 ጓደኛዎን ይጋብዙ — እስከ 40 ብር ይሸለሙ! 🔥
-
 👥 ጓደኛዎ በReferral Linkዎ ተጠቅሞ ሲቀላቀል
 💰 20 ብር ያግኙ!
 💳 ጓደኛዎ ቢያንስ 50 ብር ዴፖዚት ሲያደርግ
 💰 ተጨማሪ 20 ብር ያግኙ!
-
 🎉 ከአንድ ጓደኛ 40 ብር!
 🔥 ብዙ ጓደኞችን ይጋብዙ — ብዙ ይሸለሙ!
 ━━━━━━━━━━━━━━━━━━
 👉 አሁኑኑ ይጫወቱ:
 https://t.me/ZABingo_bot
+
 📢 ለተጨማሪ መረጃ የእኛን Telegram Channel ይቀላቀሉ! 👇
+
 👉 https://t.me/EdelBingoo
+
 ❤️ Edel Bingo — መልካም ጨዋታ!
+`;
 let lastPromoDate = '';
 let lastPromoHour = null;
 

@@ -1915,8 +1915,14 @@ function handleWithdrawMenu(chatId, player) {
 }
 
 function handleProfile(chatId, player) {
+  // ============================================================
+  // REFERRAL LINK
+  // Format must match /start handler:
+  // /start ref_TELEGRAM_ID
+  // ============================================================
+
   const referralLink =
-    `https://t.me/ZABingo_bot?startapp=ref${player.telegram_id}`;
+    `https://t.me/ZABingo_bot?start=ref_${player.telegram_id}`;
 
   const shareText =
     `🎱 Join Edel Bingo and get your bonus!\n\n` +

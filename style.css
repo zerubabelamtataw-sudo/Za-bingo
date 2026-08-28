@@ -2826,7 +2826,7 @@ opacity: 1;
 }
 
 .play-bonus-challenge {
-  width: 65%;
+  width: 95%;
   min-height: 32px;
   padding: 12px 10px;
   box-sizing: border-box;
@@ -2956,4 +2956,64 @@ header .live-bingo {
   transform: scale(1.04);
   font-weight: 900;
   z-index: 2;
+}
+/* ───────── LIVE UNDER BALANCE ───────── */
+
+.header-balance-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-balance-area .live-bingo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  margin-top: 3px;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  line-height: 12px;
+
+  color: #ff4d5a;
+}
+
+.header-balance-area .live-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+
+  border-radius: 50%;
+  background: #ff4d5a;
+
+  box-shadow: 0 0 5px rgba(255, 77, 90, 0.8);
+
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.75);
+  }
+}
+.new-header-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.05;
+}
+
+.new-header-text span:last-child {
+  font-weight: 900;
 }

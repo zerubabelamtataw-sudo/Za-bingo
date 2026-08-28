@@ -2941,7 +2941,6 @@ header .live-bingo {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin-left: 5px;
 }
 .select-join-room {
   display: flex;

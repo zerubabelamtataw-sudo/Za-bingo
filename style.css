@@ -63,12 +63,15 @@ header {
   z-index: 100;
 }
 .new-header-text {
-  flex: 1;
-  text-align: center;
-  color: #000;
-  font-size: .85rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
   font-weight: 900;
-  white-space: nowrap;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #000;
+  text-align: center;
+  line-height: 1.1;
+  text-shadow: 0 1px 0 rgba(255,255,255,.45);
 }
 
 .logo {
@@ -2824,7 +2827,7 @@ opacity: 1;
 
 .play-bonus-challenge {
   width: 65%;
-  min-height: 52px;
+  min-height: 32px;
   padding: 12px 10px;
   box-sizing: border-box;
 
@@ -2843,13 +2846,10 @@ opacity: 1;
   border-radius: 10px;
 
   color: #000;
-  font-size: .9rem;
-  font-weight: 900;
+  font-size: .7rem;
+  font-weight: 600;
+  box-shadow: none;
 
-  box-shadow:
-    rgba(45, 35, 66, .4) 0 2px 4px,
-    rgba(45, 35, 66, .3) 0 7px 13px -3px,
-    #D6D6E7 0 -5px 0 inset;
 }
 
 .lobby-title {
@@ -2885,7 +2885,7 @@ opacity: 1;
 .lobby-announcement {
   width: 95%;
   box-sizing: border-box;
-  margin: 2px 0;
+  margin: 2px auto;
   padding: 0;
   border-radius: 14px;
   background: #E9D6FA;

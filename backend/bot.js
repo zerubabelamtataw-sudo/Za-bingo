@@ -536,6 +536,17 @@ bot.onText(/\/withdraw/, async (msg) => {
     return bot.sendMessage(chatId, 'Please /start first.');
   }
 
+  const deposited = await hasMadeDeposit(tgId);
+
+  if (!deposited) {
+    return bot.sendMessage(
+      chatId,
+      `❌ *ገንዘብ ማውጣት አይችሉም*\n\n` +
+      `ገንዘብ ማውጣት ከመቻልዎ በፊት ቢያንስ አንድ ጊዜ ዴፖዚት ማድረግ አለብዎት።`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+
   handleWithdrawMenu(chatId, player);
 });
 
@@ -811,7 +822,28 @@ if (data === 'menu_deposit') {
 }
 
 if (data === 'menu_withdraw') {
+
+  const deposited = await hasMadeDeposit(tgId);
+
+  if (!deposited) {
+
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ You must make a deposit first',
+      show_alert: true
+    });
+
+    await bot.sendMessage(
+      chatId,
+      `❌ *ገንዘብ ማውጣት አይችሉም*\n\n` +
+      `ገንዘብ ማውጣት ከመቻልዎ በፊት ቢያንስ አንድ ጊዜ ዴፖዚት ማድረግ አለብዎት።`,
+      { parse_mode: 'Markdown' }
+    );
+
+    return;
+  }
+
   await bot.answerCallbackQuery(query.id);
+
   return handleWithdrawMenu(chatId, player);
 }
 
@@ -1684,8 +1716,29 @@ function handleDepositMenu(chatId, player) {
     step: 'amount'
   };
 }
+// ============================================================
+// CHECK WITHDRAWAL DEPOSIT REQUIREMENT
+// Player must have at least ONE approved deposit
+// ============================================================
 
-function handleWithdrawMenu(chatId, player) {
+async function hasMadeDeposit(telegramId) {
+  const snapshot = await db
+    .ref('transactions')
+    .orderByChild('telegramId')
+    .equalTo(String(telegramId))
+    .once('value');
+
+  const transactions = snapshot.val() || {};
+
+  return Object.values(transactions).some(transaction =>
+    transaction &&
+    transaction.type === 'deposit' &&
+    transaction.status === 'approved'
+  );
+}
+
+function 
+(chatId, player) {
   bot.sendMessage(chatId,
     ` *ገንዘብ ለማውጣት*\n\n` +
 `ቀሪ ሂሳብዎ: ${player.balance} Br\n` +

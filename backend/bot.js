@@ -12,6 +12,14 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const BONUS_CHANNEL = '@EdelBingoo';
 const ADMIN_ID =
   process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+  // ============================================================
+// REFERRAL SYSTEM
+// ============================================================
+
+const REFERRAL_JOIN_BONUS = 20;
+const REFERRAL_DEPOSIT_BONUS = 20;
+const REFERRAL_MIN_DEPOSIT = 50;
+  
 function getEthiopiaTimeParts() {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Africa/Addis_Ababa',
@@ -570,8 +578,21 @@ let gameManager = null;
 // ============================================================
 
 // /start - Register user and show main menu
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
   const chatId = msg.chat.id;
+    // Referral code from /start ref_TELEGRAM_ID
+  const referralCode = match && match[1]
+    ? String(match[1]).trim()
+    : null;
+
+  let referrerId = null;
+
+  if (
+    referralCode &&
+    referralCode.startsWith('ref_')
+  ) {
+    referrerId = referralCode.replace('ref_', '');
+  }
 
   // Save user for future broadcasts
   broadcastUsers[String(chatId)] = true;
@@ -586,19 +607,87 @@ bot.onText(/\/start/, async (msg) => {
     let player = snapshot.val();
 
     if (!player) {
-      // Register new player
-      player = {
-        telegram_id: tgId,
-        first_name: firstName,
-        username: username,
-        phone: '',
-        balance: 30,
-        games_played: 0,
-        games_won: 0,
-        registration_date: new Date().toISOString()
-      };
+  // Register new player
+
+  // Prevent self-referral
+  if (referrerId === tgId) {
+    referrerId = null;
+  }
+
+  // Make sure referrer actually exists
+  if (referrerId) {
+    const referrerSnapshot = await db
+      .ref(`players/${referrerId}`)
+      .once('value');
+
+    if (!referrerSnapshot.exists()) {
+      referrerId = null;
+    }
+  }
+
+  player = {
+    telegram_id: tgId,
+    first_name: firstName,
+    username: username,
+    phone: '',
+    balance: 30,
+    games_played: 0,
+    games_won: 0,
+    registration_date: new Date().toISOString(),
+
+    // Referral information
+    referredBy: referrerId || null,
+    referralJoinRewardGiven: false,
+    referralDepositRewardGiven: false
+  };
 
       await playerRef.set(player);
+            // ======================================================
+      // REFERRAL JOIN BONUS
+      // ======================================================
+
+      if (referrerId) {
+
+        const referrerRef =
+          db.ref(`players/${referrerId}`);
+
+        const referrerSnapshot =
+          await referrerRef.once('value');
+
+        const referrer =
+          referrerSnapshot.val();
+
+        if (referrer) {
+
+          await referrerRef.child('balance').transaction(
+            balance =>
+              Number(balance || 0) +
+              REFERRAL_JOIN_BONUS
+          );
+
+          await referrerRef.update({
+            [`referrals/${tgId}/joined`]: true,
+            [`referrals/${tgId}/joinReward`]:
+              REFERRAL_JOIN_BONUS,
+            [`referrals/${tgId}/joinRewardAt`]:
+              new Date().toISOString()
+          });
+
+          await bot.sendMessage(
+            referrerId,
+            `🎉 *Referral Bonus!*\n\n` +
+            `${firstName} joined ZA Bingo using your referral link.\n\n` +
+            `💰 You received *20 Br*!\n\n` +
+            `🎁 If ${firstName} deposits at least 50 Br,\n` +
+            `you will receive another *20 Br*!`,
+            { parse_mode: 'Markdown' }
+          );
+
+          console.log(
+            `🎁 Referral join bonus: ${referrerId} +20 Br`
+          );
+        }
+      }
 
       bot.sendMessage(
         chatId,
@@ -1099,6 +1188,76 @@ if (
 
   const newBalance =
     Number(balanceResult.snapshot.val() || 0);
+      // ======================================================
+  // REFERRAL DEPOSIT BONUS
+  // B deposits 50+ Br for the first time
+  // A gets another 20 Br
+  // ======================================================
+
+  const depositedPlayerSnapshot =
+    await db.ref(`players/${tgId}`).once('value');
+
+  const depositedPlayer =
+    depositedPlayerSnapshot.val();
+
+  const referrerIdForDeposit =
+    depositedPlayer?.referredBy;
+
+  if (
+    referrerIdForDeposit &&
+    amount >= REFERRAL_MIN_DEPOSIT &&
+    depositedPlayer.referralDepositRewardGiven !== true
+  ) {
+
+    const referrerRef =
+      db.ref(`players/${referrerIdForDeposit}`);
+
+    const referrerSnapshot =
+      await referrerRef.once('value');
+
+    const referrer =
+      referrerSnapshot.val();
+
+    if (referrer) {
+
+      // Give referrer second 20 Br
+      await referrerRef.child('balance').transaction(
+        balance =>
+          Number(balance || 0) +
+          REFERRAL_DEPOSIT_BONUS
+      );
+
+      // Mark reward as permanently given
+      await db.ref(`players/${tgId}`).update({
+        referralDepositRewardGiven: true,
+        referralDepositRewardAt:
+          new Date().toISOString()
+      });
+
+      // Save referral record
+      await referrerRef.update({
+        [`referrals/${tgId}/depositReward`]:
+          REFERRAL_DEPOSIT_BONUS,
+        [`referrals/${tgId}/depositRewardAt`]:
+          new Date().toISOString()
+      });
+
+      // Notify A
+      await bot.sendMessage(
+        referrerIdForDeposit,
+        `🎉 *Referral Deposit Bonus!*\n\n` +
+        `${depositedPlayer.first_name || 'Your referral'} ` +
+        `made a deposit of *${amount} Br*.\n\n` +
+        `💰 You received another *20 Br*!\n\n` +
+        `🏆 Total referral bonus earned from this player: *40 Br*`,
+        { parse_mode: 'Markdown' }
+      );
+
+      console.log(
+        `🎁 Referral deposit bonus: ${referrerIdForDeposit} +20 Br`
+      );
+    }
+  }
 
   // Mark official SMS as used
   await officialRef.update({
@@ -1765,7 +1924,9 @@ function handleProfile(chatId, player) {
     `Balance: ${player.balance} Br\n` +
     `Games Played: ${player.games_played}\n` +
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
-    `Joined: ${player.registration_date}`,
+   `Joined: ${player.registration_date}\n\n` +
+`🔗 Referral link:\n` +
+`https://t.me/ZABingo_bot?startapp=ref_${player.telegram_id}`,
     { parse_mode: 'Markdown' }
   );
 }

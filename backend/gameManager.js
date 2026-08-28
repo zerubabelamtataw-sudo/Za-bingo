@@ -17,7 +17,7 @@ const ROOMS_CONFIG = [
 
 const COUNTDOWN_SECONDS = 30;
 const DRAW_INTERVAL_MS  = 4000;
-const WINNER_SHARE      = 0.85;
+const WINNER_SHARE = 0.80;
 
 const SIMULATED_PLAYERS = [
   '@fano',

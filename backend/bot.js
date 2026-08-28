@@ -1925,7 +1925,7 @@ function handleProfile(chatId, player) {
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
    `Joined: ${player.registration_date}\n\n` +
 `🔗 Referral link:\n` +
-`https://t.me/ZABingo_bot?startapp=ref_${player.telegram_id}`,
+`[👉 የሬፈራል ሊንክዎን ይጫኑ](https://t.me/ZABingobot?startapp=ref${player.telegram_id})`,
     { parse_mode: 'Markdown' }
   );
 }

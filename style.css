@@ -126,56 +126,6 @@ header {
   font-size: .60rem;
   color: var(--gold);
 }
-.header-balance-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.header-balance-area .live-bingo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-
-  border: none;
-  padding: 0;
-  margin: 0;
-
-  font-family: var(--font-display);
-  font-size: 0.55rem;
-  font-weight: 900;
-  letter-spacing: 0.7px;
-  line-height: 1;
-
-  color: #ff0000;
-}
-
-.header-balance-area .live-dot {
-  width: 6px;
-  height: 6px;
-  min-width: 6px;
-  border: none;
-  border-radius: 50%;
-  background: #ff0000;
-
-  animation: livePulse 1.2s ease-in-out infinite;
-}
-
-@keyframes livePulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.45;
-    transform: scale(0.75);
-  }
-}
 
 .nav-tabs {
   display: flex;
@@ -2940,10 +2890,6 @@ header {
   position: relative;
 }
 
-header .live-bingo {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
 }
 .game-controls {
   margin: 12px 0;
@@ -2987,5 +2933,55 @@ header .live-bingo {
   font-weight: 900;
   z-index: 2;
 }
-/* ───── BALANCE + LIVE HEADER UNIT ───── */
+/* ───── NEW HEADER FINAL LAYOUT ───── */
+
+.new-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.new-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-balance-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.header-balance-area .live-bingo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.7px;
+
+  color: #ff0000;
+}
+
+.header-balance-area .live-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+
+  border: none;
+  border-radius: 50%;
+  background: #ff0000;
+}
 

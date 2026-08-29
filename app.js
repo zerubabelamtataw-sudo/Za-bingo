@@ -883,7 +883,7 @@ if (game.status === 'countdown' && game.countdownStart) {
 
 
 
-$('infoPot').textContent = `${game.pot} Br`;
+$('infoPot').textContent = `${Math.floor((game.pot || 0) * 0.80)} Br`;
 $('infoPlayers').textContent = game.playerCount;
 $('infoCalled').textContent = `${game.calledNumbers.length}/75`;
     

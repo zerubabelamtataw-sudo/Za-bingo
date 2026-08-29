@@ -62,36 +62,24 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-
-  // English CBE Birr
-  const englishMatch = text.match(
-    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+.+?Txn ID\s+([A-Z0-9]+)/i
+  const amountMatch = text.match(
+    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
   );
 
-  if (englishMatch) {
-    return {
-      amount: Number(englishMatch[1].replace(/,/g, '')),
-      transactionId: englishMatch[2].toUpperCase(),
-      bank: 'CBE Birr',
-      type: 'sent'
-    };
-  }
-
-  // Amharic CBE Birr
-  const amharicMatch = text.match(
-    /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.+?በደረሰኝ ቁጥር\s*([A-Z0-9]+)\s+ልከዋል/i
+  const transactionMatch = text.match(
+    /Txn ID\s+([A-Z0-9]+)/i
   );
 
-  if (amharicMatch) {
-    return {
-      amount: Number(amharicMatch[1].replace(/,/g, '')),
-      transactionId: amharicMatch[2].toUpperCase(),
-      bank: 'CBE Birr',
-      type: 'sent'
-    };
+  if (!amountMatch || !transactionMatch) {
+    return null;
   }
 
-  return null;
+  return {
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: transactionMatch[1].toUpperCase(),
+    bank: 'CBE Birr',
+    type: 'received'
+  };
 }
 
 function parseWithdrawalSMS(text) {
@@ -1135,41 +1123,25 @@ if (
 
 let smsData = null;
 
-// CBE Birr — English OR Amharic
-if (
-  method === 'cbe' &&
-  (
-    (
-      /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
-      /Txn ID\s+[A-Z0-9]+/i.test(sms)
-    )
-    ||
-    (
-      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ/i.test(sms) &&
-      /በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i.test(sms)
-    )
-  )
-) {
-  smsData = parseCBEBirrDepositSMS(sms);
-}
+// PLAYER CBE BIRR SMS
+if (method === 'cbe') {
 
-// Existing deposit format
-else {
-  const amountMatch = sms.match(
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
+  // English
+  let match = sms.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\..*?Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const transactionMatch = sms.match(
-    /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
-  );
+  // Amharic
+  if (!match) {
+    match = sms.match(
+      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.*?በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i
+    );
+  }
 
-  if (amountMatch && transactionMatch) {
+  if (match) {
     smsData = {
-      amount: Number(
-        amountMatch[1].replace(/,/g, '')
-      ),
-      transactionId:
-        transactionMatch[1].toUpperCase()
+      amount: Number(match[1].replace(/,/g, '')),
+      transactionId: match[2].toUpperCase()
     };
   }
 }

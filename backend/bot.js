@@ -62,24 +62,36 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-  const amountMatch = text.match(
-    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
+
+  // English CBE Birr
+  const englishMatch = text.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+.+?Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const transactionMatch = text.match(
-    /Txn ID\s+([A-Z0-9]+)/i
-  );
-
-  if (!amountMatch || !transactionMatch) {
-    return null;
+  if (englishMatch) {
+    return {
+      amount: Number(englishMatch[1].replace(/,/g, '')),
+      transactionId: englishMatch[2].toUpperCase(),
+      bank: 'CBE Birr',
+      type: 'sent'
+    };
   }
 
-  return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: transactionMatch[1].toUpperCase(),
-    bank: 'CBE Birr',
-    type: 'received'
-  };
+  // Amharic CBE Birr
+  const amharicMatch = text.match(
+    /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.+?በደረሰኝ ቁጥር\s*([A-Z0-9]+)\s+ልከዋል/i
+  );
+
+  if (amharicMatch) {
+    return {
+      amount: Number(amharicMatch[1].replace(/,/g, '')),
+      transactionId: amharicMatch[2].toUpperCase(),
+      bank: 'CBE Birr',
+      type: 'sent'
+    };
+  }
+
+  return null;
 }
 
 function parseWithdrawalSMS(text) {
@@ -1121,14 +1133,22 @@ if (
   const method = session.method;
   const sms = text.trim();
 
-  ayer
 let smsData = null;
 
-// CBE Birr
+// CBE Birr — English OR Amharic
 if (
   method === 'cbe' &&
-  /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(sms)
+  (
+    (
+      /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
+      /Txn ID\s+[A-Z0-9]+/i.test(sms)
+    )
+    ||
+    (
+      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ/i.test(sms) &&
+      /በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i.test(sms)
+    )
+  )
 ) {
   smsData = parseCBEBirrDepositSMS(sms);
 }

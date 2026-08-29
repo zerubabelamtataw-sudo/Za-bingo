@@ -303,7 +303,7 @@ activeCountdownStart = countdownStart;
       if (room) {
         // Update Cartela Selection status bar with LIVE room data
         $('cartelaPlayers').textContent = room.playerCount || 0;
-        $('cartelaPot').textContent = `${room.pot || 0} Br`;
+        $('cartelaPot').textContent = `${Math.floor((room.pot || 0) * 0.80)} Br`;
     
         startCartelaCountdown(room);
     
@@ -370,7 +370,7 @@ activeCountdownStart = countdownStart;
     
           <div class="room-meta">
             <span>👥 ${room.playerCount} ተጫዋች</span>
-            <span>💰 ደራሽ: ${room.pot} Br</span>
+            <span>💰 ደራሽ: ${Math.floor((room.pot || 0) * 0.80)} Br</span>
             <span class="room-status-badge ${statusClass}">
               ${statusText}
             </span>
@@ -395,7 +395,7 @@ activeCountdownStart = countdownStart;
     function selectRoom(room, el) {
       state.selectedRoom = room.id;
       $('cartelaPlayers').textContent = room.playerCount || 0;
-    $('cartelaPot').textContent = `${room.pot || 0} Br`;
+    $('cartelaPot').textContent = `${Math.floor((room.pot || 0) * 0.80)} Br`;
     
     if (room.status === 'countdown' && room.countdownStart) {
       const elapsed = Math.floor((Date.now() - room.countdownStart) / 1000);

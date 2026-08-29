@@ -437,8 +437,7 @@ if (
 // --------------------------------------------------------
 if (
   /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(smsText) &&
-  /cbepay1\.cbe\.com\.et/i.test(smsText)
+  /Txn ID\s+[A-Z0-9]+/i.test(smsText)
 ) {
 
   const smsData = parseCBEBirrDepositSMS(smsText);

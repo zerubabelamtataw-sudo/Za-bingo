@@ -396,7 +396,7 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
+  if (!forwardedText.match(/^From:\s*(?:\d+|CBEBirr|CBE)/i)) {
   return;
 }
 
@@ -409,7 +409,7 @@ bot.on('message', async (msg) => {
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
 
-    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBE)/i);
+    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
 
     if (!senderMatch) {
       console.log('❌ SMS sender not found');
@@ -437,7 +437,7 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // --------------------------------------------------------
 
     const smsText = forwardedText
-  .replace(/^From:\s*(?:\d+|CBE)\s*/i, '')
+  .replace(/^From:\s*(?:\d+|CBEBirr|CBE)\s*/i, '')
   .replace(/^Time:\s*[^\n\r]*/i, '')
   .trim();
 

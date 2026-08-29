@@ -544,7 +544,7 @@ bot.onText(/\/transfer/, async (msg) => {
 
   bot.sendMessage(
     chatId,
-    'Enter the recipient’s phone number:'
+    'የተቀባዩን ስልክ ቁጥር ያስገቡ፦'
   );
 
   transferSessions[chatId] = {
@@ -738,10 +738,12 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
       bot.sendMessage(
         chatId,
-        `👑 *እንኳን ደና መጡ, ${firstName}!*\n\n` +
-        `You received *30 Br* welcome bonus!\n` +
-        `Play Bingo and win real prizes!\n\n` +
-        `Share your contact to complete registration.`,
+        `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
+`🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
+`🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
+`💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
+`📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
+`****************👇👇👇****************`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -778,7 +780,13 @@ bot.on('contact', async (msg) => {
   try {
     await db.ref(`players/${tgId}/phone`).set(phone);
 
-    bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
+    bot.sendMessage(chatId,
+  `✅ *የስልክ ቁጥርዎ ተመዝግቧል!*\n\n` +
+  `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
+  `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
+  `📤 *ለማጋራት:* Bot 👉 Profile 👥\n\n` +
+  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*`,
+  {
       reply_markup: {
         remove_keyboard: true
       }
@@ -1003,23 +1011,24 @@ else if (data.startsWith('deposit_method_')) {
   if (method === 'telebirr') {
   bot.sendMessage(
     chatId,
-    `የቴሌብር አካውንት: \`0985661720\`።\n\n` +
-    `ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ።\n\n` +
-    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል።\n\n` +
-    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-    `ማሳሰቢያ፡ የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+    `💳 የቴሌብር አካውንት: \`0985661720\`\n\n` +
+    `1️⃣ ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ\n\n` +
+    `2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
+    `3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከቴሌብር ይደርሳችኋል\n\n` +
+    `4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
+    `⚠️ ማሳሰቢያ: የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 } else if (method === 'cbe') {
   bot.sendMessage(
     chatId,
-    `Cbe birr አካውንት: \`0985661720\`።\n\n` +
-    `ከላይ ባለው Cbe birr ብር ያስገቡ።\n\n` +
-    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከCbe birr ይደርሳችኋል።\n\n` +
-    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-    `ማሳሰቢያ፡ በCbe birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+`💳 CBE Birr አካውንት: \`0985661720\`\n\n` +
+`1️⃣ ከላይ ባለው CBE Birr አካውንት ብር ያስገቡ\n\n` +
+`2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
+`3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከCBE Birr ይደርሳችኋል\n\n` +
+`4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
+`⚠️ ማሳሰቢያ: በCBE Birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ\n` +
+`የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 }
@@ -2500,7 +2509,14 @@ weeklyLeaderboard[playerId].actualWins++;
 // 2:00 PM + 8:00 PM ETHIOPIA TIME
 // ============================================================
 
-const PROMO_CHANNEL = '@EdelBingoo';
+const PROMO_CHANNELS = [
+  '@EdelBingoo',
+  '@ethiotictok',
+  '@Edelcrypto',
+  '@Edelsportnews',
+  '@ethiohotenew',
+  '@yareddish'
+];
 
 const promoMessage = `
 🏆 EDEL BINGO — DAILY BONUS 🏆
@@ -2570,10 +2586,13 @@ setInterval(async () => {
     // POST TO CHANNEL
     // --------------------------------------------------------
 
-    await bot.sendMessage(
-      PROMO_CHANNEL,
-      promoMessage
-    );
+    for (const channel of PROMO_CHANNELS) {
+  try {
+    await bot.sendMessage(channel, promoMessage);
+  } catch (error) {
+    console.error(`❌ Could not post to ${channel}:`, error.message);
+  }
+}
 
     console.log('✅ Promo posted to channel');
 

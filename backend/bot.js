@@ -62,7 +62,6 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-
   const amountMatch = text.match(
     /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
   );
@@ -79,7 +78,7 @@ function parseCBEBirrDepositSMS(text) {
     amount: Number(amountMatch[1].replace(/,/g, '')),
     transactionId: transactionMatch[1].toUpperCase(),
     bank: 'CBE Birr',
-    type: 'deposit'
+    type: 'received'
   };
 }
 

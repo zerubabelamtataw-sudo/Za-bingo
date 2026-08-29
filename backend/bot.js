@@ -62,29 +62,30 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-  // Amount + sender + sender name + date + time + Txn ID
-  const receivedMatch = text.match(
-    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+from\s+(\d+)\s+-\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
+  // CBE Birr SENT SMS:
+  // you have sent 20.00Br. to Zerubabel Amtataw
+  // on 29/08/26 10:27,Txn ID DHT91MNULGL
+
+  const sentMatch = text.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
   );
 
-  if (!receivedMatch) {
+  if (!sentMatch) {
     return null;
   }
 
   const amount = Number(
-    receivedMatch[1].replace(/,/g, '')
+    sentMatch[1].replace(/,/g, '')
   );
 
-  const senderPhone = receivedMatch[2];
+  const receiverName = sentMatch[2].trim();
 
-  const senderName = receivedMatch[3].trim();
+  const date = sentMatch[3];
 
-  const date = receivedMatch[4];
-
-  const time = receivedMatch[5];
+  const time = sentMatch[4];
 
   const transactionId =
-    receivedMatch[6].toUpperCase();
+    sentMatch[5].toUpperCase();
 
   // CBE invoice TID
   const invoiceMatch = text.match(
@@ -108,13 +109,12 @@ function parseCBEBirrDepositSMS(text) {
   return {
     amount,
     transactionId,
-    senderPhone,
-    senderName,
+    receiverName,
     date,
     time,
     invoiceTid,
     bank: 'CBE',
-    type: 'received'
+    type: 'sent'
   };
 }
 
@@ -419,7 +419,11 @@ bot.on('message', async (msg) => {
     const sender = senderMatch[1];
 
    // TRUST TELEBIRR + CBE SMS SENDERS
-if (sender !== '127' && sender.toUpperCase() !== 'CBE') {
+if (
+  sender !== '127' &&
+  sender.toUpperCase() !== 'CBE' &&
+  sender.toUpperCase() !== 'CBEBIRR'
+) {
   console.log(
     `❌ Unauthorized SMS sender: ${sender}`
   );
@@ -468,7 +472,7 @@ if (
 // CBE BIRR DEPOSIT SMS
 // --------------------------------------------------------
 if (
-  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
+  /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\.\s+to\s+/i.test(smsText) &&
   /Txn ID\s+[A-Z0-9]+/i.test(smsText) &&
   /cbepay1\.cbe\.com\.et/i.test(smsText)
 ) {
@@ -1154,7 +1158,7 @@ if (
   const method = session.method;
   const sms = text.trim();
 
-  // Parse the SMS pasted by the player
+  ayer
 let smsData = null;
 
 // CBE Birr

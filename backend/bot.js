@@ -62,59 +62,24 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-  // CBE Birr SENT SMS:
-  // you have sent 20.00Br. to Zerubabel Amtataw
-  // on 29/08/26 10:27,Txn ID DHT91MNULGL
 
-  const sentMatch = text.match(
-    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
+  const amountMatch = text.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\./i
   );
 
-  if (!sentMatch) {
-    return null;
-  }
-
-  const amount = Number(
-    sentMatch[1].replace(/,/g, '')
+  const transactionMatch = text.match(
+    /Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const receiverName = sentMatch[2].trim();
-
-  const date = sentMatch[3];
-
-  const time = sentMatch[4];
-
-  const transactionId =
-    sentMatch[5].toUpperCase();
-
-  // CBE invoice TID
-  const invoiceMatch = text.match(
-    /[?&]TID=([A-Z0-9]+)/i
-  );
-
-  const invoiceTid = invoiceMatch
-    ? invoiceMatch[1].toUpperCase()
-    : null;
-
-  // Extra security check:
-  // If the SMS contains an invoice TID,
-  // it must match the transaction ID.
-  if (
-    invoiceTid &&
-    invoiceTid !== transactionId
-  ) {
+  if (!amountMatch || !transactionMatch) {
     return null;
   }
 
   return {
-    amount,
-    transactionId,
-    receiverName,
-    date,
-    time,
-    invoiceTid,
-    bank: 'CBE',
-    type: 'sent'
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: transactionMatch[1].toUpperCase(),
+    bank: 'CBE Birr',
+    type: 'deposit'
   };
 }
 

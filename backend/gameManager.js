@@ -920,7 +920,7 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
 
   // ── tournament leaderboard ────────────────────────────────────────────────
 
- // ── DAILY + WEEKLY LEADERBOARDS ─────────────────────────────────────────
+// ── DAILY LEADERBOARD ─────────────────────────────────────────
 
 async getDailyLeaderboard() {
   if (!this.db) return [];
@@ -928,12 +928,56 @@ async getDailyLeaderboard() {
   const snap = await this.db.ref('winners').once('value');
   const data = snap.val() || {};
 
-  const today = new Intl.DateTimeFormat('en-CA', {
+  // ─────────────────────────────────────────────
+  // DAILY RESET: 10:30 PM ETHIOPIA TIME
+  // ─────────────────────────────────────────────
+
+  const now = new Date();
+
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Africa/Addis_Ababa',
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
-  }).format(new Date());
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(now);
+
+  const getPart = type =>
+    Number(parts.find(p => p.type === type)?.value || 0);
+
+  let year = getPart('year');
+  let month = getPart('month');
+  let day = getPart('day');
+  const hour = getPart('hour');
+  const minute = getPart('minute');
+
+  // Before 10:30 PM:
+  // still belongs to the previous daily period.
+  if (hour < 22 || (hour === 22 && minute < 30)) {
+    const previousDay = new Date(
+      Date.UTC(year, month - 1, day)
+    );
+
+    previousDay.setUTCDate(
+      previousDay.getUTCDate() - 1
+    );
+
+    year = previousDay.getUTCFullYear();
+    month = previousDay.getUTCMonth() + 1;
+    day = previousDay.getUTCDate();
+  }
+
+  // 10:30 PM Ethiopia = 19:30 UTC
+  const dailyStart = Date.UTC(
+    year,
+    month - 1,
+    day,
+    19,
+    30,
+    0
+  );
 
   const leaderboard = {};
 
@@ -949,14 +993,8 @@ async getDailyLeaderboard() {
       continue;
     }
 
-    const winnerDay = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Africa/Addis_Ababa',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(winnerDate);
-
-    if (winnerDay !== today) {
+    // Only wins after the current 10:30 PM reset
+    if (winnerDate.getTime() < dailyStart) {
       continue;
     }
 
@@ -975,10 +1013,14 @@ async getDailyLeaderboard() {
 
   const players = Object.values(leaderboard);
 
+  // Simulated players:
+  // 3 actual wins = 1 leaderboard win
   for (const player of players) {
 
     if (player.id.startsWith('sim_')) {
-      player.wins = Math.floor(player.actualWins / 3);
+      player.wins = Math.floor(
+        player.actualWins / 3
+      );
     } else {
       player.wins = player.actualWins;
     }
@@ -990,102 +1032,6 @@ async getDailyLeaderboard() {
     .filter(player => player.wins > 0)
     .sort((a, b) => b.wins - a.wins)
     .slice(0, 10);
-}
-
-
-async getWeeklyLeaderboard() {
-  if (!this.db) return [];
-
-  const snap = await this.db.ref('winners').once('value');
-  const data = snap.val() || {};
-
-  const now = getEthiopiaTimeParts();
-
-  // Ethiopia week: Monday → Sunday
-  const currentDate = new Date(
-    Date.UTC(now.year, now.month - 1, now.day)
-  );
-
-  const day = currentDate.getUTCDay();
-
-  // Sunday = 0, Monday = 1
-  const daysFromMonday = day === 0 ? 6 : day - 1;
-
-  const weekStart = new Date(currentDate);
-  weekStart.setUTCDate(
-    currentDate.getUTCDate() - daysFromMonday
-  );
-
-  const leaderboard = {};
-
-  for (const winner of Object.values(data)) {
-    if (!winner.date) continue;
-
-    const winnerDate = new Date(winner.date);
-
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Africa/Addis_Ababa',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).formatToParts(winnerDate);
-
-    const dateParts = {};
-
-    for (const part of parts) {
-      if (part.type !== 'literal') {
-        dateParts[part.type] = Number(part.value);
-      }
-    }
-
-    const winnerDay = new Date(
-      Date.UTC(
-        dateParts.year,
-        dateParts.month - 1,
-        dateParts.day
-      )
-    );
-
-    const diff =
-      winnerDay.getTime() - weekStart.getTime();
-
-    const daysDifference =
-      diff / (1000 * 60 * 60 * 24);
-
-    // Only this Monday → Sunday
-    if (daysDifference < 0 || daysDifference > 6) {
-      continue;
-    }
-
-    const playerId = String(winner.playerId);
-
-    if (!leaderboard[playerId]) {
-      leaderboard[playerId] = {
-        id: playerId,
-        name: winner.playerName || 'Player',
-        wins: 0,
-        actualWins: 0
-      };
-    }
-
-    leaderboard[playerId].actualWins += 1;
-  }
-
-  // SIM PLAYERS: 3 actual wins = 1 leaderboard win
-  for (const player of Object.values(leaderboard)) {
-    if (String(player.id).startsWith('sim_')) {
-      player.wins = Math.floor(player.actualWins / 3);
-    } else {
-      player.wins = player.actualWins;
-    }
-
-    delete player.actualWins;
-  }
-
-  return Object.values(leaderboard)
-    .filter(player => player.wins > 0)
-    .sort((a, b) => b.wins - a.wins)
-    .slice(0, 5);
 }
 
    // ── TOURNAMENT LEADERBOARD ──────────────────────────────────────────────

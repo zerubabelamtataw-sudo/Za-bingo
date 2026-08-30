@@ -62,23 +62,59 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-  const amountMatch = text.match(
-    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
+  // CBE Birr SENT SMS:
+  // you have sent 20.00Br. to Zerubabel Amtataw
+  // on 29/08/26 10:27,Txn ID DHT91MNULGL
+
+  const sentMatch = text.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const transactionMatch = text.match(
-    /Txn ID\s+([A-Z0-9]+)/i
+  if (!sentMatch) {
+    return null;
+  }
+
+  const amount = Number(
+    sentMatch[1].replace(/,/g, '')
   );
 
-  if (!amountMatch || !transactionMatch) {
+  const receiverName = sentMatch[2].trim();
+
+  const date = sentMatch[3];
+
+  const time = sentMatch[4];
+
+  const transactionId =
+    sentMatch[5].toUpperCase();
+
+  // CBE invoice TID
+  const invoiceMatch = text.match(
+    /[?&]TID=([A-Z0-9]+)/i
+  );
+
+  const invoiceTid = invoiceMatch
+    ? invoiceMatch[1].toUpperCase()
+    : null;
+
+  // Extra security check:
+  // If the SMS contains an invoice TID,
+  // it must match the transaction ID.
+  if (
+    invoiceTid &&
+    invoiceTid !== transactionId
+  ) {
     return null;
   }
 
   return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: transactionMatch[1].toUpperCase(),
-    bank: 'CBE Birr',
-    type: 'received'
+    amount,
+    transactionId,
+    receiverName,
+    date,
+    time,
+    invoiceTid,
+    bank: 'CBE',
+    type: 'sent'
   };
 }
 
@@ -360,7 +396,7 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*(?:\d+|CBEBirr|CBE)/i)) {
+  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
   return;
 }
 
@@ -373,7 +409,7 @@ bot.on('message', async (msg) => {
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
 
-    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
+    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBE)/i);
 
     if (!senderMatch) {
       console.log('❌ SMS sender not found');
@@ -401,7 +437,7 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // --------------------------------------------------------
 
     const smsText = forwardedText
-  .replace(/^From:\s*(?:\d+|CBEBirr|CBE)\s*/i, '')
+  .replace(/^From:\s*(?:\d+|CBE)\s*/i, '')
   .replace(/^Time:\s*[^\n\r]*/i, '')
   .trim();
 
@@ -436,8 +472,9 @@ if (
 // CBE BIRR DEPOSIT SMS
 // --------------------------------------------------------
 if (
-  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(smsText)
+  /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\.\s+to\s+/i.test(smsText) &&
+  /Txn ID\s+[A-Z0-9]+/i.test(smsText) &&
+  /cbepay1\.cbe\.com\.et/i.test(smsText)
 ) {
 
   const smsData = parseCBEBirrDepositSMS(smsText);
@@ -544,7 +581,7 @@ bot.onText(/\/transfer/, async (msg) => {
 
   bot.sendMessage(
     chatId,
-    'የተቀባዩን ስልክ ቁጥር ያስገቡ፦'
+    'Enter the recipient’s phone number:'
   );
 
   transferSessions[chatId] = {
@@ -738,12 +775,10 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
       bot.sendMessage(
         chatId,
-        `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
-`🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
-`🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
-`💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
-`📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
-`****************👇👇👇****************`,
+        `👑 *እንኳን ደና መጡ, ${firstName}!*\n\n` +
+        `You received *30 Br* welcome bonus!\n` +
+        `Play Bingo and win real prizes!\n\n` +
+        `Share your contact to complete registration.`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -780,13 +815,7 @@ bot.on('contact', async (msg) => {
   try {
     await db.ref(`players/${tgId}/phone`).set(phone);
 
-    bot.sendMessage(chatId,
-  `✅ *የስልክ ቁጥርዎ ተመዝግቧል!*\n\n` +
-  `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
-  `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
-  `📤 *ለማጋራት:* Bot 👉 Profile 👥\n\n` +
-  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*`,
-  {
+    bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
       reply_markup: {
         remove_keyboard: true
       }
@@ -1011,24 +1040,23 @@ else if (data.startsWith('deposit_method_')) {
   if (method === 'telebirr') {
   bot.sendMessage(
     chatId,
-    `💳 የቴሌብር አካውንት: \`0985661720\`\n\n` +
-    `1️⃣ ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ\n\n` +
-    `2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
-    `3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከቴሌብር ይደርሳችኋል\n\n` +
-    `4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
-    `⚠️ ማሳሰቢያ: የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
+    `የቴሌብር አካውንት: \`0985661720\`።\n\n` +
+    `ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ።\n\n` +
+    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
+    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል።\n\n` +
+    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
+    `ማሳሰቢያ፡ የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 } else if (method === 'cbe') {
   bot.sendMessage(
     chatId,
-`💳 CBE Birr አካውንት: \`0985661720\`\n\n` +
-`1️⃣ ከላይ ባለው CBE Birr አካውንት ብር ያስገቡ\n\n` +
-`2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
-`3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከCBE Birr ይደርሳችኋል\n\n` +
-`4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
-`⚠️ ማሳሰቢያ: በCBE Birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ\n` +
-`የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
+    `Cbe birr አካውንት: \`0985661720\`።\n\n` +
+    `ከላይ ባለው Cbe birr ብር ያስገቡ።\n\n` +
+    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
+    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከCbe birr ይደርሳችኋል።\n\n` +
+    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
+    `ማሳሰቢያ፡ በCbe birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 }
@@ -1117,9 +1145,9 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
     }
   );
 
-        return;
-  }
-});
+  return;
+}
+
   // Handle deposit SMS
 if (
   depositSessions[chatId] &&
@@ -1130,27 +1158,35 @@ if (
   const method = session.method;
   const sms = text.trim();
 
+
 let smsData = null;
 
-// PLAYER CBE BIRR SMS
-if (method === 'cbe') {
+// CBE Birr
+if (
+  method === 'cbe' &&
+  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
+  /Txn ID\s+[A-Z0-9]+/i.test(sms)
+) {
+  smsData = parseCBEBirrDepositSMS(sms);
+}
 
-  // English
-  let match = sms.match(
-    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\..*?Txn ID\s+([A-Z0-9]+)/i
+// Existing deposit format
+else {
+  const amountMatch = sms.match(
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
   );
 
-  // Amharic
-  if (!match) {
-    match = sms.match(
-      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.*?በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i
-    );
-  }
+  const transactionMatch = sms.match(
+    /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
+  );
 
-  if (match) {
+  if (amountMatch && transactionMatch) {
     smsData = {
-      amount: Number(match[1].replace(/,/g, '')),
-      transactionId: match[2].toUpperCase()
+      amount: Number(
+        amountMatch[1].replace(/,/g, '')
+      ),
+      transactionId:
+        transactionMatch[1].toUpperCase()
     };
   }
 }
@@ -1359,60 +1395,44 @@ if (withdrawSessions[chatId]) {
 
   const session = withdrawSessions[chatId];
 
-// ----------------------------------------------------------
-// STEP 1 — AMOUNT
-// ----------------------------------------------------------
+  // ----------------------------------------------------------
+  // STEP 1 — AMOUNT
+  // ----------------------------------------------------------
 
-if (session.step === 'amount') {
+  if (session.step === 'amount') {
 
-  const amount = parseFloat(text);
+    const amount = parseFloat(text);
 
-  if (!Number.isFinite(amount) || amount < 10) {
-    await bot.sendMessage(
-      chatId,
-      '❌ የተሳሳተ መጠን ነው። እባክዎ 10 Br ወይም ከዚያ በላይ ያስገቡ።'
-    );
-    return;
-  }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await bot.sendMessage(
+        chatId,
+        '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
+      );
+      return;
+    }
 
-  const balance = Number(player.balance || 0);
+    const balance = Number(player.balance || 0);
 
-  const MIN_REMAINING_BALANCE = 25;
+    if (amount > balance) {
+      await bot.sendMessage(
+        chatId,
+        `❌ በቂ ቀሪ ሂሳብ የለዎትም።\n\n💰 ያለዎት ሂሳብ: ${balance} Br`
+      );
+      return;
+    }
 
-  if (balance <= MIN_REMAINING_BALANCE) {
-    await bot.sendMessage(
-      chatId,
-      `❌ ገንዘብ ማውጣት አይችሉም።\n\n` +
-      `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
-      `🔒 25 Br በአካውንትዎ መቀረት አለበት።`
-    );
-    return;
-  }
-
-  if (amount > balance - MIN_REMAINING_BALANCE) {
-    const maxWithdrawal = balance - MIN_REMAINING_BALANCE;
+    session.amount = amount;
+    session.step = 'phone';
 
     await bot.sendMessage(
       chatId,
-      `❌ 25 Br በአካውንትዎ መቅረት አለበት።\n\n` +
-      `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
-      `💸 ከፍተኛው ማውጣት የሚችሉት: ${maxWithdrawal} Br`
+      session.method === 'cbe'
+        ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
+        : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
     );
+
     return;
   }
-
-  session.amount = amount;
-  session.step = 'phone';
-
-  await bot.sendMessage(
-    chatId,
-    session.method === 'cbe'
-      ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
-      : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
-  );
-
-  return;
-}
 
 
   // ----------------------------------------------------------
@@ -1634,17 +1654,14 @@ if (session.step === 'amount') {
 
   return;
 }
-// ============================================================
+  // ============================================================
 // HANDLE PLAYER TRANSFER
 // ============================================================
 
 if (transferSessions[chatId]) {
   const session = transferSessions[chatId];
 
-  // ----------------------------------------------------------
-  // STEP 1 — PHONE NUMBER
-  // ----------------------------------------------------------
-
+  // Step 1: Phone number
   if (session.step === 'phone') {
     const phone = text.trim();
 
@@ -1654,44 +1671,43 @@ if (transferSessions[chatId]) {
     let recipientId = null;
     let recipient = null;
 
-    const normalizePhone = (number) => {
-      let value = String(number || '').replace(/\D/g, '');
-
-      if (value.startsWith('251')) {
-        value = value.slice(3);
-      }
-
-      if (value.startsWith('0')) {
-        value = value.slice(1);
-      }
-
-      return value;
-    };
-
-    const enteredPhone = normalizePhone(phone);
-
     for (const [id, p] of Object.entries(players)) {
       if (!p) continue;
 
-      const savedPhone = normalizePhone(p.phone);
+      const normalizePhone = (number) => {
+  let phone = String(number || '').replace(/\D/g, '');
 
-      if (savedPhone === enteredPhone) {
-        recipientId = id;
-        recipient = p;
-        break;
-      }
+  if (phone.startsWith('251')) {
+    phone = phone.slice(3);
+  }
+
+  if (phone.startsWith('0')) {
+    phone = phone.slice(1);
+  }
+
+  return phone;
+};
+
+const savedPhone = normalizePhone(p.phone);
+const enteredPhone = normalizePhone(phone);
+
+if (savedPhone === enteredPhone) {
+  recipientId = id;
+  recipient = p;
+  break;
+}
     }
 
     if (!recipient) {
-      await bot.sendMessage(
+      bot.sendMessage(
         chatId,
         '❌ No player was found with this phone number.'
       );
       return;
     }
 
-    if (String(recipientId) === String(tgId)) {
-      await bot.sendMessage(
+    if (recipientId === tgId) {
+      bot.sendMessage(
         chatId,
         '❌ You cannot transfer money to yourself.'
       );
@@ -1702,54 +1718,33 @@ if (transferSessions[chatId]) {
     session.recipient = recipient;
     session.step = 'amount';
 
-    await bot.sendMessage(
+    bot.sendMessage(
       chatId,
       `Recipient: ${recipient.first_name || 'Player'}\n\n` +
-      `Enter the amount to transfer (minimum 10 Br):`
+      `Enter the amount to transfer:`
     );
 
     return;
   }
 
-  // ----------------------------------------------------------
-  // STEP 2 — AMOUNT
-  // ----------------------------------------------------------
-
+  // Step 2: Amount
   if (session.step === 'amount') {
-    const amount = parseFloat(text);
+    const amount = Number(text);
 
-    // Minimum transfer = 10 Br
-    if (!Number.isFinite(amount) || amount < 10) {
-      await bot.sendMessage(
+    if (!Number.isFinite(amount) || amount <= 0) {
+      bot.sendMessage(
         chatId,
-        '❌ Minimum transfer amount is 10 Br. Enter 10 Br or more:'
+        '❌ Invalid amount. Enter the amount again:'
       );
       return;
     }
 
     const balance = Number(player.balance || 0);
 
-    // Sender must keep 25 Br
-    const MIN_REMAINING_BALANCE = 25;
-
-    if (balance <= MIN_REMAINING_BALANCE) {
-      await bot.sendMessage(
+    if (amount > balance) {
+      bot.sendMessage(
         chatId,
-        `❌ You cannot transfer money.\n\n` +
-        `💰 Your balance: ${balance} Br\n` +
-        `🔒 You must keep 25 Br in your account.`
-      );
-      return;
-    }
-
-    if (amount > balance - MIN_REMAINING_BALANCE) {
-      const maxTransfer = balance - MIN_REMAINING_BALANCE;
-
-      await bot.sendMessage(
-        chatId,
-        `❌ You must keep 25 Br in your account.\n\n` +
-        `💰 Your balance: ${balance} Br\n` +
-        `💸 Maximum transfer: ${maxTransfer} Br`
+        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
       );
       return;
     }
@@ -1757,23 +1752,23 @@ if (transferSessions[chatId]) {
     session.amount = amount;
     session.step = 'confirm';
 
-    await bot.sendMessage(
+    bot.sendMessage(
       chatId,
-      `🧾 Transfer Confirmation\n\n` +
-      `👤 To: ${session.recipient.first_name || 'Player'}\n` +
-      `📱 Phone: ${session.recipient.phone || 'N/A'}\n` +
-      `💰 Amount: ${amount.toFixed(2)} Br\n\n` +
+      `Transfer Confirmation\n\n` +
+      `To: ${session.recipient.first_name || 'Player'}\n` +
+      `Phone: ${session.recipient.phone}\n` +
+      `Amount: ${amount} Br\n\n` +
       `Confirm this transfer?`,
       {
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: '✅ Confirm',
+                text: 'Confirm',
                 callback_data: 'transfer_confirm'
               },
               {
-                text: '❌ Cancel',
+                text: 'Cancel',
                 callback_data: 'transfer_cancel'
               }
             ]
@@ -1785,6 +1780,7 @@ if (transferSessions[chatId]) {
     return;
   }
 }
+});
 
 function isAdmin(telegramId) {
   return String(telegramId) === String(ADMIN_ID);
@@ -2102,6 +2098,20 @@ function setGameManager(gm) {
 // ============================================================
 
 let lastDailyBonusDate = null;
+let lastWeeklyBonusDate = null;
+async function recordWeeklyWin(playerId, playerName) {
+  const ref = db.ref(`leaderboards/weekly/${playerId}`);
+  const snapshot = await ref.once('value');
+  const current = snapshot.val() || {};
+
+  await ref.set({
+    playerId: String(playerId),
+    playerName: playerName || 'Player',
+    actualWins: Number(current.actualWins || 0) + 1,
+    updatedAt: new Date().toISOString()
+  });
+}
+
 
 // ============================================================
 // ETHIOPIA DATE HELPER
@@ -2328,6 +2338,187 @@ https://t.me/ZABingo_bot
       );
     }
 
+
+    // ========================================================
+    // WEEKLY BONUS
+    //
+    // SUNDAY ONLY
+    // WEEK = MONDAY → SUNDAY
+    // ========================================================
+
+    const todayDate =
+      new Date(
+        `${today}T12:00:00+03:00`
+      );
+
+    const dayOfWeek =
+      todayDate.getDay();
+
+    // Sunday = 0
+    const isSunday =
+      dayOfWeek === 0;
+
+
+    if (
+      isSunday &&
+      lastWeeklyBonusDate !== today
+    ) {
+
+      console.log(
+        '🏆 CALCULATING WEEKLY LEADERBOARD...'
+      );
+
+
+      // ------------------------------------------------------
+      // FIND MONDAY OF CURRENT WEEK
+      // ------------------------------------------------------
+
+      const weekStart =
+        new Date(todayDate);
+
+      // Sunday → go back 6 days
+      weekStart.setDate(
+        weekStart.getDate() - 6
+      );
+
+      weekStart.setHours(
+        0, 0, 0, 0
+      );
+
+
+      // ------------------------------------------------------
+      // WEEKLY LEADERBOARD
+      // ------------------------------------------------------
+
+      const weeklyLeaderboard = {};
+
+
+      for (const winner of allWinners) {
+
+        if (!winner.date) continue;
+
+        const winnerDate =
+          new Date(winner.date);
+
+
+        // Convert winner date to Ethiopia date
+        const winnerDay =
+          getEthiopiaDate(
+            winner.date
+          );
+
+
+        const winnerEthiopiaDate =
+          new Date(
+            `${winnerDay}T12:00:00+03:00`
+          );
+
+
+        // Monday → Sunday
+        if (
+          winnerEthiopiaDate < weekStart ||
+          winnerEthiopiaDate > todayDate
+        ) {
+          continue;
+        }
+
+
+        const playerId = String(winner.playerId);
+
+if (!weeklyLeaderboard[playerId]) {
+  weeklyLeaderboard[playerId] = {
+    playerId: playerId,
+    playerName: winner.playerName || 'Player',
+    wins: 0,
+    actualWins: 0
+  };
+}
+
+// Count every actual win
+weeklyLeaderboard[playerId].actualWins++;
+      }
+
+
+      // ------------------------------------------------------
+      // APPLY SIM 3:1 RULE
+      // ------------------------------------------------------
+
+      for (
+        const player
+        of Object.values(weeklyLeaderboard)
+      ) {
+
+        player.wins =
+          calculateLeaderboardWins(
+            player.playerId,
+            player.actualWins
+          );
+      }
+
+
+      // ------------------------------------------------------
+      // TOP 5
+      // ------------------------------------------------------
+
+      const weeklyTop5 =
+        Object.values(weeklyLeaderboard)
+          .filter(player => player.wins > 0)
+          .sort((a, b) => {
+
+            if (b.wins !== a.wins) {
+              return b.wins - a.wins;
+            }
+
+            return b.actualWins - a.actualWins;
+          })
+          .slice(0, 5);
+
+
+      // ------------------------------------------------------
+      // DISPLAY NAMES
+      // ------------------------------------------------------
+
+      const weeklyNames = [];
+
+      for (let i = 0; i < 5; i++) {
+
+        if (weeklyTop5[i]) {
+
+          weeklyNames.push(
+            `${weeklyTop5[i].playerName} (${weeklyTop5[i].wins})`
+          );
+
+        } else {
+
+          weeklyNames.push(
+            'No winner'
+          );
+
+        }
+      }
+
+
+
+
+
+
+
+
+      // ------------------------------------------------------
+      // RESET WEEKLY DATA ONLY
+      //
+      // winners/ IS NEVER TOUCHED
+      // ------------------------------------------------------
+
+      await db.ref('leaderboards/weekly').remove();
+
+      lastWeeklyBonusDate = today;
+
+      console.log(
+        '🔄 WEEKLY LEADERBOARD RESET'
+      );
+    }
+
   } catch (error) {
 
     console.error(
@@ -2343,14 +2534,7 @@ https://t.me/ZABingo_bot
 // 2:00 PM + 8:00 PM ETHIOPIA TIME
 // ============================================================
 
-const PROMO_CHANNELS = [
-  '@EdelBingoo',
-  '@ethiotictok',
-  '@Edelcrypto',
-  '@Edelsportnews',
-  '@ethiohotenew',
-  '@yareddish'
-];
+const PROMO_CHANNEL = '@EdelBingoo';
 
 const promoMessage = `
 🏆 EDEL BINGO — DAILY BONUS 🏆
@@ -2420,13 +2604,10 @@ setInterval(async () => {
     // POST TO CHANNEL
     // --------------------------------------------------------
 
-    for (const channel of PROMO_CHANNELS) {
-  try {
-    await bot.sendMessage(channel, promoMessage);
-  } catch (error) {
-    console.error(`❌ Could not post to ${channel}:`, error.message);
-  }
-}
+    await bot.sendMessage(
+      PROMO_CHANNEL,
+      promoMessage
+    );
 
     console.log('✅ Promo posted to channel');
 

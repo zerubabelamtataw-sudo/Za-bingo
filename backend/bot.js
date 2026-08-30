@@ -62,59 +62,23 @@ function parseDepositSMS(text) {
   };
 }
 function parseCBEBirrDepositSMS(text) {
-  // CBE Birr SENT SMS:
-  // you have sent 20.00Br. to Zerubabel Amtataw
-  // on 29/08/26 10:27,Txn ID DHT91MNULGL
-
-  const sentMatch = text.match(
-    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\.\s+to\s+(.+?)\s+on\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}),Txn ID\s+([A-Z0-9]+)/i
+  const amountMatch = text.match(
+    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
   );
 
-  if (!sentMatch) {
-    return null;
-  }
-
-  const amount = Number(
-    sentMatch[1].replace(/,/g, '')
+  const transactionMatch = text.match(
+    /Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const receiverName = sentMatch[2].trim();
-
-  const date = sentMatch[3];
-
-  const time = sentMatch[4];
-
-  const transactionId =
-    sentMatch[5].toUpperCase();
-
-  // CBE invoice TID
-  const invoiceMatch = text.match(
-    /[?&]TID=([A-Z0-9]+)/i
-  );
-
-  const invoiceTid = invoiceMatch
-    ? invoiceMatch[1].toUpperCase()
-    : null;
-
-  // Extra security check:
-  // If the SMS contains an invoice TID,
-  // it must match the transaction ID.
-  if (
-    invoiceTid &&
-    invoiceTid !== transactionId
-  ) {
+  if (!amountMatch || !transactionMatch) {
     return null;
   }
 
   return {
-    amount,
-    transactionId,
-    receiverName,
-    date,
-    time,
-    invoiceTid,
-    bank: 'CBE',
-    type: 'sent'
+    amount: Number(amountMatch[1].replace(/,/g, '')),
+    transactionId: transactionMatch[1].toUpperCase(),
+    bank: 'CBE Birr',
+    type: 'received'
   };
 }
 
@@ -396,7 +360,7 @@ bot.on('message', async (msg) => {
   if (!forwardedText) return;
 
   // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*(?:\d+|CBE)/i)) {
+  if (!forwardedText.match(/^From:\s*(?:\d+|CBEBirr|CBE)/i)) {
   return;
 }
 
@@ -409,7 +373,7 @@ bot.on('message', async (msg) => {
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
 
-    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBE)/i);
+    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
 
     if (!senderMatch) {
       console.log('❌ SMS sender not found');
@@ -437,7 +401,7 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // --------------------------------------------------------
 
     const smsText = forwardedText
-  .replace(/^From:\s*(?:\d+|CBE)\s*/i, '')
+  .replace(/^From:\s*(?:\d+|CBEBirr|CBE)\s*/i, '')
   .replace(/^Time:\s*[^\n\r]*/i, '')
   .trim();
 
@@ -472,9 +436,8 @@ if (
 // CBE BIRR DEPOSIT SMS
 // --------------------------------------------------------
 if (
-  /you have sent\s+[\d,]+(?:\.\d{1,2})?Br\.\s+to\s+/i.test(smsText) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(smsText) &&
-  /cbepay1\.cbe\.com\.et/i.test(smsText)
+  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
+  /Txn ID\s+[A-Z0-9]+/i.test(smsText)
 ) {
 
   const smsData = parseCBEBirrDepositSMS(smsText);
@@ -581,7 +544,7 @@ bot.onText(/\/transfer/, async (msg) => {
 
   bot.sendMessage(
     chatId,
-    'Enter the recipient’s phone number:'
+    'የተቀባዩን ስልክ ቁጥር ያስገቡ፦'
   );
 
   transferSessions[chatId] = {
@@ -775,10 +738,12 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
       bot.sendMessage(
         chatId,
-        `👑 *እንኳን ደና መጡ, ${firstName}!*\n\n` +
-        `You received *30 Br* welcome bonus!\n` +
-        `Play Bingo and win real prizes!\n\n` +
-        `Share your contact to complete registration.`,
+        `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
+`🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
+`🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
+`💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
+`📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
+`****************👇👇👇****************`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -815,7 +780,13 @@ bot.on('contact', async (msg) => {
   try {
     await db.ref(`players/${tgId}/phone`).set(phone);
 
-    bot.sendMessage(chatId, '✅ Phone number saved! Welcome aboard!', {
+    bot.sendMessage(chatId,
+  `✅ *የስልክ ቁጥርዎ ተመዝግቧል!*\n\n` +
+  `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
+  `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
+  `📤 *ለማጋራት:* Bot 👉 Profile 👥\n\n` +
+  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*`,
+  {
       reply_markup: {
         remove_keyboard: true
       }
@@ -1040,23 +1011,24 @@ else if (data.startsWith('deposit_method_')) {
   if (method === 'telebirr') {
   bot.sendMessage(
     chatId,
-    `የቴሌብር አካውንት: \`0985661720\`።\n\n` +
-    `ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ።\n\n` +
-    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል።\n\n` +
-    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-    `ማሳሰቢያ፡ የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+    `💳 የቴሌብር አካውንት: \`0985661720\`\n\n` +
+    `1️⃣ ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ\n\n` +
+    `2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
+    `3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከቴሌብር ይደርሳችኋል\n\n` +
+    `4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
+    `⚠️ ማሳሰቢያ: የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 } else if (method === 'cbe') {
   bot.sendMessage(
     chatId,
-    `Cbe birr አካውንት: \`0985661720\`።\n\n` +
-    `ከላይ ባለው Cbe birr ብር ያስገቡ።\n\n` +
-    `2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ።\n\n` +
-    `3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከCbe birr ይደርሳችኋል።\n\n` +
-    `4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት።\n\n` +
-    `ማሳሰቢያ፡ በCbe birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። የከፈለችሁበትን አጭር የጹሁፍ መለክት(sms) እዚ ላይ ያስገቡት 👇👇👇`,
+`💳 CBE Birr አካውንት: \`0985661720\`\n\n` +
+`1️⃣ ከላይ ባለው CBE Birr አካውንት ብር ያስገቡ\n\n` +
+`2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
+`3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከCBE Birr ይደርሳችኋል\n\n` +
+`4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
+`⚠️ ማሳሰቢያ: በCBE Birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ\n` +
+`የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
     { parse_mode: 'Markdown' }
   );
 }
@@ -1158,35 +1130,27 @@ if (
   const method = session.method;
   const sms = text.trim();
 
-
 let smsData = null;
 
-// CBE Birr
-if (
-  method === 'cbe' &&
-  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(sms) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(sms)
-) {
-  smsData = parseCBEBirrDepositSMS(sms);
-}
+// PLAYER CBE BIRR SMS
+if (method === 'cbe') {
 
-// Existing deposit format
-else {
-  const amountMatch = sms.match(
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:ብር|ETB|Birr)/i
+  // English
+  let match = sms.match(
+    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\..*?Txn ID\s+([A-Z0-9]+)/i
   );
 
-  const transactionMatch = sms.match(
-    /(?:የሂሳብ እንቅስቃሴ ቁጥርዎ|Transaction\s*(?:ID|Number))\s*:?\s*([A-Z0-9]+)/i
-  );
+  // Amharic
+  if (!match) {
+    match = sms.match(
+      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.*?በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i
+    );
+  }
 
-  if (amountMatch && transactionMatch) {
+  if (match) {
     smsData = {
-      amount: Number(
-        amountMatch[1].replace(/,/g, '')
-      ),
-      transactionId:
-        transactionMatch[1].toUpperCase()
+      amount: Number(match[1].replace(/,/g, '')),
+      transactionId: match[2].toUpperCase()
     };
   }
 }
@@ -2534,7 +2498,14 @@ weeklyLeaderboard[playerId].actualWins++;
 // 2:00 PM + 8:00 PM ETHIOPIA TIME
 // ============================================================
 
-const PROMO_CHANNEL = '@EdelBingoo';
+const PROMO_CHANNELS = [
+  '@EdelBingoo',
+  '@ethiotictok',
+  '@Edelcrypto',
+  '@Edelsportnews',
+  '@ethiohotenew',
+  '@yareddish'
+];
 
 const promoMessage = `
 🏆 EDEL BINGO — DAILY BONUS 🏆
@@ -2604,10 +2575,13 @@ setInterval(async () => {
     // POST TO CHANNEL
     // --------------------------------------------------------
 
-    await bot.sendMessage(
-      PROMO_CHANNEL,
-      promoMessage
-    );
+    for (const channel of PROMO_CHANNELS) {
+  try {
+    await bot.sendMessage(channel, promoMessage);
+  } catch (error) {
+    console.error(`❌ Could not post to ${channel}:`, error.message);
+  }
+}
 
     console.log('✅ Promo posted to channel');
 

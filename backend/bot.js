@@ -1759,7 +1759,7 @@ if (savedPhone === enteredPhone) {
 
     return;
   }
-});
+}
 
 function isAdmin(telegramId) {
   return String(telegramId) === String(ADMIN_ID);

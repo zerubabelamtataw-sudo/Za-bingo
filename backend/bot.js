@@ -1117,9 +1117,9 @@ if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
     }
   );
 
-  return;
-}
-
+        return;
+  }
+});
   // Handle deposit SMS
 if (
   depositSessions[chatId] &&

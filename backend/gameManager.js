@@ -52,6 +52,86 @@ const SIMULATED_PLAYERS = [
   'ደላላው'
 ];
 
+// ─────────────────────────────────────────────
+// TIME-BASED SIMULATOR SCHEDULE
+// Ethiopia time: Africa/Addis_Ababa
+// ─────────────────────────────────────────────
+
+const SIMULATOR_SCHEDULES = {
+  '5br': [
+    { start: '04:00', end: '08:35', counts: [3] },
+    { start: '08:35', end: '10:20', counts: [3, 4, 5] },
+    { start: '10:20', end: '13:25', counts: [5, 7, 8] },
+    { start: '13:25', end: '16:40', counts: [9, 10, 11, 12] },
+    { start: '16:40', end: '23:45', counts: [14, 15, 16, 17] },
+    { start: '23:45', end: '01:38', counts: [12, 13, 14] },
+    { start: '01:38', end: '04:00', counts: [6, 7, 8] }
+  ],
+
+  '10br': [
+    { start: '04:00', end: '08:35', counts: [] },
+    { start: '08:35', end: '10:20', counts: [3, 4] },
+    { start: '10:20', end: '13:25', counts: [5, 7, 8] },
+    { start: '13:25', end: '16:40', counts: [9, 10, 11] },
+    { start: '16:40', end: '23:45', counts: [14, 15, 16, 17] },
+    { start: '23:45', end: '01:38', counts: [12, 13] },
+    { start: '01:38', end: '04:00', counts: [6, 7, 8] }
+  ]
+};
+
+function getEthiopiaMinutes() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Addis_Ababa',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+
+  const hour = Number(
+    parts.find(p => p.type === 'hour')?.value || 0
+  );
+
+  const minute = Number(
+    parts.find(p => p.type === 'minute')?.value || 0
+  );
+
+  return hour * 60 + minute;
+}
+
+function timeToMinutes(time) {
+  const [hour, minute] = time.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function isTimeInScheduleRange(now, start, end) {
+  const startMin = timeToMinutes(start);
+  const endMin = timeToMinutes(end);
+
+  // Normal period, e.g. 08:35 → 10:20
+  if (startMin < endMin) {
+    return now >= startMin && now < endMin;
+  }
+
+  // Crosses midnight, e.g. 23:45 → 01:38
+  return now >= startMin || now < endMin;
+}
+
+function getRoomSimulatorSchedule(roomId) {
+  const schedule = SIMULATOR_SCHEDULES[roomId];
+
+  if (!schedule) return null;
+
+  const now = getEthiopiaMinutes();
+
+  return schedule.find(period =>
+    isTimeInScheduleRange(
+      now,
+      period.start,
+      period.end
+    )
+  ) || null;
+}
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function generateCartela() {
@@ -129,6 +209,7 @@ reset() {
   this._countdownTimer  = null;
   this._drawTimer       = null;
   this._gameStartTime   = null;
+  this._simulatorScheduleKey = null;
 }
 
 // Public snapshot for API
@@ -170,6 +251,31 @@ class GamesManager {
       this.rooms[cfg.id] = new Room(cfg);
     }
   }
+
+// ─────────────────────────────────────────────
+// AUTOMATIC TIME-BASED SIMULATOR CHECK
+// Checks every 30 seconds using Ethiopia time.
+// ─────────────────────────────────────────────
+
+this._simulatorScheduler = setInterval(() => {
+
+  for (const roomId of ['5br', '10br']) {
+
+    const room = this.rooms[roomId];
+
+    if (!room || room.status !== 'waiting') {
+      continue;
+    }
+
+    this.addSimulatedPlayers(roomId).catch(err => {
+      console.error(
+        `❌ Simulator scheduler error for ${roomId}:`,
+        err.message
+      );
+    });
+  }
+
+}, 30 * 1000);
 
   // ── cartelas ──────────────────────────────────────────────────────────────
 
@@ -401,23 +507,55 @@ async addSimulatedPlayers(roomId = '5br') {
 
   if (room.status !== 'waiting') return;
 
+  const schedule = getRoomSimulatorSchedule(roomId);
+
+  // 20 Br remains on the old system
+  if (!schedule) {
+    return this.addSimulatedPlayersOld(roomId);
+  }
+
+  // No simulators scheduled at this time
+  if (schedule.counts.length === 0) {
+    console.log(
+      `🤖 ${roomId}: no simulators scheduled right now`
+    );
+    return;
+  }
+
+  // Prevent the scheduler from adding another group
+  // during the same waiting period.
+  const scheduleKey =
+    `${schedule.start}-${schedule.end}`;
+
+  if (room._simulatorScheduleKey === scheduleKey) {
+    return;
+  }
+
+  room._simulatorScheduleKey = scheduleKey;
+
   const cartelas = await this.getCartelas();
+
+  // Pick the number for this game
+  const playerCount =
+    schedule.counts[
+      Math.floor(
+        Math.random() * schedule.counts.length
+      )
+    ];
+
+  console.log(
+    `🕐 ${roomId}: Ethiopia time schedule ` +
+    `${schedule.start} → ${schedule.end}`
+  );
+
+  console.log(
+    `🤖 ${roomId}: selected ${playerCount} simulated players`
+  );
 
   // ─────────────────────────────────────────────
   // RANDOM NUMBER OF SIMULATED PLAYERS: 10–15
   // ─────────────────────────────────────────────
-  const baseCount = {
-  '5br': this.simPlayerSettings?.['5br'] ?? 10,
-  '10br': this.simPlayerSettings?.['10br'] ?? 3,
-  '20br': this.simPlayerSettings?.['20br'] ?? 1
-}[roomId] || 0;
-
-const minSimPlayers = Math.max(0, baseCount - 1);
-const maxSimPlayers = baseCount + 2;
-
-const playerCount =
-  minSimPlayers +
-  Math.floor(Math.random() * (maxSimPlayers - minSimPlayers + 1));
+  
 
   // Randomly choose which simulated players participate
   const players = [...SIMULATED_PLAYERS];

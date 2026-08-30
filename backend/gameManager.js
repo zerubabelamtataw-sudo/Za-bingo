@@ -250,7 +250,6 @@ class GamesManager {
     for (const cfg of ROOMS_CONFIG) {
       this.rooms[cfg.id] = new Room(cfg);
     }
-  }
 
 // ─────────────────────────────────────────────
 // AUTOMATIC TIME-BASED SIMULATOR CHECK

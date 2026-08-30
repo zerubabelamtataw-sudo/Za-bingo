@@ -1359,66 +1359,60 @@ if (withdrawSessions[chatId]) {
 
   const session = withdrawSessions[chatId];
 
-  // ----------------------------------------------------------
-  // STEP 1 — AMOUNT
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// STEP 1 — AMOUNT
+// ----------------------------------------------------------
 
-  if (session.step === 'amount') {
+if (session.step === 'amount') {
 
-    const amount = parseFloat(text);
+  const amount = parseFloat(text);
 
-    if (!Number.isFinite(amount) || amount < 10) {
-  bot.sendMessage(
-    chatId,
-    '❌ Minimum transfer amount is 10 Br. Enter 10 Br or more:'
-  );
-  return;
-}
-      await bot.sendMessage(
-        chatId,
-        '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
-      );
-      return;
-    }
+  if (!Number.isFinite(amount) || amount < 10) {
+    await bot.sendMessage(
+      chatId,
+      '❌ የተሳሳተ መጠን ነው። እባክዎ 10 Br ወይም ከዚያ በላይ ያስገቡ።'
+    );
+    return;
+  }
 
-    const balance = Number(player.balance || 0);
+  const balance = Number(player.balance || 0);
 
-    const MIN_REMAINING_BALANCE = 25;
+  const MIN_REMAINING_BALANCE = 25;
 
-if (balance <= MIN_REMAINING_BALANCE) {
-  await bot.sendMessage(
-    chatId,
-    `❌ ገንዘብ ማውጣት አይችሉም።\n\n` +
-    `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
-    `🔒 25 Br በአካውንትዎ መቀረት አለበት።`
-  );
-  return;
-}
+  if (balance <= MIN_REMAINING_BALANCE) {
+    await bot.sendMessage(
+      chatId,
+      `❌ ገንዘብ ማውጣት አይችሉም።\n\n` +
+      `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
+      `🔒 25 Br በአካውንትዎ መቀረት አለበት።`
+    );
+    return;
+  }
 
-if (amount > balance - MIN_REMAINING_BALANCE) {
-  const maxWithdrawal = balance - MIN_REMAINING_BALANCE;
-
-  await bot.sendMessage(
-    chatId,
-    `❌ 25 Br በአካውንትዎ መቅረት አለበት።\n\n` +
-    `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
-    `💸 ከፍተኛው ማውጣት የሚችሉት: ${maxWithdrawal} Br`
-  );
-  return;
-}
-
-    session.amount = amount;
-    session.step = 'phone';
+  if (amount > balance - MIN_REMAINING_BALANCE) {
+    const maxWithdrawal = balance - MIN_REMAINING_BALANCE;
 
     await bot.sendMessage(
       chatId,
-      session.method === 'cbe'
-        ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
-        : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+      `❌ 25 Br በአካውንትዎ መቅረት አለበት።\n\n` +
+      `💰 ያለዎት ሂሳብ: ${balance} Br\n` +
+      `💸 ከፍተኛው ማውጣት የሚችሉት: ${maxWithdrawal} Br`
     );
-
     return;
   }
+
+  session.amount = amount;
+  session.step = 'phone';
+
+  await bot.sendMessage(
+    chatId,
+    session.method === 'cbe'
+      ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
+      : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+  );
+
+  return;
+}
 
 
   // ----------------------------------------------------------

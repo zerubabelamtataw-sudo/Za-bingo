@@ -1634,14 +1634,17 @@ if (session.step === 'amount') {
 
   return;
 }
-  // ============================================================
+// ============================================================
 // HANDLE PLAYER TRANSFER
 // ============================================================
 
 if (transferSessions[chatId]) {
   const session = transferSessions[chatId];
 
-  // Step 1: Phone number
+  // ----------------------------------------------------------
+  // STEP 1 — PHONE NUMBER
+  // ----------------------------------------------------------
+
   if (session.step === 'phone') {
     const phone = text.trim();
 
@@ -1651,43 +1654,44 @@ if (transferSessions[chatId]) {
     let recipientId = null;
     let recipient = null;
 
+    const normalizePhone = (number) => {
+      let value = String(number || '').replace(/\D/g, '');
+
+      if (value.startsWith('251')) {
+        value = value.slice(3);
+      }
+
+      if (value.startsWith('0')) {
+        value = value.slice(1);
+      }
+
+      return value;
+    };
+
+    const enteredPhone = normalizePhone(phone);
+
     for (const [id, p] of Object.entries(players)) {
       if (!p) continue;
 
-      const normalizePhone = (number) => {
-  let phone = String(number || '').replace(/\D/g, '');
+      const savedPhone = normalizePhone(p.phone);
 
-  if (phone.startsWith('251')) {
-    phone = phone.slice(3);
-  }
-
-  if (phone.startsWith('0')) {
-    phone = phone.slice(1);
-  }
-
-  return phone;
-};
-
-const savedPhone = normalizePhone(p.phone);
-const enteredPhone = normalizePhone(phone);
-
-if (savedPhone === enteredPhone) {
-  recipientId = id;
-  recipient = p;
-  break;
-}
+      if (savedPhone === enteredPhone) {
+        recipientId = id;
+        recipient = p;
+        break;
+      }
     }
 
     if (!recipient) {
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
         '❌ No player was found with this phone number.'
       );
       return;
     }
 
-    if (recipientId === tgId) {
-      bot.sendMessage(
+    if (String(recipientId) === String(tgId)) {
+      await bot.sendMessage(
         chatId,
         '❌ You cannot transfer money to yourself.'
       );
@@ -1698,33 +1702,54 @@ if (savedPhone === enteredPhone) {
     session.recipient = recipient;
     session.step = 'amount';
 
-    bot.sendMessage(
+    await bot.sendMessage(
       chatId,
       `Recipient: ${recipient.first_name || 'Player'}\n\n` +
-      `Enter the amount to transfer:`
+      `Enter the amount to transfer (minimum 10 Br):`
     );
 
     return;
   }
 
-  // Step 2: Amount
-  if (session.step === 'amount') {
-    const amount = Number(text);
+  // ----------------------------------------------------------
+  // STEP 2 — AMOUNT
+  // ----------------------------------------------------------
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      bot.sendMessage(
+  if (session.step === 'amount') {
+    const amount = parseFloat(text);
+
+    // Minimum transfer = 10 Br
+    if (!Number.isFinite(amount) || amount < 10) {
+      await bot.sendMessage(
         chatId,
-        '❌ Invalid amount. Enter the amount again:'
+        '❌ Minimum transfer amount is 10 Br. Enter 10 Br or more:'
       );
       return;
     }
 
     const balance = Number(player.balance || 0);
 
-    if (amount > balance) {
-      bot.sendMessage(
+    // Sender must keep 25 Br
+    const MIN_REMAINING_BALANCE = 25;
+
+    if (balance <= MIN_REMAINING_BALANCE) {
+      await bot.sendMessage(
         chatId,
-        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
+        `❌ You cannot transfer money.\n\n` +
+        `💰 Your balance: ${balance} Br\n` +
+        `🔒 You must keep 25 Br in your account.`
+      );
+      return;
+    }
+
+    if (amount > balance - MIN_REMAINING_BALANCE) {
+      const maxTransfer = balance - MIN_REMAINING_BALANCE;
+
+      await bot.sendMessage(
+        chatId,
+        `❌ You must keep 25 Br in your account.\n\n` +
+        `💰 Your balance: ${balance} Br\n` +
+        `💸 Maximum transfer: ${maxTransfer} Br`
       );
       return;
     }
@@ -1732,23 +1757,23 @@ if (savedPhone === enteredPhone) {
     session.amount = amount;
     session.step = 'confirm';
 
-    bot.sendMessage(
+    await bot.sendMessage(
       chatId,
-      `Transfer Confirmation\n\n` +
-      `To: ${session.recipient.first_name || 'Player'}\n` +
-      `Phone: ${session.recipient.phone}\n` +
-      `Amount: ${amount} Br\n\n` +
+      `🧾 Transfer Confirmation\n\n` +
+      `👤 To: ${session.recipient.first_name || 'Player'}\n` +
+      `📱 Phone: ${session.recipient.phone || 'N/A'}\n` +
+      `💰 Amount: ${amount.toFixed(2)} Br\n\n` +
       `Confirm this transfer?`,
       {
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: 'Confirm',
+                text: '✅ Confirm',
                 callback_data: 'transfer_confirm'
               },
               {
-                text: 'Cancel',
+                text: '❌ Cancel',
                 callback_data: 'transfer_cancel'
               }
             ]

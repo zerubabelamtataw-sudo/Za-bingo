@@ -1765,7 +1765,6 @@ if (savedPhone === enteredPhone) {
 
     return;
   }
-}
 });
 
 function isAdmin(telegramId) {

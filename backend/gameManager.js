@@ -275,7 +275,7 @@ this._simulatorScheduler = setInterval(() => {
   }
 
 }, 30 * 1000);
-
+}
   // ── cartelas ──────────────────────────────────────────────────────────────
 
   async getCartelas() {

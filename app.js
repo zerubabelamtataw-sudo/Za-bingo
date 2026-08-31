@@ -565,7 +565,7 @@ $('leaveGameBtn').addEventListener('click', async () => {
         ? 'cancel-countdown'
         : 'leave-game';
 
-    await api(`/api/rooms/${state.activeRoomId}/${endpoint}`, {
+    await apiFetch(`/api/rooms/${state.activeRoomId}/${endpoint}`, {
       method: 'POST',
       body: JSON.stringify({
         playerId: state.player.id

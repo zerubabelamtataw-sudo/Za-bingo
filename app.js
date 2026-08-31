@@ -578,7 +578,7 @@ $('leaveGameBtn').addEventListener('click', async () => {
     state.markedCells = {};
     state.gameStatus = 'waiting';
 
-    showPage('rooms');
+    showPage('lobby');
 
   } catch (e) {
     toast(e.message || 'Unable to leave game', 'error');

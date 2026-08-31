@@ -197,7 +197,7 @@ function renderPlayers(players) {
     list.appendChild(div);
 
   });
-
+}
 
 // ============================================================
 // PLAYER SEARCH

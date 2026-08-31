@@ -492,6 +492,26 @@ app.post('/api/rooms/:roomId/cancel-countdown', async (req, res) => {
     err(res, e.message);
   }
 });
+// POST /api/rooms/:roomId/leave-game
+// body: { playerId }
+app.post('/api/rooms/:roomId/leave-game', async (req, res) => {
+  const { playerId } = req.body || {};
+
+  if (!playerId) {
+    return err(res, 'playerId required');
+  }
+
+  try {
+    const room = await gm.leaveGame(
+      req.params.roomId,
+      playerId
+    );
+
+    ok(res, { room });
+  } catch (e) {
+    err(res, e.message);
+  }
+});
 
 // POST /api/rooms/:roomId/start-game
 app.post('/api/rooms/:roomId/start-game', async (req, res) => {

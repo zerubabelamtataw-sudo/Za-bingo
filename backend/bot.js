@@ -541,7 +541,14 @@ bot.onText(/\/transfer/, async (msg) => {
   if (!player) {
     return bot.sendMessage(chatId, 'Please /start first.');
   }
+const deposited = await hasMadeDeposit(tgId);
 
+if (!deposited) {
+  return bot.sendMessage(
+    chatId,
+    '❌ You must make at least one deposit before you can transfer money.'
+  );
+}
   bot.sendMessage(
     chatId,
     'የተቀባዩን ስልክ ቁጥር ያስገቡ፦'
@@ -1695,7 +1702,7 @@ if (savedPhone === enteredPhone) {
   if (session.step === 'amount') {
     const amount = Number(text);
 
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount < 10) {
       bot.sendMessage(
         chatId,
         '❌ Invalid amount. Enter the amount again:'

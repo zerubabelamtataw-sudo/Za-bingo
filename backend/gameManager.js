@@ -77,6 +77,9 @@ const SIMULATOR_SCHEDULES = {
     { start: '23:45', end: '01:38', counts: [12, 13] },
     { start: '01:38', end: '04:00', counts: [6, 7, 8] }
   ]
+  '20br': [
+  { start: '18:25', end: '23:47', counts: [3, 4, 5] }
+]
 };
 
 function getEthiopiaMinutes() {
@@ -258,7 +261,7 @@ class GamesManager {
 
 this._simulatorScheduler = setInterval(() => {
 
-  for (const roomId of ['5br', '10br']) {
+  for (const roomId of ['5br', '10br', '20br']) {
 
     const room = this.rooms[roomId];
 
@@ -710,6 +713,42 @@ room.pot -= refundAmount;
   this.addSimulatedPlayers(room.id).catch(err => {
     console.error('❌ Failed to restart simulated players:', err);
   });
+
+  return room.toJSON();
+}
+async leaveGame(roomId, playerId) {
+  const room = this.rooms[roomId];
+
+  if (!room) throw new Error('Room not found');
+
+  if (room.status !== 'playing') {
+    throw new Error('Game is not in progress');
+  }
+
+  const player = room.players.find(
+    p => String(p.id) === String(playerId)
+  );
+
+  if (!player) {
+    throw new Error('You are not in this game');
+  }
+
+  const playerCartelas = room.playerCartelas[playerId] || [];
+
+  // Release cartelas
+  for (const cartela of playerCartelas) {
+    room.reservedCartelas.delete(cartela.id);
+  }
+
+  // Remove player cartelas
+  delete room.playerCartelas[playerId];
+
+  // Remove player from room
+  room.players = room.players.filter(
+    p => String(p.id) !== String(playerId)
+  );
+
+  // NO REFUND — game has already started
 
   return room.toJSON();
 }

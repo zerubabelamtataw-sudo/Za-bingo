@@ -25,7 +25,7 @@
       lastCalledCount:  0,
       bingoDetected:    {},          // { cartelaId: bool }
       autoMark: false,
-soundOn: true,       // automatic marking OFF by default
+soundOn: false,       // automatic marking OFF by default
     };
     
     // ── Utils ──────────────────────────────────────────────────────────────────────
@@ -233,10 +233,38 @@ if (!state.allCartelas.length) {
         el.classList.remove('selected');
       }
       $('selectedCount').textContent = `${state.selectedCartelas.length} cartela${state.selectedCartelas.length !== 1 ? 's' : ''} selected`;
-      $('joinBtn').disabled = state.selectedCartelas.length === 0 || !state.selectedRoom;
-    }
+     $('joinBtn').disabled = state.selectedCartelas.length === 0 || !state.selectedRoom;
+
+renderSelectedCartelaPreview();
+}
+function renderSelectedCartelaPreview() {
+  const container = $('selectedCartelaPreview');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  for (const id of state.selectedCartelas) {
+    const cartela = state.allCartelas.find(c => c.id === id);
+    if (!cartela) continue;
+
+    const card = document.createElement('div');
+    card.className = 'selected-cartela-preview';
+
+    card.innerHTML = `
+      <div class="preview-title">Cartela ${cartela.number}</div>
+      <div class="preview-grid">
+        ${cartela.grid.flat().map(value => `
+          <div class="preview-cell">${value}</div>
+        `).join('')}
+      </div>
+    `;
+
+    container.appendChild(card);
+  }
+}
+
     
-    // ── Rooms ─────────────────────────────────────────────────────────────────────
+// ── Rooms ──────────────
     let lobbyPollInterval = null;
     let countdownTimer = null;
     let activeCountdownStart = null;
@@ -522,6 +550,38 @@ saveLocal('activeGame', {
     btn.textContent = 'Join Room →';
 
     toast(e.message, 'error');
+  }
+});
+$('leaveGameBtn').addEventListener('click', async () => {
+  if (!state.activeRoomId || !state.player?.id) return;
+
+  const confirmed = confirm('Leave the game?');
+
+  if (!confirmed) return;
+
+  try {
+    const endpoint =
+      state.gameStatus === 'countdown'
+        ? 'cancel-countdown'
+        : 'leave-game';
+
+    await api(`/api/rooms/${state.activeRoomId}/${endpoint}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        playerId: state.player.id
+      })
+    });
+
+    state.activeRoomId = null;
+    state.myCartelas = [];
+    state.calledNumbers = [];
+    state.markedCells = {};
+    state.gameStatus = 'waiting';
+
+    showPage('rooms');
+
+  } catch (e) {
+    toast(e.message || 'Unable to leave game', 'error');
   }
 });
     
@@ -870,6 +930,14 @@ saveLocal('activeGame', {
     function applyGameState(game) {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
+     const leaveBtn = $('leaveGameBtn');
+
+if (leaveBtn) {
+  leaveBtn.style.display =
+    game.status === 'countdown' || game.status === 'playing'
+      ? 'block'
+      : 'none';
+} 
     
     
       $('infoRoomName').textContent = game.name;
@@ -1015,8 +1083,7 @@ if (winnerGrid && winner.cartelaGrid) {
           ? `+${winner.amount} Br 🎉`
           : `${winner.playerName} won ${winner.amount} Br`;
     
-      $('popupAmount').style.color =
-        isMe ? 'var(--green)' : 'var(--muted)';
+      $('popupAmount').style.color = 'var(--green)';
     
       $('winnerOverlay').classList.add('visible');
     

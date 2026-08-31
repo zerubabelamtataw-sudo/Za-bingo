@@ -76,10 +76,11 @@ const SIMULATOR_SCHEDULES = {
     { start: '16:40', end: '23:45', counts: [14, 15, 16, 17] },
     { start: '23:45', end: '01:38', counts: [12, 13] },
     { start: '01:38', end: '04:00', counts: [6, 7, 8] }
-  ]
+  ],
+
   '20br': [
-  { start: '18:25', end: '23:47', counts: [3, 4, 5] }
-]
+    { start: '18:25', end: '23:47', counts: [3, 4, 5] }
+  ]
 };
 
 function getEthiopiaMinutes() {

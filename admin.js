@@ -149,21 +149,22 @@ function renderPlayers(players) {
   list.innerHTML = '';
 
 
-  Object.entries(players).forEach(([id, player]) => {
+  Object.entries(players)
+  .sort(([, a], [, b]) => {
+    return Number(b?.balance || 0) - Number(a?.balance || 0);
+  })
+  .forEach(([id, player]) => {
 
     if (!player) return;
 
-
     const div =
       document.createElement('div');
-
 
     div.style.padding =
       '12px';
 
     div.style.borderBottom =
       '1px solid #263044';
-
 
     div.innerHTML = `
 
@@ -193,12 +194,9 @@ function renderPlayers(players) {
 
     `;
 
-
     list.appendChild(div);
 
   });
-
-}
 
 
 // ============================================================

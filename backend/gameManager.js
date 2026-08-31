@@ -514,8 +514,8 @@ async addSimulatedPlayers(roomId = '5br') {
 
   // 20 Br remains on the old system
   if (!schedule) {
-    return this.addSimulatedPlayersOld(roomId);
-  }
+  return;
+}
 
   // No simulators scheduled at this time
   if (schedule.counts.length === 0) {

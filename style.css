@@ -3044,3 +3044,83 @@ header {
   border-radius: 2px;
   box-sizing: border-box;
 }
+/* ============================================================
+   ZA BINGO — GAME START GRAPHIC
+   ============================================================ */
+
+.game-start-overlay {
+  position: fixed;
+
+  /* Starts below the top status area */
+  top: 14.9vh;
+  left: 0;
+
+  width: 100vw;
+  height: 70vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  z-index: 99999;
+
+  pointer-events: none;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition: opacity 0.2s ease;
+}
+
+.game-start-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.game-start-image {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+
+  object-fit: contain;
+
+  transform: scale(0.75);
+  opacity: 0;
+}
+
+.game-start-overlay.show .game-start-image {
+  animation: gameStartPop 1.8s ease-out forwards;
+}
+
+
+/* ── POP ANIMATION ── */
+
+@keyframes gameStartPop {
+
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+
+  25% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  45% {
+    transform: scale(0.96);
+  }
+
+  65% {
+    transform: scale(1.02);
+  }
+
+  80% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

@@ -265,37 +265,42 @@ async function processWithdrawal(text, smsData) {
     return false;
   }
 
-// CBE → match amount + first name
-if (smsData.bank === 'CBE') {
-
-  const requestName =
-    String(transaction.firstName || '')
-      .trim()
-      .toLowerCase();
-
-  const smsName =
-    String(smsData.receiverFirstName || '')
-      .trim()
-      .toLowerCase();
-
-  if (requestName !== smsName) {
-    console.log(
-      `❌ CBE name mismatch: ${requestName} ≠ ${smsName}`
-    );
+  if (transaction.status !== 'pending') {
+    console.log('⚠️ Withdrawal already processed:', transaction.key);
     return false;
   }
-}
 
-  const transactionRef = db.ref(
-    `transactions/${transaction.key}`
-  );
+  // CBE → match amount + first name
+  if (smsData.bank === 'CBE') {
+    const requestName =
+      String(transaction.firstName || '')
+        .trim()
+        .toLowerCase();
 
-  const playerRef = db.ref(
-    `players/${transaction.telegramId}`
-  );
+    const smsName =
+      String(smsData.receiverFirstName || '')
+        .trim()
+        .toLowerCase();
 
-  const playerSnapshot = await playerRef.once('value');
-  const player = playerSnapshot.val();
+    if (requestName !== smsName) {
+      console.log(
+        `❌ CBE name mismatch: ${requestName} ≠ ${smsName}`
+      );
+      return false;
+    }
+  }
+
+  const transactionRef =
+    db.ref(`transactions/${transaction.key}`);
+
+  const playerRef =
+    db.ref(`players/${transaction.telegramId}`);
+
+  const playerSnapshot =
+    await playerRef.once('value');
+
+  const player =
+    playerSnapshot.val();
 
   if (!player) {
     console.log(
@@ -305,28 +310,95 @@ if (smsData.bank === 'CBE') {
     return false;
   }
 
-  const currentBalance = Number(player.balance || 0);
-  const amount = Number(transaction.amount);
+  const amount =
+    Number(transaction.amount || 0);
 
-  if (currentBalance < amount) {
-    console.log(
-      `❌ Insufficient balance for withdrawal: ${transaction.telegramId}`
+  const source =
+    transaction.withdrawSource ||
+    (
+      Number(transaction.mainAmount || 0) > 0
+        ? 'main'
+        : Number(transaction.referralAmount || 0) > 0
+          ? 'referral'
+          : null
     );
 
-    await transactionRef.update({
-      status: 'failed',
-      failureReason: 'Insufficient balance',
-      updatedAt: new Date().toISOString()
-    });
-
-    await bot.sendMessage(
-      transaction.telegramId,
-      `❌ Withdrawal failed.\n\nInsufficient balance.`
-    );
-
+  if (!source || amount <= 0) {
+    console.log('❌ Invalid withdrawal source:', transaction.key);
     return false;
   }
 
+  let remainingBalance = 0;
+
+  if (source === 'main') {
+
+    const result =
+      await playerRef.child('balance').transaction(
+        current => {
+          const balance =
+            Number(current || 0);
+
+          if (balance < amount) {
+            return;
+          }
+
+          return balance - amount;
+        }
+      );
+
+    if (!result.committed) {
+      console.log(
+        `❌ Insufficient main balance: ${transaction.telegramId}`
+      );
+      return false;
+    }
+
+    remainingBalance =
+      Number(result.snapshot.val() || 0);
+  }
+
+  else if (source === 'referral') {
+
+    const gamesWon =
+      Number(
+        player.games_won ??
+        player.gamesWon ??
+        0
+      );
+
+    if (gamesWon < 10) {
+      console.log(
+        `❌ Referral withdrawal blocked: ${gamesWon}/10 wins`
+      );
+      return false;
+    }
+
+    const result =
+      await playerRef
+        .child('referralBonusBalance')
+        .transaction(
+          current => {
+            const balance =
+              Number(current || 0);
+
+            if (balance < amount) {
+              return;
+            }
+
+            return balance - amount;
+          }
+        );
+
+    if (!result.committed) {
+      console.log(
+        `❌ Insufficient referral balance: ${transaction.telegramId}`
+      );
+      return false;
+    }
+
+    remainingBalance =
+      Number(result.snapshot.val() || 0);
+  }
 
   await transactionRef.update({
     status: 'approved',
@@ -335,39 +407,29 @@ if (smsData.bank === 'CBE') {
     confirmationSms: text
   });
 
+  const balanceName =
+    source === 'main'
+      ? 'Main balance'
+      : 'Referral balance';
+
   await bot.sendMessage(
     transaction.telegramId,
     `🧾 *ያዘዙት ወጪ ተረጋግጧል 💯*\n\n` +
-    `Amount: ${amount} Br\n` +
+    `Amount: ${amount.toFixed(2)} Br\n` +
+    `Source: ${balanceName}\n` +
     `Transaction ID: ${smsData.transactionId}\n\n` +
-    `💰 Remaining balance: ${currentBalance} Br`,
+    `💰 Remaining ${balanceName}: ${remainingBalance.toFixed(2)} Br`,
     {
       parse_mode: 'Markdown'
     }
   );
 
   console.log(
-    `✅ Withdrawal approved: ${amount} Br → ${transaction.telegramId}`
+    `✅ Withdrawal approved: ${amount} Br → ${transaction.telegramId} (${source})`
   );
 
   return true;
 }
-
-bot.on('message', async (msg) => {
-
-  const forwardedText = msg.text;
-
-  if (!forwardedText) return;
-
-  // Only process forwarded SMS messages
-  if (!forwardedText.match(/^From:\s*(?:\d+|CBEBirr|CBE)/i)) {
-  return;
-}
-
-  console.log('\n📩 Forwarded SMS received:');
-  console.log(forwardedText);
-
-  try {
 
     // --------------------------------------------------------
     // CHECK SMS FORWARDER SENDER
@@ -1042,15 +1104,93 @@ else if (data.startsWith('deposit_method_')) {
 }
 }
   // Withdraw method selection
-  else if (data.startsWith('withdraw_method_')) {
-    const method = data.replace('withdraw_method_', '');
-    bot.sendMessage(chatId,
-      ` *በ${method === 'telebirr' ? 'ቴሌ ብር' : 'CBE'} ለማውጣት*\n\n` +
-`ማውጣት የፈለጉትን መጠን ያስገቡ 👇`,
-      { parse_mode: 'Markdown' }
+  else if (
+  data === 'withdraw_source_main' ||
+  data === 'withdraw_source_referral'
+) {
+  const source =
+    data === 'withdraw_source_main'
+      ? 'main'
+      : 'referral';
+
+  withdrawSessions[chatId] = {
+    source,
+    step: 'method'
+  };
+
+  const sourceName =
+    source === 'main'
+      ? 'Main Balance'
+      : 'Referral Bonus';
+
+  await bot.sendMessage(
+    chatId,
+    `*${sourceName} Withdrawal*\n\n` +
+    `የገንዘብ ማውጫ መንገድ ይምረጡ 👇`,
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '📱 Telebirr',
+              callback_data: 'withdraw_method_telebirr'
+            }
+          ],
+          [
+            {
+              text: '🏦 CBE',
+              callback_data: 'withdraw_method_cbe'
+            }
+          ],
+          [
+            {
+              text: '🔙 Back',
+              callback_data: 'back_to_menu'
+            }
+          ]
+        ]
+      }
+    }
+  );
+}
+
+else if (
+  data === 'withdraw_method_telebirr' ||
+  data === 'withdraw_method_cbe'
+) {
+  const session = withdrawSessions[chatId];
+
+  if (!session || !session.source) {
+    await bot.sendMessage(
+      chatId,
+      '❌ Withdrawal session expired. Please start again with /withdraw.'
     );
-    withdrawSessions[chatId] = { method, step: 'amount' };
+    delete withdrawSessions[chatId];
+    return;
   }
+
+  session.method =
+    data === 'withdraw_method_cbe'
+      ? 'cbe'
+      : 'telebirr';
+
+  session.step = 'amount';
+
+  const sourceName =
+    session.source === 'main'
+      ? 'Main Balance'
+      : 'Referral Bonus';
+
+  await bot.sendMessage(
+    chatId,
+    `*${sourceName} Withdrawal*\n\n` +
+    `የሚያወጡትን መጠን ያስገቡ 👇`,
+    {
+      parse_mode: 'Markdown'
+    }
+  );
+}
   
   // Admin: Approve withdrawal
   else if (data.startsWith('approve_withdraw_')) {
@@ -1399,55 +1539,93 @@ if (withdrawSessions[chatId]) {
 
   if (session.step === 'amount') {
 
-    const amount = parseFloat(text);
+  const amount = parseFloat(text);
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      await bot.sendMessage(
-        chatId,
-        '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
-      );
-      return;
-    }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    await bot.sendMessage(
+      chatId,
+      '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
+    );
+    return;
+  }
 
-    const referralBalance =
-      Number(player.referralBonusBalance || 0);
+  let availableBalance = 0;
+
+  // ==========================================
+  // MAIN BALANCE
+  // NO 10-WIN REQUIREMENT
+  // ==========================================
+  if (session.source === 'main') {
+
+    availableBalance =
+      Number(player.balance || 0);
+
+  }
+
+  // ==========================================
+  // REFERRAL BALANCE
+  // 10 WINS REQUIRED
+  // ==========================================
+  else if (session.source === 'referral') {
 
     const gamesWon =
-      Number(player.games_won ?? player.gamesWon ?? 0);
+      Number(
+        player.games_won ??
+        player.gamesWon ??
+        0
+      );
 
-    // Referral withdrawal requires 10 wins
     if (gamesWon < 10) {
       await bot.sendMessage(
         chatId,
-        `🎁 Referral bonus is locked.\n\n` +
+        `🎁 *Referral bonus is locked.*\n\n` +
         `🏆 Wins: ${gamesWon}/10\n\n` +
-        `You need 10 wins before you can withdraw referral money.`
+        `You need 10 wins before you can withdraw referral money.`,
+        {
+          parse_mode: 'Markdown'
+        }
       );
       return;
     }
 
-    // Referral balance only
-    if (amount > referralBalance) {
-      await bot.sendMessage(
-        chatId,
-        `❌ Insufficient referral balance.\n\n` +
-        `🎁 Referral balance: ${referralBalance.toFixed(2)} Br`
-      );
-      return;
-    }
+    availableBalance =
+      Number(player.referralBonusBalance || 0);
 
-    session.amount = amount;
-    session.step = 'phone';
+  }
+
+  else {
+    await bot.sendMessage(
+      chatId,
+      '❌ Withdrawal session expired. Please start again.'
+    );
+
+    delete withdrawSessions[chatId];
+    return;
+  }
+
+  if (amount > availableBalance) {
 
     await bot.sendMessage(
       chatId,
-      session.method === 'cbe'
-        ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
-        : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+      `❌ Insufficient balance.\n\n` +
+      `Available: ${availableBalance.toFixed(2)} Br`
     );
 
     return;
   }
+
+  session.amount = amount;
+  session.step = 'phone';
+
+  await bot.sendMessage(
+    chatId,
+    session.method === 'cbe'
+      ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
+      : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+  );
+
+  return;
+}
 
 
   // ----------------------------------------------------------
@@ -1548,12 +1726,42 @@ if (withdrawSessions[chatId]) {
   const phone = session.phone;
   const requestedAmount = Number(session.amount);
 
-  const referralBalance =
-    Number(player.referralBonusBalance || 0);
+  const freshSnapshot =
+  await db.ref(`players/${tgId}`).once('value');
 
-  // Re-check before creating request
+const freshPlayer =
+  freshSnapshot.val();
+
+if (!freshPlayer) {
+  await bot.sendMessage(
+    chatId,
+    '❌ Player account not found.'
+  );
+
+  delete withdrawSessions[chatId];
+  return;
+}
+
+const requestedAmount =
+  Number(session.amount);
+
+let availableBalance = 0;
+
+if (session.source === 'main') {
+
+  availableBalance =
+    Number(freshPlayer.balance || 0);
+
+}
+
+else if (session.source === 'referral') {
+
   const gamesWon =
-    Number(player.games_won ?? player.gamesWon ?? 0);
+    Number(
+      freshPlayer.games_won ??
+      freshPlayer.gamesWon ??
+      0
+    );
 
   if (gamesWon < 10) {
     await bot.sendMessage(
@@ -1561,17 +1769,40 @@ if (withdrawSessions[chatId]) {
       `❌ You need at least 10 wins to withdraw referral money.\n\n` +
       `🏆 Your wins: ${gamesWon}/10`
     );
+
+    delete withdrawSessions[chatId];
     return;
   }
 
-  if (requestedAmount > referralBalance) {
-    await bot.sendMessage(
-      chatId,
-      `❌ Insufficient referral balance.\n\n` +
-      `🎁 Referral balance: ${referralBalance.toFixed(2)} Br`
+  availableBalance =
+    Number(
+      freshPlayer.referralBonusBalance || 0
     );
-    return;
-  }
+
+}
+
+else {
+
+  await bot.sendMessage(
+    chatId,
+    '❌ Invalid withdrawal source.'
+  );
+
+  delete withdrawSessions[chatId];
+  return;
+}
+
+if (requestedAmount > availableBalance) {
+
+  await bot.sendMessage(
+    chatId,
+    `❌ Insufficient balance.\n\n` +
+    `Available: ${availableBalance.toFixed(2)} Br`
+  );
+
+  delete withdrawSessions[chatId];
+  return;
+}
 
   // ----------------------------------------------------------
   // CREATE PENDING WITHDRAWAL
@@ -1581,32 +1812,38 @@ if (withdrawSessions[chatId]) {
     db.ref('transactions').push();
 
   await transactionRef.set({
-    playerId: tgId,
-    telegramId: tgId,
+  playerId: tgId,
+  telegramId: tgId,
 
-    type: 'withdrawal',
+  type: 'withdrawal',
 
-    amount: requestedAmount,
+  amount: requestedAmount,
 
-    // MAIN BALANCE IS NOT TOUCHED
-    mainAmount: 0,
+  withdrawSource: session.source,
 
-    // WITHDRAWAL COMES FROM REFERRAL BALANCE
-    referralAmount: requestedAmount,
+  mainAmount:
+    session.source === 'main'
+      ? requestedAmount
+      : 0,
 
-    status: 'pending',
+  referralAmount:
+    session.source === 'referral'
+      ? requestedAmount
+      : 0,
 
-    paymentMethod: session.method,
+  status: 'pending',
 
-    withdrawalPhone: phone,
+  paymentMethod: session.method,
 
-    firstName:
-      session.method === 'cbe'
-        ? session.firstName
-        : '',
+  withdrawalPhone: phone,
 
-    createdAt: new Date().toISOString()
-  });
+  firstName:
+    session.method === 'cbe'
+      ? session.firstName
+      : '',
+
+  createdAt: new Date().toISOString()
+});
 
 
   // ----------------------------------------------------------
@@ -1656,8 +1893,8 @@ if (withdrawSessions[chatId]) {
         : 'ስልክ'
     }: ${phone}\n\n` +
     `⏳ ሁኔታ: Pending\n` +
-    `💰 Main balance: ${newBalance.toFixed(2)} Br\n` +
-`🎁 Referral balance: ${newReferralBonusBalance.toFixed(2)} Br`,
+    `💰 Main balance: ${Number(freshPlayer.balance || 0).toFixed(2)} Br\n` +
+`🎁 Referral balance: ${Number(freshPlayer.referralBonusBalance || 0).toFixed(2)} Br`,
     {
       parse_mode: 'Markdown'
     }
@@ -1821,9 +2058,15 @@ async function approveWithdrawal(query, txnId) {
   }
 
   try {
-    const transactionRef = db.ref(`transactions/${txnId}`);
-    const snapshot = await transactionRef.once('value');
-    const transaction = snapshot.val();
+
+    const transactionRef =
+      db.ref(`transactions/${txnId}`);
+
+    const snapshot =
+      await transactionRef.once('value');
+
+    const transaction =
+      snapshot.val();
 
     if (!transaction) {
       await bot.answerCallbackQuery(query.id, {
@@ -1841,51 +2084,146 @@ async function approveWithdrawal(query, txnId) {
       return;
     }
 
-    const playerId = String(transaction.telegramId);
-    const amount = Number(transaction.amount);
-    const referralAmount = Number(transaction.referralAmount || transaction.amount);
+    const playerId =
+      String(transaction.telegramId);
 
-    const playerRef = db.ref(`players/${playerId}`);
-    const playerSnapshot = await playerRef.once('value');
-    const player = playerSnapshot.val();
+    const amount =
+      Number(transaction.amount || 0);
 
-    if (!player) {
+    const source =
+      transaction.withdrawSource ||
+      (
+        Number(transaction.mainAmount || 0) > 0
+          ? 'main'
+          : Number(transaction.referralAmount || 0) > 0
+            ? 'referral'
+            : null
+      );
+
+    if (!source || amount <= 0) {
       await bot.answerCallbackQuery(query.id, {
-        text: '❌ Player not found',
+        text: '❌ Invalid withdrawal source',
         show_alert: true
       });
       return;
     }
-const referralBalance = Number(player.referralBalance || 0);
 
-if (referralBalance < referralAmount) {
-  await bot.answerCallbackQuery(query.id, {
-    text: '❌ Insufficient referral balance',
-    show_alert: true
-  });
-  return;
-}
+    const playerRef =
+      db.ref(`players/${playerId}`);
 
-const newReferralBalance = referralBalance - referralAmount;
+    let remainingBalance = 0;
 
-await playerRef.update({
-  referralBalance: newReferralBalance
-});
-  
+    // ==========================================
+    // MAIN BALANCE WITHDRAWAL
+    // ==========================================
+    if (source === 'main') {
 
+      const result =
+        await playerRef.child('balance').transaction(
+          current => {
+
+            const balance =
+              Number(current || 0);
+
+            if (balance < amount) {
+              return;
+            }
+
+            return balance - amount;
+          }
+        );
+
+      if (!result.committed) {
+        await bot.answerCallbackQuery(query.id, {
+          text: '❌ Insufficient main balance',
+          show_alert: true
+        });
+        return;
+      }
+
+      remainingBalance =
+        Number(result.snapshot.val() || 0);
+    }
+
+    // ==========================================
+    // REFERRAL BALANCE WITHDRAWAL
+    // ==========================================
+    else if (source === 'referral') {
+
+      const playerSnapshot =
+        await playerRef.once('value');
+
+      const player =
+        playerSnapshot.val();
+
+      const gamesWon =
+        Number(
+          player.games_won ??
+          player.gamesWon ??
+          0
+        );
+
+      if (gamesWon < 10) {
+        await bot.answerCallbackQuery(query.id, {
+          text: `❌ Player has only ${gamesWon}/10 wins`,
+          show_alert: true
+        });
+        return;
+      }
+
+      const result =
+        await playerRef
+          .child('referralBonusBalance')
+          .transaction(
+            current => {
+
+              const balance =
+                Number(current || 0);
+
+              if (balance < amount) {
+                return;
+              }
+
+              return balance - amount;
+            }
+          );
+
+      if (!result.committed) {
+        await bot.answerCallbackQuery(query.id, {
+          text: '❌ Insufficient referral balance',
+          show_alert: true
+        });
+        return;
+      }
+
+      remainingBalance =
+        Number(result.snapshot.val() || 0);
+    }
+
+    // ==========================================
+    // MARK TRANSACTION APPROVED
+    // ==========================================
     await transactionRef.update({
       status: 'approved',
       approvedAt: new Date().toISOString(),
       approvedBy: adminId
     });
 
+    const balanceName =
+      source === 'main'
+        ? 'Main balance'
+        : 'Referral balance';
+
     await bot.sendMessage(
       playerId,
       `✅ *Withdrawal approved!*\n\n` +
-      `Amount: ${amount} Br\n` +
+      `Amount: ${amount.toFixed(2)} Br\n` +
+      `Source: ${balanceName}\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining referral balance: ${newReferralBalance} Br`,
-      { parse_mode: 'Markdown' }
+      `💰 Remaining ${balanceName}: ${remainingBalance.toFixed(2)} Br`,
+      {
+        parse_mode: 'Markdown'
+      }
     );
 
     await bot.answerCallbackQuery(query.id, {
@@ -1903,12 +2241,17 @@ await playerRef.update({
     await bot.sendMessage(
       chatId,
       `✅ Withdrawal approved.\n\n` +
-      `Player: ${player.first_name || 'Player'}\n` +
-      `Amount: ${amount} Br`
+      `Player: ${playerId}\n` +
+      `Amount: ${amount.toFixed(2)} Br\n` +
+      `Source: ${balanceName}`
     );
 
   } catch (error) {
-    console.error('❌ Approve withdrawal error:', error);
+
+    console.error(
+      '❌ Approve withdrawal error:',
+      error
+    );
 
     await bot.answerCallbackQuery(query.id, {
       text: '❌ Approval failed',
@@ -2036,17 +2379,22 @@ async function hasMadeDeposit(telegramId) {
 }
 
 function handleWithdrawMenu(chatId, player) {
-  bot.sendMessage(chatId,
-    ` *ገንዘብ ለማውጣት*\n\n` +
-`ቀሪ ሂሳብዎ: ${player.balance} Br\n` +
-`ገንዘብ የማውጫ መንገድ ይምረጡ 👇`,
+  const mainBalance = Number(player.balance || 0);
+  const referralBalance = Number(player.referralBonusBalance || 0);
+
+  bot.sendMessage(
+    chatId,
+    `*ገንዘብ ለማውጣት*\n\n` +
+    `💰 Main balance: ${mainBalance.toFixed(2)} Br\n` +
+    `🎁 Referral balance: ${referralBalance.toFixed(2)} Br\n\n` +
+    `የሚያወጡትን ሂሳብ ይምረጡ 👇`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: ' Telebirr', callback_data: 'withdraw_method_telebirr' }],
-          [{ text: ' CBE', callback_data: 'withdraw_method_cbe' }],
-          [{ text: '🔙 Back', callback_data: 'back_to_menu' }],
+          [{ text: '💰 Main Balance', callback_data: 'withdraw_source_main' }],
+          [{ text: '🎁 Referral Bonus', callback_data: 'withdraw_source_referral' }],
+          [{ text: '🔙 Back', callback_data: 'back_to_menu' }]
         ]
       }
     }

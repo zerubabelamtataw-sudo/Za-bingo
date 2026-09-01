@@ -1140,18 +1140,46 @@ if (
 
 let smsData = null;
 
+// ============================================================
 // PLAYER CBE BIRR SMS
+// ============================================================
 if (method === 'cbe') {
 
-  // English
+  // English CBE
   let match = sms.match(
     /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\..*?Txn ID\s+([A-Z0-9]+)/i
   );
 
-  // Amharic
+  // Amharic CBE
   if (!match) {
     match = sms.match(
       /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.*?በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i
+    );
+  }
+
+  if (match) {
+    smsData = {
+      amount: Number(match[1].replace(/,/g, '')),
+      transactionId: match[2].toUpperCase()
+    };
+  }
+}
+
+
+// ============================================================
+// PLAYER TELEBIRR SMS
+// ============================================================
+if (method === 'telebirr') {
+
+  // Amharic Telebirr
+  let match = sms.match(
+    /([\d,]+\.\d{2})\s*ብር[\s\S]*?የሂሳብ\s+እንቅስቃሴ\s+ቁጥርዎ\s+([A-Z0-9]+)/i
+  );
+
+  // English Telebirr
+  if (!match) {
+    match = sms.match(
+      /([\d,]+\.\d{2})\s*Br[\s\S]*?(?:transaction\s+(?:number|ID)|transaction\s+no\.?)\s*[:#]?\s*([A-Z0-9]+)/i
     );
   }
 

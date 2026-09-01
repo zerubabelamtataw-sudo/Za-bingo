@@ -486,7 +486,106 @@ document
 
   });
 
+// ============================================================
+// ADMIN — ADD REFERRAL BALANCE
+// ============================================================
 
+document
+  .getElementById('addReferralBalanceBtn')
+  .addEventListener('click', async () => {
+
+  const playerId =
+    document
+      .getElementById('referralBalancePlayerId')
+      .value
+      .trim();
+
+  const amount =
+    Number(
+      document
+        .getElementById('referralBalanceAmount')
+        .value
+    );
+
+  const message =
+    document.getElementById(
+      'referralBalanceMessage'
+    );
+
+  if (!playerId) {
+    message.textContent =
+      '❌ Enter Player ID.';
+    return;
+  }
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+    message.textContent =
+      '❌ Enter a valid amount.';
+    return;
+  }
+
+  const password =
+    document
+      .getElementById('adminPassword')
+      .value;
+
+  try {
+    const response =
+      await fetch(
+        '/api/admin/add-referral-balance',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+          body: JSON.stringify({
+            password,
+            playerId,
+            amount
+          })
+        }
+      );
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result.success
+    ) {
+      message.textContent =
+        `❌ ${
+          result.message ||
+          'Failed to add referral balance.'
+        }`;
+      return;
+    }
+
+    message.textContent =
+      `✅ Added ${
+        amount.toFixed(2)
+      } Br referral balance. New referral balance: ${
+        result.newReferralBalance.toFixed(2)
+      } Br`;
+
+    document.getElementById(
+      'referralBalanceAmount'
+    ).value = '';
+
+  } catch (error) {
+    console.error(
+      'Add referral balance error:',
+      error
+    );
+
+    message.textContent =
+      '❌ Could not connect to server.';
+  }
+});
 // ============================================================
 // ADMIN — TRANSACTIONS DATABASE
 // ============================================================

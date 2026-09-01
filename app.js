@@ -284,29 +284,6 @@ activeCountdownStart = countdownStart;
     const elapsed = (Date.now() - countdownStart) / 1000;
     const remaining = Math.max(0, seconds - elapsed);
     const display = `${Math.ceil(remaining)}s`;
-    // ── GAME START GRAPHIC ──
-if (
-  remaining <= 2 &&
-  remaining > 0 &&
-  !state.gameStartShown
-) {
-  state.gameStartShown = true;
-
-  const overlay = $('gameStartOverlay');
-
-  if (overlay) {
-    overlay.classList.remove('show');
-
-    // Restart animation
-    void overlay.offsetWidth;
-
-    overlay.classList.add('show');
-
-    setTimeout(() => {
-      overlay.classList.remove('show');
-    }, 1800);
-  }
-}
 
     const cartela = $('cartelaCountdown');
     if (cartela) cartela.textContent = display;
@@ -954,6 +931,21 @@ $('leaveGameBtn').addEventListener('click', async () => {
     function applyGameState(game) {
       state.gameStatus  = game.status;
       state.calledNumbers = game.calledNumbers || [];
+if (game.status === 'playing' && !state.gameStartShown) {
+  state.gameStartShown = true;
+
+  const overlay = $('gameStartOverlay');
+
+  if (overlay) {
+    overlay.classList.remove('show');
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+
+    setTimeout(() => {
+      overlay.classList.remove('show');
+    }, 1800);
+  }
+}
      const leaveBtn = $('leaveGameBtn');
 
 if (leaveBtn) {

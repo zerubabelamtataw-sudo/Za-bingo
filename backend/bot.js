@@ -1409,12 +1409,29 @@ if (withdrawSessions[chatId]) {
       return;
     }
 
-    const balance = Number(player.balance || 0);
+    const referralBalance =
+      Number(player.referralBonusBalance || 0);
 
-    if (amount > balance) {
+    const gamesWon =
+      Number(player.games_won ?? player.gamesWon ?? 0);
+
+    // Referral withdrawal requires 10 wins
+    if (gamesWon < 10) {
       await bot.sendMessage(
         chatId,
-        `❌ በቂ ቀሪ ሂሳብ የለዎትም።\n\n💰 ያለዎት ሂሳብ: ${balance} Br`
+        `🎁 Referral bonus is locked.\n\n` +
+        `🏆 Wins: ${gamesWon}/10\n\n` +
+        `You need 10 wins before you can withdraw referral money.`
+      );
+      return;
+    }
+
+    // Referral balance only
+    if (amount > referralBalance) {
+      await bot.sendMessage(
+        chatId,
+        `❌ Insufficient referral balance.\n\n` +
+        `🎁 Referral balance: ${referralBalance.toFixed(2)} Br`
       );
       return;
     }
@@ -1441,10 +1458,7 @@ if (withdrawSessions[chatId]) {
 
     const input = text.trim();
 
-    // --------------------------------------------------------
     // CBE → ACCOUNT NUMBER
-    // --------------------------------------------------------
-
     if (session.method === 'cbe') {
 
       if (!/^\d+$/.test(input)) {
@@ -1466,11 +1480,7 @@ if (withdrawSessions[chatId]) {
       return;
     }
 
-
-    // --------------------------------------------------------
     // TELEBIRR → PHONE NUMBER
-    // --------------------------------------------------------
-
     const normalizedPhone = input.replace(/\D/g, '');
 
     if (
@@ -1493,8 +1503,7 @@ if (withdrawSessions[chatId]) {
 
     session.phone = input;
 
-    // Telebirr does not need first name.
-    // Create the pending withdrawal below.
+    // Telebirr continues to create the request below.
   }
 
 
@@ -1516,16 +1525,7 @@ if (withdrawSessions[chatId]) {
 
     session.firstName = firstName;
   }
-const gamesWon = Number(player.games_won || player.gamesWon || 0);
 
-if (gamesWon < 10) {
-  await bot.sendMessage(
-    tgId,
-    `❌ You need at least 10 wins to withdraw referral money.\n\n` +
-    `🏆 Your wins: ${gamesWon}/10`
-  );
-  return;
-}
 
   // ----------------------------------------------------------
   // ONLY CREATE REQUEST AFTER ALL REQUIRED INFORMATION
@@ -1545,11 +1545,33 @@ if (gamesWon < 10) {
     return;
   }
 
-
   const phone = session.phone;
+  const requestedAmount = Number(session.amount);
 
-const referralBalance = Number(player.referralBonusBalance || 0);
-const referralDeduct = Math.min(requestedAmount, referralBalance);
+  const referralBalance =
+    Number(player.referralBonusBalance || 0);
+
+  // Re-check before creating request
+  const gamesWon =
+    Number(player.games_won ?? player.gamesWon ?? 0);
+
+  if (gamesWon < 10) {
+    await bot.sendMessage(
+      chatId,
+      `❌ You need at least 10 wins to withdraw referral money.\n\n` +
+      `🏆 Your wins: ${gamesWon}/10`
+    );
+    return;
+  }
+
+  if (requestedAmount > referralBalance) {
+    await bot.sendMessage(
+      chatId,
+      `❌ Insufficient referral balance.\n\n` +
+      `🎁 Referral balance: ${referralBalance.toFixed(2)} Br`
+    );
+    return;
+  }
 
   // ----------------------------------------------------------
   // CREATE PENDING WITHDRAWAL
@@ -1564,12 +1586,15 @@ const referralDeduct = Math.min(requestedAmount, referralBalance);
 
     type: 'withdrawal',
 
-    amount: Number(session.amount),
+    amount: requestedAmount,
 
-mainAmount: 0,
-referralAmount: referralDeduct,
+    // MAIN BALANCE IS NOT TOUCHED
+    mainAmount: 0,
 
-status: 'pending',
+    // WITHDRAWAL COMES FROM REFERRAL BALANCE
+    referralAmount: requestedAmount,
+
+    status: 'pending',
 
     paymentMethod: session.method,
 
@@ -1582,88 +1607,6 @@ status: 'pending',
 
     createdAt: new Date().toISOString()
   });
-
-// ============================================================
-// WITHDRAWAL BALANCE CHECK
-// ============================================================
-
-const requestedAmount = Number(session.amount);
-
-const mainBalance = Number(player.balance || 0);
-
-const referralBonusBalance =
-  Number(player.referralBonusBalance || 0);
-
-const gamesWon =
-  Number(player.games_won ?? player.gamesWon ?? 0);
-
-// Main balance is always used first
-let mainAmount = Math.min(
-  requestedAmount,
-  mainBalance
-);
-
-let referralAmount =
-  requestedAmount - mainAmount;
-
-// Referral money requires 10 wins
-if (referralAmount > 0 && gamesWon < 10) {
-  await bot.sendMessage(
-    chatId,
-    `🎁 Referral bonus is locked.\n\n` +
-    `Referral balance: ${referralBonusBalance.toFixed(2)} Br\n` +
-    `Games won: ${gamesWon}/10\n\n` +
-    `🏆 You need 10 wins before you can withdraw your referral bonus.\n\n` +
-    `💰 You can still withdraw from your main balance.`
-  );
-
-  return;
-}
-
-// Make sure referral balance is sufficient
-if (referralAmount > referralBonusBalance) {
-  await bot.sendMessage(
-    chatId,
-    `❌ Insufficient balance.\n\n` +
-    `Main balance: ${mainBalance.toFixed(2)} Br\n` +
-    `Referral balance: ${referralBonusBalance.toFixed(2)} Br`
-  );
-
-  return;
-}
-// ----------------------------------------------------------
-// DEDUCT FROM MAIN BALANCE FIRST,
-// THEN REFERRAL BONUS BALANCE
-// ----------------------------------------------------------
-
-let remainingAmount = requestedAmount;
-
-// 1. Deduct from main balance first
-const mainDeduct = Math.min(
-  remainingAmount,
-  mainBalance
-);
-
-let newBalance =
-  mainBalance - mainDeduct;
-
-remainingAmount -= mainDeduct;
-
-// 2. Deduct the rest from referral bonus
-let newReferralBonusBalance =
-  referralBonusBalance;
-
-if (remainingAmount > 0) {
-  newReferralBonusBalance =
-    referralBonusBalance - remainingAmount;
-}
-
-// 3. Save both balances
-await db.ref(`players/${tgId}`).update({
-  balance: newBalance,
-  referralBonusBalance:
-    newReferralBonusBalance
-});
 
 
   // ----------------------------------------------------------

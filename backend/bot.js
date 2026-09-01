@@ -1138,7 +1138,7 @@ if (
   const method = session.method;
   const sms = text.trim();
 
-let smsData = null;
+
 
 // ============================================================
 // PLAYER CBE BIRR SMS
@@ -1166,9 +1166,7 @@ if (method === 'cbe') {
 }
 
 
-// ============================================================
 // PLAYER TELEBIRR SMS
-// ============================================================
 if (method === 'telebirr') {
 
   // Amharic Telebirr
@@ -1179,7 +1177,7 @@ if (method === 'telebirr') {
   // English Telebirr
   if (!match) {
     match = sms.match(
-      /([\d,]+\.\d{2})\s*Br[\s\S]*?(?:transaction\s+(?:number|ID)|transaction\s+no\.?)\s*[:#]?\s*([A-Z0-9]+)/i
+      /You\s+have\s+transferred\s+ETB\s+([\d,]+\.\d{2})[\s\S]*?Your\s+transaction\s+number\s+is\s+([A-Z0-9]+)/i
     );
   }
 

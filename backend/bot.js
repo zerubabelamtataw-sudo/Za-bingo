@@ -685,8 +685,9 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     username: username,
     phone: '',
     balance: 30,
-    games_played: 0,
-    games_won: 0,
+referralBonusBalance: 0,
+games_played: 0,
+games_won: 0,
     registration_date: new Date().toISOString(),
 
     // Referral information
@@ -713,11 +714,11 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
         if (referrer) {
 
-          await referrerRef.child('balance').transaction(
-            balance =>
-              Number(balance || 0) +
-              REFERRAL_JOIN_BONUS
-          );
+          await referrerRef.child('referralBonusBalance').transaction(
+  balance =>
+    Number(balance || 0) +
+    REFERRAL_JOIN_BONUS
+);
 
           await referrerRef.update({
             [`referrals/${tgId}/joined`]: true,
@@ -1298,11 +1299,11 @@ if (
     if (referrer) {
 
       // Give referrer second 20 Br
-      await referrerRef.child('balance').transaction(
-        balance =>
-          Number(balance || 0) +
-          REFERRAL_DEPOSIT_BONUS
-      );
+      await referrerRef.child('referralBonusBalance').transaction(
+  balance =>
+    Number(balance || 0) +
+    REFERRAL_DEPOSIT_BONUS
+);
 
       // Mark reward as permanently given
       await db.ref(`players/${tgId}`).update({
@@ -1528,7 +1529,10 @@ if (withdrawSessions[chatId]) {
 
     amount: Number(session.amount),
 
-    status: 'pending',
+mainAmount: mainDeduct,
+referralAmount: requestedAmount - mainDeduct,
+
+status: 'pending',
 
     paymentMethod: session.method,
 
@@ -1542,25 +1546,87 @@ if (withdrawSessions[chatId]) {
     createdAt: new Date().toISOString()
   });
 
+// ============================================================
+// WITHDRAWAL BALANCE CHECK
+// ============================================================
 
-  // ----------------------------------------------------------
-  // DEDUCT BALANCE IMMEDIATELY
-  // ----------------------------------------------------------
+const requestedAmount = Number(session.amount);
 
-  const balanceRef =
-    db.ref(`players/${tgId}/balance`);
+const mainBalance = Number(player.balance || 0);
 
-  const balanceResult =
-    await balanceRef.transaction(
-      balance =>
-        Number(balance || 0) -
-        Number(session.amount)
-    );
+const referralBonusBalance =
+  Number(player.referralBonusBalance || 0);
 
-  const newBalance =
-    Number(
-      balanceResult.snapshot.val() || 0
-    );
+const gamesWon =
+  Number(player.games_won ?? player.gamesWon ?? 0);
+
+// Main balance is always used first
+let mainAmount = Math.min(
+  requestedAmount,
+  mainBalance
+);
+
+let referralAmount =
+  requestedAmount - mainAmount;
+
+// Referral money requires 10 wins
+if (referralAmount > 0 && gamesWon < 10) {
+  await bot.sendMessage(
+    chatId,
+    `🎁 Referral bonus is locked.\n\n` +
+    `Referral balance: ${referralBonusBalance.toFixed(2)} Br\n` +
+    `Games won: ${gamesWon}/10\n\n` +
+    `🏆 You need 10 wins before you can withdraw your referral bonus.\n\n` +
+    `💰 You can still withdraw from your main balance.`
+  );
+
+  return;
+}
+
+// Make sure referral balance is sufficient
+if (referralAmount > referralBonusBalance) {
+  await bot.sendMessage(
+    chatId,
+    `❌ Insufficient balance.\n\n` +
+    `Main balance: ${mainBalance.toFixed(2)} Br\n` +
+    `Referral balance: ${referralBonusBalance.toFixed(2)} Br`
+  );
+
+  return;
+}
+// ----------------------------------------------------------
+// DEDUCT FROM MAIN BALANCE FIRST,
+// THEN REFERRAL BONUS BALANCE
+// ----------------------------------------------------------
+
+let remainingAmount = requestedAmount;
+
+// 1. Deduct from main balance first
+const mainDeduct = Math.min(
+  remainingAmount,
+  mainBalance
+);
+
+let newBalance =
+  mainBalance - mainDeduct;
+
+remainingAmount -= mainDeduct;
+
+// 2. Deduct the rest from referral bonus
+let newReferralBonusBalance =
+  referralBonusBalance;
+
+if (remainingAmount > 0) {
+  newReferralBonusBalance =
+    referralBonusBalance - remainingAmount;
+}
+
+// 3. Save both balances
+await db.ref(`players/${tgId}`).update({
+  balance: newBalance,
+  referralBonusBalance:
+    newReferralBonusBalance
+});
 
 
   // ----------------------------------------------------------
@@ -1610,7 +1676,8 @@ if (withdrawSessions[chatId]) {
         : 'ስልክ'
     }: ${phone}\n\n` +
     `⏳ ሁኔታ: Pending\n` +
-    `💰 ቀሪ ሂሳብ: ${newBalance.toFixed(2)} Br`,
+    `💰 Main balance: ${newBalance.toFixed(2)} Br\n` +
+`🎁 Referral balance: ${newReferralBonusBalance.toFixed(2)} Br`,
     {
       parse_mode: 'Markdown'
     }

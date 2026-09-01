@@ -1279,7 +1279,7 @@ if (
   const sms = text.trim();
 
 
-
+let smsData = null;
 // ============================================================
 // PLAYER CBE BIRR SMS
 // ============================================================
@@ -1742,8 +1742,6 @@ if (!freshPlayer) {
   return;
 }
 
-const requestedAmount =
-  Number(session.amount);
 
 let availableBalance = 0;
 

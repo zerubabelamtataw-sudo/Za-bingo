@@ -1547,10 +1547,8 @@ if (gamesWon < 10) {
 
 
   const phone = session.phone;
-const requestedAmount = Number(session.amount);
 
-const referralBalance = Number(player.referralBalance || 0);
-
+const referralBalance = Number(player.referralBonusBalance || 0);
 const referralDeduct = Math.min(requestedAmount, referralBalance);
 
   // ----------------------------------------------------------

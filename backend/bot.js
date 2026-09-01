@@ -1516,7 +1516,16 @@ if (withdrawSessions[chatId]) {
 
     session.firstName = firstName;
   }
+const gamesWon = Number(player.games_won || player.gamesWon || 0);
 
+if (gamesWon < 10) {
+  await bot.sendMessage(
+    tgId,
+    `❌ You need at least 10 wins to withdraw referral money.\n\n` +
+    `🏆 Your wins: ${gamesWon}/10`
+  );
+  return;
+}
 
   // ----------------------------------------------------------
   // ONLY CREATE REQUEST AFTER ALL REQUIRED INFORMATION
@@ -1538,7 +1547,11 @@ if (withdrawSessions[chatId]) {
 
 
   const phone = session.phone;
+const requestedAmount = Number(session.amount);
 
+const referralBalance = Number(player.referralBalance || 0);
+
+const referralDeduct = Math.min(requestedAmount, referralBalance);
 
   // ----------------------------------------------------------
   // CREATE PENDING WITHDRAWAL
@@ -1555,8 +1568,8 @@ if (withdrawSessions[chatId]) {
 
     amount: Number(session.amount),
 
-mainAmount: mainDeduct,
-referralAmount: requestedAmount - mainDeduct,
+mainAmount: 0,
+referralAmount: referralDeduct,
 
 status: 'pending',
 
@@ -1889,6 +1902,7 @@ async function approveWithdrawal(query, txnId) {
 
     const playerId = String(transaction.telegramId);
     const amount = Number(transaction.amount);
+    const referralAmount = Number(transaction.referralAmount || transaction.amount);
 
     const playerRef = db.ref(`players/${playerId}`);
     const playerSnapshot = await playerRef.once('value');
@@ -1901,7 +1915,21 @@ async function approveWithdrawal(query, txnId) {
       });
       return;
     }
+const referralBalance = Number(player.referralBalance || 0);
 
+if (referralBalance < referralAmount) {
+  await bot.answerCallbackQuery(query.id, {
+    text: '❌ Insufficient referral balance',
+    show_alert: true
+  });
+  return;
+}
+
+const newReferralBalance = referralBalance - referralAmount;
+
+await playerRef.update({
+  referralBalance: newReferralBalance
+});
   
 
     await transactionRef.update({
@@ -1915,7 +1943,7 @@ async function approveWithdrawal(query, txnId) {
       `✅ *Withdrawal approved!*\n\n` +
       `Amount: ${amount} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining balance: ${Number(player.balance || 0)} Br`,
+      `💰 Remaining referral balance: ${newReferralBalance} Br`,
       { parse_mode: 'Markdown' }
     );
 

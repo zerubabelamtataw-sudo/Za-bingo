@@ -3052,8 +3052,8 @@ header {
   position: fixed;
 
   /* Starts below the top status area */
-  top: 14.9vh;
-  left: 0;
+  top: 7%;
+left: 10%;
 
   width: 100vw;
   height: 70vh;

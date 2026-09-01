@@ -3079,8 +3079,8 @@ header {
 
 .game-start-image {
   width: 100%;
-  max-width: 900px;
-  height: auto;
+  max-width: 220px;
+  height: 85px;
 
   object-fit: contain;
 

@@ -3052,14 +3052,14 @@ header {
   position: fixed;
 
   /* Starts below the top status area */
-  top: 7%;
+  top: 9%;
 left: 10%;
 
   width: 100vw;
   height: 70vh;
 
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
 
   z-index: 99999;

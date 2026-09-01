@@ -434,7 +434,12 @@ async function processWithdrawal(text, smsData) {
     // --------------------------------------------------------
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
+bot.on('message', async (msg) => {
+try {
 
+  const forwardedText = msg.text;
+
+  if (!forwardedText) return;
     const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
 
     if (!senderMatch) {

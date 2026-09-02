@@ -1554,18 +1554,22 @@ if (withdrawSessions[chatId]) {
     return;
   }
 
-  let availableBalance = 0;
+ // ==========================================
+// MAIN BALANCE
+// NO 10-WIN REQUIREMENT
+// ==========================================
+let availableBalance = 0;
 
-  // ==========================================
-  // MAIN BALANCE
-  // NO 10-WIN REQUIREMENT
-  // ==========================================
-  if (session.source === 'main') {
+if (session.source === 'main') {
 
-    availableBalance =
-      Number(player.balance || 0);
+  availableBalance =
+    Math.max(
+      0,
+      Number(player.balance || 0) -
+      Number(player.withdrawalHold || 0)
+    );
 
-  }
+}
 
   // ==========================================
   // REFERRAL BALANCE
@@ -1753,7 +1757,11 @@ let availableBalance = 0;
 if (session.source === 'main') {
 
   availableBalance =
-    Number(freshPlayer.balance || 0);
+    Math.max(
+      0,
+      Number(player.balance || 0) -
+      Number(player.withdrawalHold || 0)
+    );
 
 }
 
@@ -1813,6 +1821,43 @@ if (requestedAmount > availableBalance) {
 
   const transactionRef =
     db.ref('transactions').push();
+   if (session.source === 'main') {
+  const playerRef = db.ref(`players/${tgId}`);
+
+  const lockResult =
+    await playerRef.transaction(current => {
+
+      if (!current) return;
+
+      const balance =
+        Number(current.balance || 0);
+
+      const currentHold =
+        Number(current.withdrawalHold || 0);
+
+      const available =
+        balance - currentHold;
+
+      if (available < requestedAmount) {
+        return;
+      }
+
+      current.withdrawalHold =
+        currentHold + requestedAmount;
+
+      return current;
+    });
+
+  if (!lockResult.committed) {
+    await bot.sendMessage(
+      chatId,
+      '❌ Insufficient available balance. Please try again.'
+    );
+
+    delete withdrawSessions[chatId];
+    return;
+  }
+}
 
   await transactionRef.set({
   playerId: tgId,
@@ -2116,37 +2161,43 @@ async function approveWithdrawal(query, txnId) {
 
     let remainingBalance = 0;
 
-    // ==========================================
-    // MAIN BALANCE WITHDRAWAL
-    // ==========================================
-    if (source === 'main') {
+// ==========================================
+// MAIN BALANCE WITHDRAWAL
+// ==========================================
+if (source === 'main') {
 
-      const result =
-        await playerRef.child('balance').transaction(
-          current => {
+  const result =
+    await playerRef.transaction(current => {
 
-            const balance =
-              Number(current || 0);
+      if (!current) return;
 
-            if (balance < amount) {
-              return;
-            }
+      const balance =
+        Number(current.balance || 0);
 
-            return balance - amount;
-          }
-        );
+      const hold =
+        Number(current.withdrawalHold || 0);
 
-      if (!result.committed) {
-        await bot.answerCallbackQuery(query.id, {
-          text: '❌ Insufficient main balance',
-          show_alert: true
-        });
+      if (hold < amount) {
         return;
       }
 
-      remainingBalance =
-        Number(result.snapshot.val() || 0);
-    }
+      current.withdrawalHold =
+        hold - amount;
+
+      return current;
+    });
+
+  if (!result.committed) {
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Withdrawal hold not found',
+      show_alert: true
+    });
+    return;
+  }
+
+  remainingBalance =
+    Number(result.snapshot.val().balance || 0);
+}
 
     // ==========================================
     // REFERRAL BALANCE WITHDRAWAL
@@ -2300,6 +2351,20 @@ async function rejectWithdrawal(query, txnId) {
       return;
     }
 
+if (source === 'main') {
+
+  await playerRef.child('withdrawalHold').transaction(
+    current => {
+      const hold = Number(current || 0);
+
+      if (hold < amount) {
+        return;
+      }
+
+      return hold - amount;
+    }
+  );
+}
     await transactionRef.update({
       status: 'rejected',
       rejectedAt: new Date().toISOString(),

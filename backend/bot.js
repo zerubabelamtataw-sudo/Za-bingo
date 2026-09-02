@@ -1811,6 +1811,13 @@ if (session.source === 'main') {
 
       const available =
         balance - currentHold;
+        console.log('🔎 WITHDRAW CHECK:', {
+  tgId,
+  requestedAmount,
+  balance,
+  currentHold,
+  available
+});
 
       if (available < requestedAmount) {
         insufficientBalance = true;

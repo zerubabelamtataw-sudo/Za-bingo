@@ -330,32 +330,50 @@ async function processWithdrawal(text, smsData) {
 
   let remainingBalance = 0;
 
-  if (source === 'main') {
+ if (source === 'main') {
 
-    const result =
-      await playerRef.child('balance').transaction(
-        current => {
-          const balance =
-            Number(current || 0);
+  const result =
+    await playerRef.transaction(current => {
 
-          if (balance < amount) {
-            return;
-          }
+      if (!current) {
+        return;
+      }
 
-          return balance - amount;
-        }
-      );
+      const balance =
+        Number(current.balance || 0);
 
-    if (!result.committed) {
-      console.log(
-        `❌ Insufficient main balance: ${transaction.telegramId}`
-      );
-      return false;
-    }
+      const hold =
+        Number(current.withdrawalHold || 0);
 
-    remainingBalance =
-      Number(result.snapshot.val() || 0);
+      // The withdrawal amount must already be held
+      if (hold < amount) {
+        return;
+      }
+
+      if (balance < amount) {
+        return;
+      }
+
+      // Deduct the money AND release the hold atomically
+      current.balance =
+        balance - amount;
+
+      current.withdrawalHold =
+        hold - amount;
+
+      return current;
+    });
+
+  if (!result.committed) {
+    console.log(
+      `❌ Could not settle main withdrawal: ${transaction.telegramId}`
+    );
+    return false;
   }
+
+  remainingBalance =
+    Number(result.snapshot.val().balance || 0);
+}
 
   else if (source === 'referral') {
 
@@ -1538,11 +1556,11 @@ if (withdrawSessions[chatId]) {
 
   const session = withdrawSessions[chatId];
 
-  // ----------------------------------------------------------
-  // STEP 1 — AMOUNT
-  // ----------------------------------------------------------
+// ----------------------------------------------------------
+// STEP 1 — AMOUNT
+// ----------------------------------------------------------
 
-  if (session.step === 'amount') {
+if (session.step === 'amount') {
 
   const amount = parseFloat(text);
 
@@ -1554,22 +1572,42 @@ if (withdrawSessions[chatId]) {
     return;
   }
 
- // ==========================================
-// MAIN BALANCE
-// NO 10-WIN REQUIREMENT
-// ==========================================
-let availableBalance = 0;
+  // Always read the latest Firebase balance
+  const freshSnapshot =
+    await db.ref(`players/${tgId}`).once('value');
 
-if (session.source === 'main') {
+  const freshPlayer =
+    freshSnapshot.val();
 
-  availableBalance =
-    Math.max(
-      0,
-      Number(player.balance || 0) -
-      Number(player.withdrawalHold || 0)
+  if (!freshPlayer) {
+    await bot.sendMessage(
+      chatId,
+      '❌ Player account not found.'
     );
 
-}
+    delete withdrawSessions[chatId];
+    return;
+  }
+
+  let availableBalance = 0;
+
+  // ==========================================
+  // MAIN BALANCE
+  // ==========================================
+  if (session.source === 'main') {
+
+    const balance =
+      Number(freshPlayer.balance || 0);
+
+    const withdrawalHold =
+      Number(freshPlayer.withdrawalHold || 0);
+
+    availableBalance =
+      Math.max(
+        0,
+        balance - withdrawalHold
+      );
+  }
 
   // ==========================================
   // REFERRAL BALANCE
@@ -1579,47 +1617,48 @@ if (session.source === 'main') {
 
     const gamesWon =
       Number(
-        player.games_won ??
-        player.gamesWon ??
+        freshPlayer.games_won ??
+        freshPlayer.gamesWon ??
         0
       );
 
     if (gamesWon < 10) {
       await bot.sendMessage(
         chatId,
-        `🎁 *Referral bonus is locked.*\n\n` +
-        `🏆 Wins: ${gamesWon}/10\n\n` +
-        `You need 10 wins before you can withdraw referral money.`,
-        {
-          parse_mode: 'Markdown'
-        }
+        `❌ You need at least 10 wins to withdraw referral money.\n\n` +
+        `🏆 Your wins: ${gamesWon}/10`
       );
+
+      delete withdrawSessions[chatId];
       return;
     }
 
     availableBalance =
-      Number(player.referralBonusBalance || 0);
-
+      Number(
+        freshPlayer.referralBonusBalance || 0
+      );
   }
 
   else {
     await bot.sendMessage(
       chatId,
-      '❌ Withdrawal session expired. Please start again.'
+      '❌ Invalid withdrawal source.'
     );
 
     delete withdrawSessions[chatId];
     return;
   }
 
-  if (amount > availableBalance) {
+  // ==========================================
+  // CHECK AVAILABLE BALANCE
+  // ==========================================
 
+  if (amount > availableBalance) {
     await bot.sendMessage(
       chatId,
       `❌ Insufficient balance.\n\n` +
       `Available: ${availableBalance.toFixed(2)} Br`
     );
-
     return;
   }
 
@@ -1733,39 +1772,86 @@ if (session.source === 'main') {
   }
 
   const phone = session.phone;
-  const requestedAmount = Number(session.amount);
+const requestedAmount = Number(session.amount);
 
-  const freshSnapshot =
-  await db.ref(`players/${tgId}`).once('value');
-
-const freshPlayer =
-  freshSnapshot.val();
-
-if (!freshPlayer) {
+if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
   await bot.sendMessage(
     chatId,
-    '❌ Player account not found.'
+    '❌ Invalid withdrawal amount.'
   );
 
   delete withdrawSessions[chatId];
   return;
 }
 
-
-let availableBalance = 0;
+// ==========================================================
+// MAIN BALANCE — ATOMIC HOLD
+// ==========================================================
 
 if (session.source === 'main') {
 
-  availableBalance =
-    Math.max(
-      0,
-      Number(player.balance || 0) -
-      Number(player.withdrawalHold || 0)
+  const playerRef =
+    db.ref(`players/${tgId}`);
+
+  const lockResult =
+    await playerRef.transaction(current => {
+
+      if (!current) {
+        return;
+      }
+
+      const balance =
+        Number(current.balance || 0);
+
+      const currentHold =
+        Number(current.withdrawalHold || 0);
+
+      const available =
+        balance - currentHold;
+
+      if (available < requestedAmount) {
+        return;
+      }
+
+      current.withdrawalHold =
+        currentHold + requestedAmount;
+
+      return current;
+    });
+
+  if (!lockResult.committed) {
+    await bot.sendMessage(
+      chatId,
+      '❌ Insufficient available balance. Please try again.'
     );
+
+    delete withdrawSessions[chatId];
+    return;
+  }
 
 }
 
+// ==========================================================
+// REFERRAL BALANCE
+// ==========================================================
+
 else if (session.source === 'referral') {
+
+  const freshSnapshot =
+    await db.ref(`players/${tgId}`).once('value');
+
+  const freshPlayer =
+    freshSnapshot.val();
+
+  if (!freshPlayer) {
+    await bot.sendMessage(
+      chatId,
+      '❌ Player account not found.'
+    );
+
+    delete withdrawSessions[chatId];
+    return;
+  }
 
   const gamesWon =
     Number(
@@ -1785,12 +1871,27 @@ else if (session.source === 'referral') {
     return;
   }
 
-  availableBalance =
+  const availableBalance =
     Number(
       freshPlayer.referralBonusBalance || 0
     );
 
+  if (requestedAmount > availableBalance) {
+    await bot.sendMessage(
+      chatId,
+      `❌ Insufficient balance.\n\n` +
+      `Available: ${availableBalance.toFixed(2)} Br`
+    );
+
+    delete withdrawSessions[chatId];
+    return;
+  }
+
 }
+
+// ==========================================================
+// INVALID SOURCE
+// ==========================================================
 
 else {
 
@@ -1802,19 +1903,6 @@ else {
   delete withdrawSessions[chatId];
   return;
 }
-
-if (requestedAmount > availableBalance) {
-
-  await bot.sendMessage(
-    chatId,
-    `❌ Insufficient balance.\n\n` +
-    `Available: ${availableBalance.toFixed(2)} Br`
-  );
-
-  delete withdrawSessions[chatId];
-  return;
-}
-
   // ----------------------------------------------------------
   // CREATE PENDING WITHDRAWAL
   // ----------------------------------------------------------
@@ -2094,6 +2182,7 @@ function isAdmin(telegramId) {
 // ============================================================
 
 async function approveWithdrawal(query, txnId) {
+
   const chatId = query.message.chat.id;
   const adminId = String(query.from.id);
 
@@ -2150,7 +2239,7 @@ async function approveWithdrawal(query, txnId) {
 
     if (!source || amount <= 0) {
       await bot.answerCallbackQuery(query.id, {
-        text: '❌ Invalid withdrawal source',
+        text: '❌ Invalid withdrawal',
         show_alert: true
       });
       return;
@@ -2161,47 +2250,64 @@ async function approveWithdrawal(query, txnId) {
 
     let remainingBalance = 0;
 
-// ==========================================
-// MAIN BALANCE WITHDRAWAL
-// ==========================================
-if (source === 'main') {
+    // ========================================================
+    // MAIN BALANCE
+    // Deduct the real balance and release the hold atomically
+    // ========================================================
 
-  const result =
-    await playerRef.transaction(current => {
+    if (source === 'main') {
 
-      if (!current) return;
+      const result =
+        await playerRef.transaction(current => {
 
-      const balance =
-        Number(current.balance || 0);
+          if (!current) {
+            return;
+          }
 
-      const hold =
-        Number(current.withdrawalHold || 0);
+          const balance =
+            Number(current.balance || 0);
 
-      if (hold < amount) {
+          const hold =
+            Number(current.withdrawalHold || 0);
+
+          if (hold < amount) {
+            return;
+          }
+
+          if (balance < amount) {
+            return;
+          }
+
+          current.balance =
+            balance - amount;
+
+          current.withdrawalHold =
+            hold - amount;
+
+          return current;
+        });
+
+      if (!result.committed) {
+
+        await bot.answerCallbackQuery(query.id, {
+          text: '❌ Balance/withdrawal hold error',
+          show_alert: true
+        });
+
         return;
       }
 
-      current.withdrawalHold =
-        hold - amount;
+      const updatedPlayer =
+        result.snapshot.val();
 
-      return current;
-    });
+      remainingBalance =
+        Number(updatedPlayer.balance || 0);
+    }
 
-  if (!result.committed) {
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Withdrawal hold not found',
-      show_alert: true
-    });
-    return;
-  }
+    // ========================================================
+    // REFERRAL BALANCE
+    // ========================================================
 
-  remainingBalance =
-    Number(result.snapshot.val().balance || 0);
-}
-
-    // ==========================================
-    // REFERRAL BALANCE WITHDRAWAL
-    // ==========================================
     else if (source === 'referral') {
 
       const playerSnapshot =
@@ -2209,6 +2315,14 @@ if (source === 'main') {
 
       const player =
         playerSnapshot.val();
+
+      if (!player) {
+        await bot.answerCallbackQuery(query.id, {
+          text: '❌ Player not found',
+          show_alert: true
+        });
+        return;
+      }
 
       const gamesWon =
         Number(
@@ -2228,19 +2342,17 @@ if (source === 'main') {
       const result =
         await playerRef
           .child('referralBonusBalance')
-          .transaction(
-            current => {
+          .transaction(current => {
 
-              const balance =
-                Number(current || 0);
+            const balance =
+              Number(current || 0);
 
-              if (balance < amount) {
-                return;
-              }
-
-              return balance - amount;
+            if (balance < amount) {
+              return;
             }
-          );
+
+            return balance - amount;
+          });
 
       if (!result.committed) {
         await bot.answerCallbackQuery(query.id, {
@@ -2254,9 +2366,10 @@ if (source === 'main') {
         Number(result.snapshot.val() || 0);
     }
 
-    // ==========================================
-    // MARK TRANSACTION APPROVED
-    // ==========================================
+    // ========================================================
+    // MARK APPROVED
+    // ========================================================
+
     await transactionRef.update({
       status: 'approved',
       approvedAt: new Date().toISOString(),
@@ -2319,6 +2432,7 @@ if (source === 'main') {
 // ============================================================
 
 async function rejectWithdrawal(query, txnId) {
+
   const chatId = query.message.chat.id;
   const adminId = String(query.from.id);
 
@@ -2331,9 +2445,15 @@ async function rejectWithdrawal(query, txnId) {
   }
 
   try {
-    const transactionRef = db.ref(`transactions/${txnId}`);
-    const snapshot = await transactionRef.once('value');
-    const transaction = snapshot.val();
+
+    const transactionRef =
+      db.ref(`transactions/${txnId}`);
+
+    const snapshot =
+      await transactionRef.once('value');
+
+    const transaction =
+      snapshot.val();
 
     if (!transaction) {
       await bot.answerCallbackQuery(query.id, {
@@ -2351,20 +2471,50 @@ async function rejectWithdrawal(query, txnId) {
       return;
     }
 
-if (source === 'main') {
+    const playerId =
+      String(transaction.telegramId);
 
-  await playerRef.child('withdrawalHold').transaction(
-    current => {
-      const hold = Number(current || 0);
+    const amount =
+      Number(transaction.amount || 0);
 
-      if (hold < amount) {
-        return;
-      }
+    const source =
+      transaction.withdrawSource ||
+      (
+        Number(transaction.mainAmount || 0) > 0
+          ? 'main'
+          : Number(transaction.referralAmount || 0) > 0
+            ? 'referral'
+            : null
+      );
 
-      return hold - amount;
+    // ========================================================
+    // RELEASE MAIN BALANCE HOLD
+    // ========================================================
+
+    if (source === 'main') {
+
+      const playerRef =
+        db.ref(`players/${playerId}`);
+
+      await playerRef
+        .child('withdrawalHold')
+        .transaction(current => {
+
+          const hold =
+            Number(current || 0);
+
+          if (hold < amount) {
+            return;
+          }
+
+          return hold - amount;
+        });
     }
-  );
-}
+
+    // ========================================================
+    // MARK REJECTED
+    // ========================================================
+
     await transactionRef.update({
       status: 'rejected',
       rejectedAt: new Date().toISOString(),
@@ -2372,11 +2522,13 @@ if (source === 'main') {
     });
 
     await bot.sendMessage(
-      transaction.telegramId,
+      playerId,
       `❌ *Withdrawal rejected.*\n\n` +
-      `Amount: ${transaction.amount} Br\n` +
+      `Amount: ${amount.toFixed(2)} Br\n` +
       `Phone: ${transaction.withdrawalPhone || 'N/A'}`,
-      { parse_mode: 'Markdown' }
+      {
+        parse_mode: 'Markdown'
+      }
     );
 
     await bot.answerCallbackQuery(query.id, {
@@ -2394,11 +2546,16 @@ if (source === 'main') {
     await bot.sendMessage(
       chatId,
       `❌ Withdrawal rejected.\n\n` +
-      `Amount: ${transaction.amount} Br`
+      `Player: ${playerId}\n` +
+      `Amount: ${amount.toFixed(2)} Br`
     );
 
   } catch (error) {
-    console.error('❌ Reject withdrawal error:', error);
+
+    console.error(
+      '❌ Reject withdrawal error:',
+      error
+    );
 
     await bot.answerCallbackQuery(query.id, {
       text: '❌ Rejection failed',
@@ -2406,8 +2563,6 @@ if (source === 'main') {
     });
   }
 }
-
-    
 
 // ============================================================
 // HANDLERS

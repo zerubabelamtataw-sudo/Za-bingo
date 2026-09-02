@@ -1244,10 +1244,10 @@ const player = snapshot.val();
 if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
   const amount = parseFloat(text);
 
-  if (isNaN(amount) || amount < 10) {
-    bot.sendMessage(chatId, '❌ Minimum deposit is 10 Br. Enter amount:');
-    return;
-  }
+  if (isNaN(amount) || amount < 50) {
+  bot.sendMessage(chatId, '❌ Minimum deposit is 50 Br. Enter amount:');
+  return;
+}
 
   // Save amount and move to payment method
   depositSessions[chatId] = {
@@ -2352,7 +2352,7 @@ function handleDepositMenu(chatId, player) {
     chatId,
     ` *ገንዘብ ለማስገባት*\n\n` +
     `ቀሪ ሂሳብ: ${player.balance} Br\n\n` +
-    `ማስገባት የሚፈልጉትን መጠን ያስገቡ 👇 ( ዝቅተኛ 10 ብር):`,
+    `ማስገባት የሚፈልጉትን መጠን ያስገቡ 👇 ( ዝቅተኛ 50 ብር):`,
     { parse_mode: 'Markdown' }
   );
 

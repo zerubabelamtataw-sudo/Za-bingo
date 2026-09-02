@@ -1793,10 +1793,13 @@ if (session.source === 'main') {
   const playerRef =
     db.ref(`players/${tgId}`);
 
+  let insufficientBalance = false;
+
   const lockResult =
     await playerRef.transaction(current => {
 
       if (!current) {
+        insufficientBalance = true;
         return;
       }
 
@@ -1810,6 +1813,7 @@ if (session.source === 'main') {
         balance - currentHold;
 
       if (available < requestedAmount) {
+        insufficientBalance = true;
         return;
       }
 
@@ -1820,10 +1824,18 @@ if (session.source === 'main') {
     });
 
   if (!lockResult.committed) {
-    await bot.sendMessage(
-      chatId,
-      '❌ Insufficient available balance. Please try again.'
-    );
+
+    if (insufficientBalance) {
+      await bot.sendMessage(
+        chatId,
+        '❌ Insufficient available balance. Please try again.'
+      );
+    } else {
+      await bot.sendMessage(
+        chatId,
+        '❌ Withdrawal could not be processed. Please try again.'
+      );
+    }
 
     delete withdrawSessions[chatId];
     return;

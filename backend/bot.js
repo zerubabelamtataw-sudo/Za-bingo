@@ -1787,19 +1787,19 @@ if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
 // ==========================================================
 // MAIN BALANCE — ATOMIC HOLD
 // ==========================================================
-
 if (session.source === 'main') {
 
   const playerRef =
     db.ref(`players/${tgId}`);
 
   let insufficientBalance = false;
+  let playerNotFound = false;
 
   const lockResult =
     await playerRef.transaction(current => {
 
       if (!current) {
-        insufficientBalance = true;
+        playerNotFound = true;
         return;
       }
 
@@ -1825,11 +1825,20 @@ if (session.source === 'main') {
 
   if (!lockResult.committed) {
 
-    if (insufficientBalance) {
+    if (playerNotFound) {
+      console.error('❌ WITHDRAW PLAYER NOT FOUND:', tgId);
+
+      await bot.sendMessage(
+        chatId,
+        '❌ Player account not found. Please contact support.'
+      );
+
+    } else if (insufficientBalance) {
       await bot.sendMessage(
         chatId,
         '❌ Insufficient available balance. Please try again.'
       );
+
     } else {
       await bot.sendMessage(
         chatId,
@@ -1840,7 +1849,6 @@ if (session.source === 'main') {
     delete withdrawSessions[chatId];
     return;
   }
-
 }
 
 // ==========================================================

@@ -695,6 +695,19 @@ app.post('/api/rooms/:roomId/bingo', async (req, res) => {
     ok(res, { game: result, winner: result.winner });
   } catch (e) { err(res, e.message); }
 });
+// ============================================================
+// SMS GATEWAY TEST
+// ============================================================
+
+app.post('/api/sms', (req, res) => {
+  console.log('📩 SMS RECEIVED FROM SMS GATE:');
+  console.log(JSON.stringify(req.body, null, 2));
+
+  res.status(200).json({
+    success: true,
+    message: 'SMS received'
+  });
+});
 
 // Catch-all → serve frontend
 app.get('*', (req, res) => {

@@ -1816,26 +1816,12 @@ if (requestedAmount > availableBalance) {
     ? 'balance'
     : 'referralBonusBalance';
 
-const deductionResult =
-  await playerRef.child(balanceField).transaction(current => {
-    const balance = Number(current || 0);
+const newBalance =
+  availableBalance - requestedAmount;
 
-    if (balance < requestedAmount) {
-      return;
-    }
-
-    return balance - requestedAmount;
-  });
-
-if (!deductionResult.committed) {
-  await bot.sendMessage(
-    chatId,
-    '❌ Insufficient balance. Please try again.'
-  );
-
-  delete withdrawSessions[chatId];
-  return;
-}
+await playerRef
+  .child(balanceField)
+  .set(newBalance);
 
   const transactionRef =
     db.ref('transactions').push();

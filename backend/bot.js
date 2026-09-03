@@ -434,10 +434,8 @@ async function processWithdrawal(text, smsData) {
     // --------------------------------------------------------
     // CHECK SMS FORWARDER SENDER
     // --------------------------------------------------------
-bot.on('message', async (msg) => {
-try {
-
-  const forwardedText = msg.text;
+async function processGatewaySMS(forwardedText) {
+  try {
 
   if (!forwardedText) return;
     const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
@@ -562,13 +560,21 @@ if (
 
     console.log('ℹ️ SMS format not recognized');
 
-  } catch (error) {
-
+    } catch (error) {
     console.error(
       '❌ SMS processing error:',
       error
     );
+  }
+}
+bot.on('message', async (msg) => {
+  try {
+    if (!msg.text) return;
 
+    await processGatewaySMS(msg.text);
+
+  } catch (error) {
+    console.error('❌ Telegram SMS processing error:', error);
   }
 });
 
@@ -3025,4 +3031,4 @@ setInterval(async () => {
   }
 
 }, 30 * 1000);
-module.exports = { bot };
+module.exports = { bot, processGatewaySMS };

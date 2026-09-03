@@ -14,7 +14,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const { GamesManager, setRecordWeeklyWin } = require('./gameManager');
-const { bot } = require('./bot');
+const { bot, processGatewaySMS } = require('./bot');
 // ── Firebase init (graceful if credentials missing) ───────────────────────────
 let db = null;
 try {
@@ -699,14 +699,52 @@ app.post('/api/rooms/:roomId/bingo', async (req, res) => {
 // SMS GATEWAY TEST
 // ============================================================
 
-app.post('/api/sms', (req, res) => {
-  console.log('📩 SMS RECEIVED FROM SMS GATE:');
-  console.log(JSON.stringify(req.body, null, 2));
+app.post('/api/sms', async (req, res) => {
+  try {
 
-  res.status(200).json({
-    success: true,
-    message: 'SMS received'
-  });
+    console.log('📩 SMS RECEIVED FROM SMS GATE:');
+    console.log(JSON.stringify(req.body, null, 2));
+
+    const sender =
+      req.body.sender ||
+      req.body.payload?.sender ||
+      '';
+
+    const message =
+      req.body.message ||
+      req.body.payload?.message ||
+      '';
+
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'No SMS message'
+      });
+    }
+
+    const forwardedText =
+      `From: ${sender}\n` +
+      `Time: ${new Date().toISOString()}\n` +
+      message;
+
+    await processGatewaySMS(forwardedText);
+
+    res.json({
+      success: true
+    });
+
+  } catch (error) {
+
+    console.error(
+      '❌ Gateway SMS error:',
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Catch-all → serve frontend

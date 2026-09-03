@@ -2153,7 +2153,7 @@ const balanceSnapshot =
 
 remainingBalance =
   Number(balanceSnapshot.val() || 0);
-
+}
     // ==========================================
     // REFERRAL BALANCE WITHDRAWAL
     // ==========================================

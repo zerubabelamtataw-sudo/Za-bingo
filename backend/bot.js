@@ -1811,6 +1811,32 @@ if (requestedAmount > availableBalance) {
   // CREATE PENDING WITHDRAWAL
   // ----------------------------------------------------------
 
+  const balanceField =
+  session.source === 'main'
+    ? 'balance'
+    : 'referralBonusBalance';
+
+const deductionResult =
+  await playerRef.child(balanceField).transaction(current => {
+    const balance = Number(current || 0);
+
+    if (balance < requestedAmount) {
+      return;
+    }
+
+    return balance - requestedAmount;
+  });
+
+if (!deductionResult.committed) {
+  await bot.sendMessage(
+    chatId,
+    '❌ Insufficient balance. Please try again.'
+  );
+
+  delete withdrawSessions[chatId];
+  return;
+}
+
   const transactionRef =
     db.ref('transactions').push();
 
@@ -1835,6 +1861,7 @@ if (requestedAmount > availableBalance) {
       : 0,
 
   status: 'pending',
+balanceDeducted: true,
 
   paymentMethod: session.method,
 
@@ -2121,32 +2148,11 @@ async function approveWithdrawal(query, txnId) {
     // ==========================================
     if (source === 'main') {
 
-      const result =
-        await playerRef.child('balance').transaction(
-          current => {
+const balanceSnapshot =
+  await playerRef.child('balance').once('value');
 
-            const balance =
-              Number(current || 0);
-
-            if (balance < amount) {
-              return;
-            }
-
-            return balance - amount;
-          }
-        );
-
-      if (!result.committed) {
-        await bot.answerCallbackQuery(query.id, {
-          text: '❌ Insufficient main balance',
-          show_alert: true
-        });
-        return;
-      }
-
-      remainingBalance =
-        Number(result.snapshot.val() || 0);
-    }
+remainingBalance =
+  Number(balanceSnapshot.val() || 0);
 
     // ==========================================
     // REFERRAL BALANCE WITHDRAWAL
@@ -2174,34 +2180,13 @@ async function approveWithdrawal(query, txnId) {
         return;
       }
 
-      const result =
-        await playerRef
-          .child('referralBonusBalance')
-          .transaction(
-            current => {
+      const balanceSnapshot =
+  await playerRef
+    .child('referralBonusBalance')
+    .once('value');
 
-              const balance =
-                Number(current || 0);
-
-              if (balance < amount) {
-                return;
-              }
-
-              return balance - amount;
-            }
-          );
-
-      if (!result.committed) {
-        await bot.answerCallbackQuery(query.id, {
-          text: '❌ Insufficient referral balance',
-          show_alert: true
-        });
-        return;
-      }
-
-      remainingBalance =
-        Number(result.snapshot.val() || 0);
-    }
+remainingBalance =
+  Number(balanceSnapshot.val() || 0);
 
     // ==========================================
     // MARK TRANSACTION APPROVED
@@ -2299,6 +2284,16 @@ async function rejectWithdrawal(query, txnId) {
       });
       return;
     }
+    const playerRef = db.ref(`players/${transaction.playerId}`);
+
+const balanceField =
+  transaction.withdrawSource === 'main'
+    ? 'balance'
+    : 'referralBonusBalance';
+
+await playerRef.child(balanceField).transaction(current => {
+  return Number(current || 0) + Number(transaction.amount || 0);
+});
 
     await transactionRef.update({
       status: 'rejected',

@@ -2187,7 +2187,7 @@ remainingBalance =
 
 remainingBalance =
   Number(balanceSnapshot.val() || 0);
-
+}
     // ==========================================
     // MARK TRANSACTION APPROVED
     // ==========================================

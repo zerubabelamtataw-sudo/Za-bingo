@@ -20,7 +20,8 @@ const DRAW_INTERVAL_MS  = 4000;
 const WINNER_SHARE = 0.80;
 
 const SIMULATED_PLAYERS = [
-  'gunners',
+  // ───── 5 BR GROUP: 1–20 ─────
+  '@fano',
   '🤘',
   'ማሜ',
   'neqelu',
@@ -40,16 +41,50 @@ const SIMULATED_PLAYERS = [
   'Ggz',
   'Dave',
   'መካሽ',
+
+  // ───── 10 BR GROUP: 21–40 ─────
   'cr7',
   'Dangote',
   '@mente',
   'Messi',
   'Runner',
-  'Here we go',
-  'deme',
-  '@fifi',
-  'Adu',
-  'ደላላው'
+  'Dawit',
+  'Selam',
+  'Hana',
+  'Yonatan',
+  'Bereket',
+  'Natnael',
+  'Abel',
+  'Samrawit',
+  'Teddy',
+  'Michael',
+  'Robel',
+  'Kalkidan',
+  'Meron',
+  'Henok',
+  'Sami',
+
+  // ───── 20 BR GROUP: 41–60 ─────
+  'Bini',
+  'Kalki',
+  'Micky',
+  'Roni',
+  'ሚካኤል',
+  'ሳራ',
+  'ዮሴፍ',
+  'ሀና',
+  'ብርሃኑ',
+  'ማርታ',
+  'ናትናኤል',
+  'ሰላም',
+  'Alex',
+  'Danny',
+  'Lucky',
+  'King',
+  'SamiBoy',
+  'Winner',
+  'Flash',
+  'Boss'
 ];
 
 // ─────────────────────────────────────────────
@@ -593,11 +628,22 @@ async addSimulatedPlayers(roomId = '5br') {
   
 
   // Randomly choose which simulated players participate
-  const players = [...SIMULATED_PLAYERS];
+  const SIMULATOR_GROUPS = {
+  '5br': SIMULATED_PLAYERS.slice(0, 20),
+  '10br': SIMULATED_PLAYERS.slice(20, 40),
+  '20br': SIMULATED_PLAYERS.slice(40, 60)
+};
 
-  players.sort(() => Math.random() - 0.5);
+const roomPlayers = SIMULATOR_GROUPS[roomId] || [];
 
-  const selectedPlayers = players.slice(0, playerCount);
+const players = [...roomPlayers];
+
+players.sort(() => Math.random() - 0.5);
+
+const selectedPlayers = players.slice(
+  0,
+  Math.min(playerCount, players.length)
+);
 
   // ─────────────────────────────────────────────
   // RANDOM CARTELAS: 2–4 PER PLAYER

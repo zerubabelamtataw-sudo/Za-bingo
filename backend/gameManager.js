@@ -480,18 +480,50 @@ return { id: playerId, ...player };
     for (const c of selected) room.reservedCartelas.add(c.id);
 
     // Deduct fee (per cartela)
-    const totalFee = room.entryFee * cartelaIds.length;
-    if (player.balance < totalFee) throw new Error('Insufficient balance');
+// ONE balance only: Main first, otherwise Bonus.
+// Never split a single game fee between the two balances.
+const totalFee = room.entryFee * cartelaIds.length;
 
-    await this.updatePlayerBalance(player.id, -totalFee, {
-      type: 'join', roomId, amount: -totalFee, date: new Date().toISOString(),
-    });
+const mainBalance = Number(player.balance || 0);
+const bonusBalance = Number(player.referralBonusBalance || 0);
 
-    room.players.push({
+let paymentSource = null;
+
+if (mainBalance >= totalFee) {
+  // Main balance pays the entire fee
+  await this.updatePlayerBalance(player.id, -totalFee, {
+    type: 'join',
+    roomId,
+    amount: -totalFee,
+    paymentSource: 'main',
+    date: new Date().toISOString(),
+  });
+
+  paymentSource = 'main';
+
+} else if (bonusBalance >= totalFee) {
+  // Bonus balance pays the entire fee
+  const playerRef = this.db.ref(`players/${player.id}`);
+
+  await playerRef.update({
+    referralBonusBalance: bonusBalance - totalFee
+  });
+
+  paymentSource = 'bonus';
+
+} else {
+  throw new Error('Insufficient balance');
+}
+
+room.players.push({
   id: String(player.id),
   name: player.name || `Player ${player.id}`,
   username: player.username || '',
-  balance: player.balance - totalFee
+  balance:
+    paymentSource === 'main'
+      ? mainBalance - totalFee
+      : mainBalance,
+  paymentSource
 });
     room.playerCartelas[player.id] = selected;
     room.pot += totalFee;

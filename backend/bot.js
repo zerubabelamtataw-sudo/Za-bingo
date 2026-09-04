@@ -2,8 +2,10 @@
 // ZA BINGO — TELEGRAM BOT
 // ============================================================
 const TelegramBot = require('node-telegram-bot-api');
-const db = require('./firebase');
 const path = require('path');
+const db = require('./firebase');
+
+const welcomePhoto = path.join(__dirname, '../images/welcome.jpg');
 const PROMOTION_IMAGE = path.join(__dirname, '../images/promotion.jpg');
 const DAILY_WINNER_IMAGE = path.join(__dirname, '../images/daily-winner.jpg');
 
@@ -820,28 +822,30 @@ games_won: 0,
         }
       }
 
-      bot.sendMessage(
-        chatId,
-        `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
-`🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
-`🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
-`💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
-`📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
-`****************👇👇👇****************`,
+      bot.sendPhoto(
+  chatId,
+  welcomePhoto,
+  {
+    caption:
+      `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
+      `🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
+      `🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
+      `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
+      `📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
+      `****************👇👇👇****************`,
+    parse_mode: 'Markdown',
+    reply_markup: {
+      keyboard: [[
         {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            keyboard: [[
-              {
-                text: '📱 Share Contact',
-                request_contact: true
-              }
-            ]],
-            resize_keyboard: true,
-            one_time_keyboard: true
-          }
+          text: '📱 Share Contact',
+          request_contact: true
         }
-      );
+      ]],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  }
+);
     } else {
       showMainMenu(chatId);
     }

@@ -20,7 +20,7 @@ const DRAW_INTERVAL_MS  = 4000;
 const WINNER_SHARE = 0.80;
 
 const SIMULATED_PLAYERS = [
-  '@fano',
+  'gunners',
   '🤘',
   'ማሜ',
   'neqelu',
@@ -60,9 +60,9 @@ const SIMULATED_PLAYERS = [
 const SIMULATOR_SCHEDULES = {
   '5br': [
     { start: '04:00', end: '08:35', counts: [6] },
-    { start: '08:35', end: '10:20', counts: [6, 7, 8] },
-    { start: '10:20', end: '13:25', counts: [8, 10, 11] },
-    { start: '13:25', end: '16:40', counts: [12, 13, 14, 15] },
+    { start: '08:35', end: '10:20', counts: [8, 10, 11] },
+    { start: '10:20', end: '13:25', counts: [12, 13, 14, 15] },
+    { start: '13:25', end: '16:40', counts: [17, 18, 19, 20] },
     { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
     { start: '23:45', end: '01:38', counts: [15, 16, 17] },
     { start: '01:38', end: '04:00', counts: [9, 10, 11] }
@@ -74,8 +74,8 @@ const SIMULATOR_SCHEDULES = {
     { start: '10:20', end: '13:25', counts: [8, 10, 11] },
     { start: '13:25', end: '16:40', counts: [12, 13, 14] },
     { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
-    { start: '23:45', end: '01:38', counts: [15, 16] },
-    { start: '01:38', end: '04:00', counts: [9, 10, 11] }
+    { start: '23:45', end: '01:38', counts: [17, 18, 19, 20] },
+    { start: '01:38', end: '04:00', counts: [12, 13, 14] }
   ],
 
   '20br': [

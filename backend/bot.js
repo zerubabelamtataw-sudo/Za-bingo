@@ -66,7 +66,7 @@ function parseDepositSMS(text) {
 }
 function parseCBEBirrDepositSMS(text) {
   const amountMatch = text.match(
-    /you received\s+([\d,]+(?:\.\d{1,2})?)Br\./i
+    /you have received\s+([\d,]+(?:\.\d{1,2})?)\s*Br\./i
   );
 
   const transactionMatch = text.match(
@@ -504,7 +504,7 @@ if (
 // CBE BIRR DEPOSIT SMS
 // --------------------------------------------------------
 if (
-  /you received\s+[\d,]+(?:\.\d{1,2})?Br\./i.test(smsText) &&
+  /you have received\s+[\d,]+(?:\.\d{1,2})?\s*Br\./i.test(smsText) &&
   /Txn ID\s+[A-Z0-9]+/i.test(smsText)
 ) {
 

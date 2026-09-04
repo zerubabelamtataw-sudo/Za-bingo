@@ -3,6 +3,9 @@
 // ============================================================
 const TelegramBot = require('node-telegram-bot-api');
 const db = require('./firebase');
+const path = require('path');
+const PROMOTION_IMAGE = path.join(__dirname, '../images/promotion.jpg');
+const DAILY_WINNER_IMAGE = path.join(__dirname, '../images/daily-winner.jpg');
 
 // Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -2686,10 +2689,13 @@ https://t.me/ZABingo_bot
       // POST FIRST
       // ------------------------------------------------------
 
-      await bot.sendMessage(
-        BONUS_CHANNEL,
-        dailyMessage
-      );
+      await bot.sendPhoto(
+  BONUS_CHANNEL,
+  DAILY_WINNER_IMAGE,
+  {
+    caption: dailyMessage
+  }
+);
 
       console.log('✅ DAILY BONUS POSTED');
 
@@ -2984,7 +2990,13 @@ setInterval(async () => {
 
     for (const channel of PROMO_CHANNELS) {
   try {
-    await bot.sendMessage(channel, promoMessage);
+    await bot.sendPhoto(
+  channel,
+  PROMOTION_IMAGE,
+  {
+    caption: promoMessage
+  }
+);
   } catch (error) {
     console.error(`❌ Could not post to ${channel}:`, error.message);
   }
@@ -3000,10 +3012,13 @@ setInterval(async () => {
 
       try {
 
-        await bot.sendMessage(
-          chatId,
-          promoMessage
-        );
+        await bot.sendPhoto(
+  chatId,
+  PROMOTION_IMAGE,
+  {
+    caption: promoMessage
+  }
+);
 
       } catch (error) {
 

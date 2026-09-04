@@ -59,27 +59,27 @@ const SIMULATED_PLAYERS = [
 
 const SIMULATOR_SCHEDULES = {
   '5br': [
-    { start: '04:00', end: '08:35', counts: [3] },
-    { start: '08:35', end: '10:20', counts: [3, 4, 5] },
-    { start: '10:20', end: '13:25', counts: [5, 7, 8] },
-    { start: '13:25', end: '16:40', counts: [9, 10, 11, 12] },
-    { start: '16:40', end: '23:45', counts: [14, 15, 16, 17] },
-    { start: '23:45', end: '01:38', counts: [12, 13, 14] },
-    { start: '01:38', end: '04:00', counts: [6, 7, 8] }
+    { start: '04:00', end: '08:35', counts: [6] },
+    { start: '08:35', end: '10:20', counts: [6, 7, 8] },
+    { start: '10:20', end: '13:25', counts: [8, 10, 11] },
+    { start: '13:25', end: '16:40', counts: [12, 13, 14, 15] },
+    { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
+    { start: '23:45', end: '01:38', counts: [15, 16, 17] },
+    { start: '01:38', end: '04:00', counts: [9, 10, 11] }
   ],
 
   '10br': [
     { start: '04:00', end: '08:35', counts: [] },
-    { start: '08:35', end: '10:20', counts: [3, 4] },
-    { start: '10:20', end: '13:25', counts: [5, 7, 8] },
-    { start: '13:25', end: '16:40', counts: [9, 10, 11] },
-    { start: '16:40', end: '23:45', counts: [14, 15, 16, 17] },
-    { start: '23:45', end: '01:38', counts: [12, 13] },
-    { start: '01:38', end: '04:00', counts: [6, 7, 8] }
+    { start: '08:35', end: '10:20', counts: [6, 7] },
+    { start: '10:20', end: '13:25', counts: [8, 10, 11] },
+    { start: '13:25', end: '16:40', counts: [12, 13, 14] },
+    { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
+    { start: '23:45', end: '01:38', counts: [15, 16] },
+    { start: '01:38', end: '04:00', counts: [9, 10, 11] }
   ],
 
   '20br': [
-    { start: '18:25', end: '23:47', counts: [3, 4, 5] }
+    { start: '18:25', end: '23:47', counts: [6, 7, 8] }
   ]
 };
 

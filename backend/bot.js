@@ -605,9 +605,10 @@ bot.onText(/\/balance/, async (msg) => {
   }
 
   bot.sendMessage(
-    chatId,
-    `Balance: ${Number(player.balance || 0)} Br`
-  );
+  chatId,
+  `💰 Main Balance: ${Number(player.balance || 0).toFixed(2)} Br\n` +
+  `🎁 Referral Balance: ${Number(player.referralBonusBalance || 0).toFixed(2)} Br`
+);
 });
 bot.onText(/\/transfer/, async (msg) => {
   const chatId = msg.chat.id;

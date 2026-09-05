@@ -2400,9 +2400,18 @@ function handleWithdrawMenu(chatId, player) {
 
 function handleProfile(chatId, player) {
   // ============================================================
+  // PROFILE
+  // SHOW MAIN + REFERRAL BALANCES SEPARATELY
+  // ============================================================
+
+  const mainBalance =
+    Number(player.balance || 0);
+
+  const referralBalance =
+    Number(player.referralBonusBalance || 0);
+
+  // ============================================================
   // REFERRAL LINK
-  // Format must match /start handler:
-  // /start ref_TELEGRAM_ID
   // ============================================================
 
   const referralLink =
@@ -2419,13 +2428,14 @@ function handleProfile(chatId, player) {
   bot.sendMessage(
     chatId,
     `*Profile*\n\n` +
-    `Name: ${player.first_name}\n` +
+    `Name: ${player.first_name || 'N/A'}\n` +
     `Username: @${player.username || 'N/A'}\n` +
-    `Phone: ${player.phone || 'Not set'}\n` +
-    `Balance: ${player.balance} Br\n` +
-    `Games Played: ${player.games_played}\n` +
+    `Phone: ${player.phone || 'Not set'}\n\n` +
+    `💰 *Main Balance:* ${mainBalance.toFixed(2)} Br\n` +
+    `🎁 *Referral Balance:* ${referralBalance.toFixed(2)} Br\n\n` +
+    `Games Played: ${player.games_played ?? player.gamesPlayed ?? 0}\n` +
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
-    `Joined: ${player.registration_date}\n\n` +
+    `Joined: ${player.registration_date || 'N/A'}\n\n` +
     `🔗 *Referral link:*\n` +
     `[👉 የሬፈራል ሊንክዎን ይጫኑ](${referralLink})`,
     {

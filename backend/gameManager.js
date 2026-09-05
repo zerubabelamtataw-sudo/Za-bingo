@@ -94,7 +94,7 @@ const SIMULATED_PLAYERS = [
 
 const SIMULATOR_SCHEDULES = {
   '5br': [
-    { start: '04:00', end: '08:35', counts: [6] },
+    { start: '04:00', end: '08:35', counts: [9, 10, 11] },
     { start: '08:35', end: '10:20', counts: [8, 10, 11] },
     { start: '10:20', end: '13:25', counts: [12, 13, 14, 15] },
     { start: '13:25', end: '16:40', counts: [17, 18, 19, 20] },
@@ -771,12 +771,23 @@ for (const cartela of playerCartelas) {
 // Calculate and refund their entry fee
 const refundAmount = room.entryFee * playerCartelas.length;
 
-await this.updatePlayerBalance(playerId, refundAmount, {
-  type: 'cancel',
-  roomId,
-  amount: refundAmount,
-  date: new Date().toISOString(),
-});
+if (player.paymentSource === 'bonus') {
+  const playerRef = this.db.ref(`players/${playerId}`);
+  const currentPlayer = (await playerRef.once('value')).val() || {};
+
+  await playerRef.update({
+    referralBonusBalance:
+      Number(currentPlayer.referralBonusBalance || 0) + refundAmount
+  });
+} else {
+  await this.updatePlayerBalance(playerId, refundAmount, {
+    type: 'cancel',
+    roomId,
+    amount: refundAmount,
+    paymentSource: 'main',
+    date: new Date().toISOString(),
+  });
+}
 
 // Remove player from the room
 room.players = room.players.filter(

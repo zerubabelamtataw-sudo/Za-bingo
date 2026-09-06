@@ -59,36 +59,94 @@
 </header>
 
 <!-- ── LOBBY / ROOMS PAGE ── -->
-<div class="page active" id="page-lobby">  <div class="rooms-section"><div class="lobby-top-header">
+<div class="page active" id="page-lobby">
 
-  <div class="play-bonus-challenge">
-    ለቦነሱ ይጫወቱ እና በውድድሩ ይሳተፉ
+  <div class="rooms-section">
+
+    <!-- PLAY & BONUS -->
+    <div class="lobby-top-header">
+      <div class="play-bonus-challenge">
+
+        <div class="challenge-icon">🎁</div>
+
+        <div class="challenge-content">
+          <strong>PLAY &amp; WIN</strong>
+          <span>ለቦነሱ ይጫወቱ እና በውድድሩ ይሳተፉ</span>
+        </div>
+
+        <div class="challenge-arrow">›</div>
+
+      </div>
+    </div>
+
+
+    <!-- COMPACT ANNOUNCEMENT -->
+    <section class="lobby-announcement">
+
+      <div class="announcement-slider">
+
+        <div class="announcement-slide">
+          <span class="announcement-icon">🎁</span>
+          <div>
+            <strong>Referral Bonus</strong>
+            <small>Invite friends and earn 20 Br</small>
+          </div>
+        </div>
+
+        <div class="announcement-slide">
+          <span class="announcement-icon">💰</span>
+          <div>
+            <strong>Deposit Bonus</strong>
+            <small>Deposit 50+ Br and get another 20 Br</small>
+          </div>
+        </div>
+
+        <div class="announcement-slide">
+          <span class="announcement-icon">🏆</span>
+          <div>
+            <strong>Earn Up To 40 Br</strong>
+            <small>From one successful referral</small>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="announcement-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+    </section>
+
+
+    <!-- ROOM HEADING -->
+    <div class="rooms-heading">
+
+      <div class="rooms-heading-left">
+        <span class="rooms-heading-label">BINGO ROOMS</span>
+        <h2>Choose Your Room</h2>
+        <p>Select a room and start playing</p>
+      </div>
+
+      <div class="rooms-live-indicator">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+
+    </div>
+
+
+    <!-- IMPORTANT:
+         app.js will generate the real room cards here -->
+    <div class="room-cards" id="roomCards">
+      <div class="spinner"></div>
+    </div>
+
   </div>
 
 </div>
-
-<div class="lobby-announcement">
-
-  <div class="announcement-title">
-    📢 ANNOUNCEMENT
-  </div>
-
-  <div class="announcement-text">
-   🎁 የሪፈራል ቦነስ
-ጓደኛዎን ወደ እድል Bingo ይጋብዙ እና ሲመዘገብ 20 ብር ያግኙ!
-💰 ጓደኛዎ ለመጀመሪያ ጊዜ 50 ብር ወይም ከዚያ በላይ ሲያስገባ፣ ተጨማሪ 20 ብር ያግኙ።share ለማድረግ bot👉profile
-    <br>
-    👥 ለጓደኞችዎ ያጋሩ።🏆 **ከአንድ ሪፈራል እስከ 40 ብር!**
-  </div>
-
-</div>
-
-<div class="room-cards" id="roomCards">
-  <div class="spinner"></div>
-</div>
-
-  </div></div>
-<!-- END LOBBY PAGE -->
+<!-- END LOBBY / ROOMS PAGE -->
 
 <!-- ── BONUS & TOURNAMENT PAGE ── -->
 <div class="page" id="page-bonus">

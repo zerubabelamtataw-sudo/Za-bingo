@@ -655,12 +655,7 @@ header {
 .room-card.room-20 {
   border: 1px solid rgba(255, 255, 255, 0.07);
 
-  background:
-    linear-gradient(
-      145deg,
-      #181f2c,
-      #101620
-    );
+  background: #E9D6FA;
 }
 
 .room-card:active {
@@ -757,9 +752,9 @@ header {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-  color: #8994a6;
+  color: #3b82f6;
 
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .room-meta > span {
@@ -789,7 +784,7 @@ header {
 }
 
 .room-stat strong {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 
@@ -806,7 +801,7 @@ header {
 
   border-radius: 20px;
 
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
 
   text-transform: uppercase;
@@ -847,7 +842,7 @@ header {
   }
 
   .room-status-badge {
-    font-size: 8px;
+    font-size: 12px;
     padding-left: 4px;
     padding-right: 4px;
   }
@@ -3319,43 +3314,7 @@ opacity: 1;
   line-height: 1;
 }
 
-/* ── ANNOUNCEMENT ── */
 
-.lobby-announcement {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 2px auto;
-  padding: 0;
-  border-radius: 14px;
-  background: #E9D6FA;
-  border: 1px solid rgba(0, 0, 0, .08);
-  box-shadow: 0 4px 14px rgba(0, 0, .06);
-}
-
-.announcement-title {
-  font-size: 10px;
-  font-weight: 800;
-  color: #111;
-  margin-bottom: 7px;
-}
-
-.announcement-text {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.5;
-  color: #555;
-}
-header {
-  position: relative;
-}
-
-}
-.game-controls {
-  margin: 12px 0;
-  width: calc(100% - 24px);
-  display: flex;
-  gap: 6px;
-}
 
 #autoMarkBtn,
 #soundToggleBtn {

@@ -93,29 +93,26 @@ const SIMULATED_PLAYERS = [
 // ─────────────────────────────────────────────
 
 const SIMULATOR_SCHEDULES = {
-  '5br': [
-    { start: '04:00', end: '08:35', counts: [9, 10, 11] },
-    { start: '08:35', end: '9:20', counts: [8, 10, 11] },
-    { start: '9:20', end: '11:25', counts: [12, 13, 14, 15] },
-    { start: '11:25', end: '16:40', counts: [17, 18, 19, 20] },
-    { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
-    { start: '23:45', end: '01:38', counts: [15, 16, 17] },
-    { start: '01:38', end: '04:00', counts: [9, 10, 11] }
-  ],
+'5br': [
+  { start: '09:15', end: '09:20', counts: [8, 10, 11] },
+  { start: '09:20', end: '11:25', counts: [12, 13, 14, 15] },
+  { start: '11:25', end: '16:40', counts: [17, 18, 19, 20] },
+  { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
+  { start: '23:45', end: '01:03', counts: [15, 16, 17] },
+  { start: '01:03', end: '01:30', counts: [9, 10, 11] }
+],
 
-  '10br': [
-    { start: '04:00', end: '08:35', counts: [] },
-    { start: '08:35', end: '9:20', counts: [6, 7] },
-    { start: '9:20', end: '10:25', counts: [8, 10, 11] },
-    { start: '10:25', end: '16:40', counts: [12, 13, 14] },
-    { start: '16:40', end: '23:45', counts: [17, 18, 19, 20] },
-    { start: '23:45', end: '01:38', counts: [17, 18, 19, 20] },
-    { start: '01:38', end: '04:00', counts: [12, 13, 14] }
-  ],
+'10br': [
+  { start: '11:11', end: '11:16', counts: [8, 10, 11] },
+  { start: '11:16', end: '12:21', counts: [8, 10, 11] },
+  { start: '12:21', end: '14:36', counts: [12, 13, 14] },
+  { start: '14:36', end: '01:41', counts: [17, 18, 19, 20] },
+  { start: '01:41', end: '02:56', counts: [17, 18, 19, 20] }
+],
 
-  '20br': [
-    { start: '18:25', end: '23:47', counts: [9, 10, 11] }
-  ]
+'20br': [
+  { start: '18:45', end: '22:44', counts: [9, 10, 11] }
+]
 };
 
 function getEthiopiaMinutes() {
@@ -1001,14 +998,30 @@ setTimeout(() => {
   this._resetRoom(room);
 }, 5000);
 
-// Credit winner
-await this.updatePlayerBalance(playerId, winAmt, {
-  type: 'win',
-  roomId,
-  amount: winAmt,
-  cartelaId,
-  date: new Date().toISOString(),
-});
+// Credit winner to the same balance used to enter the game
+if (player.paymentSource === 'bonus') {
+  // Bonus-funded game → winnings go back to bonus balance
+  if (this.db) {
+    const bonusRef = this.db.ref(
+      `players/${playerId}/referralBonusBalance`
+    );
+
+    const snapshot = await bonusRef.once('value');
+    const currentBonus = Number(snapshot.val() || 0);
+
+    await bonusRef.set(currentBonus + winAmt);
+  }
+} else {
+  // Main-funded game → winnings go back to main balance
+  await this.updatePlayerBalance(playerId, winAmt, {
+    type: 'win',
+    roomId,
+    amount: winAmt,
+    cartelaId,
+    paymentSource: 'main',
+    date: new Date().toISOString()
+  });
+}
 
 // Store in Firebase
 if (this.db) {

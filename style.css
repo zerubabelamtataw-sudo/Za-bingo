@@ -655,7 +655,7 @@ header {
 .room-card.room-20 {
   border: 1px solid rgba(255, 255, 255, 0.07);
 
-  background: #E9D6FA;
+  background: #a855f7;
 }
 
 .room-card:active {
@@ -754,7 +754,7 @@ header {
 
   color: #3b82f6;
 
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .room-meta > span {
@@ -780,7 +780,7 @@ header {
 }
 
 .room-stat small {
-  font-size: 8px;
+  font-size: 14px;
 }
 
 .room-stat strong {
@@ -801,7 +801,7 @@ header {
 
   border-radius: 20px;
 
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 
   text-transform: uppercase;

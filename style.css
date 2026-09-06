@@ -468,7 +468,7 @@ header {
 .rooms-heading h2 {
   margin: 2px 0 0;
 
-  color: #ffffff;
+  color: #000;
 
   font-size: 18px;
   font-weight: 900;
@@ -568,9 +568,9 @@ header {
 .room-card.room-5,
 .room-card.room-10,
 .room-card.room-20 {
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
 
-  background: rgba(180, 130, 210, 0.2);
+  background: rgba(180, 130, 210, 0.5);
 }
 
 .room-card:active {
@@ -753,11 +753,11 @@ header {
   }
 
   .room-meta > span {
-    font-size: 12px;
+    font-size: 18px;
   }
 
   .room-status-badge {
-    font-size: 12px;
+    font-size: 18px;
     padding-left: 4px;
     padding-right: 4px;
   }

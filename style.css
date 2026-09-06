@@ -570,7 +570,7 @@ header {
 .room-card.room-20 {
   border: 1px solid rgba(255, 255, 255, 0.07);
 
-  background: #a35fba;
+  background: rgba(180, 130, 210, 0.2);
 }
 
 .room-card:active {

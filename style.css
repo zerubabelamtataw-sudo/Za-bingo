@@ -283,92 +283,7 @@ header {
   box-sizing: border-box;
 }
 
-/* ── PLAY & BONUS ── */
 
-.lobby-top-header {
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-.play-bonus-challenge {
-  width: 100%;
-  min-height: 54px;
-
-  display: flex;
-  align-items: center;
-
-  padding: 8px 10px;
-  box-sizing: border-box;
-
-  border-radius: 14px;
-
-  background:
-    linear-gradient(
-      145deg,
-      #181f2c,
-      #101620
-    );
-
-  border: 1px solid rgba(255, 255, 255, 0.07);
-
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.18);
-}
-
-.challenge-icon {
-  width: 34px;
-  height: 34px;
-
-  flex-shrink: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 9px;
-
-  background: rgba(245, 197, 66, 0.10);
-
-  font-size: 17px;
-}
-
-.challenge-content {
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  margin-left: 9px;
-}
-
-.challenge-content strong {
-  color: #ffffff;
-
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .5px;
-}
-
-.challenge-content span {
-  margin-top: 2px;
-
-  color: #8994a6;
-
-  font-size: 9px;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.challenge-arrow {
-  margin-left: auto;
-
-  color: var(--gold);
-
-  font-size: 25px;
-  line-height: 1;
-}
 
 
 /* ── COMPACT ANNOUNCEMENT ── */
@@ -655,7 +570,7 @@ header {
 .room-card.room-20 {
   border: 1px solid rgba(255, 255, 255, 0.07);
 
-  background: #a855f7;
+  background: #a35fba;
 }
 
 .room-card:active {
@@ -714,7 +629,7 @@ header {
 }
 
 .room-card-name {
-  color: #ffffff;
+  color: #000;
 
   font-size: 15px;
   font-weight: 900;
@@ -838,7 +753,7 @@ header {
   }
 
   .room-meta > span {
-    font-size: 8px;
+    font-size: 12px;
   }
 
   .room-status-badge {

@@ -1239,6 +1239,139 @@ statusNavButtons.forEach((button) => {
   );
 
 });
+// ============================================================
+// ADMIN — MASTER SIMULATED PLAYERS ON/OFF
+// ============================================================
+
+const simPlayersToggle =
+  document.getElementById('simPlayersToggle');
+
+const simToggleMessage =
+  document.getElementById('simToggleMessage');
+
+async function loadSimPlayersToggle() {
+  try {
+    const response =
+      await fetch('/api/admin/simulators-status');
+
+    const data =
+      await response.json();
+
+    if (!data.success) return;
+
+    updateSimPlayersToggle(
+      data.enabled
+    );
+
+  } catch (error) {
+    console.error(
+      '❌ Failed to load simulator status:',
+      error
+    );
+  }
+}
+
+function updateSimPlayersToggle(enabled) {
+
+  if (!simPlayersToggle) return;
+
+  if (enabled) {
+
+    simPlayersToggle.textContent =
+      '🤖 SIMULATORS: ON';
+
+    simPlayersToggle.classList.remove(
+      'sim-off'
+    );
+
+    simPlayersToggle.classList.add(
+      'sim-on'
+    );
+
+    if (simToggleMessage) {
+      simToggleMessage.textContent =
+        'Simulated players are currently ON.';
+    }
+
+  } else {
+
+    simPlayersToggle.textContent =
+      '🤖 SIMULATORS: OFF';
+
+    simPlayersToggle.classList.remove(
+      'sim-on'
+    );
+
+    simPlayersToggle.classList.add(
+      'sim-off'
+    );
+
+    if (simToggleMessage) {
+      simToggleMessage.textContent =
+        'Simulated players are currently OFF.';
+    }
+  }
+}
+
+if (simPlayersToggle) {
+
+  simPlayersToggle.addEventListener(
+    'click',
+    async () => {
+
+      simPlayersToggle.disabled = true;
+
+      try {
+
+        const response =
+          await fetch(
+            '/api/admin/simulators-toggle',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/json'
+              }
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok || !data.success) {
+
+          alert(
+            data.message ||
+            'Failed to change simulator status.'
+          );
+
+          return;
+        }
+
+        updateSimPlayersToggle(
+          data.enabled
+        );
+
+      } catch (error) {
+
+        console.error(
+          '❌ Failed to toggle simulators:',
+          error
+        );
+
+        alert(
+          'Could not connect to server.'
+        );
+
+      } finally {
+
+        simPlayersToggle.disabled = false;
+      }
+    }
+  );
+}
+
+loadSimPlayersToggle();
 document
   .getElementById('saveSimSettingsBtn')
   .addEventListener('click', async () => {

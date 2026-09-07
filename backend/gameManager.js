@@ -570,6 +570,13 @@ return room.toJSON();
 
 async addSimulatedPlayers(roomId = '5br') {
   const room = this.rooms[roomId];
+    // MASTER SIMULATOR SWITCH
+  if (this.simulatorsEnabled === false) {
+    console.log(
+      `🛑 ${roomId}: simulators are OFF`
+    );
+    return;
+  }
   if (!room) throw new Error('Room not found');
 
   if (room.status !== 'waiting') return;

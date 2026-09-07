@@ -524,6 +524,38 @@ app.post('/api/admin/sim-settings', (req, res) => {
     settings: gm.simPlayerSettings
   });
 });
+// ============================================================
+// ADMIN — MASTER SIMULATED PLAYERS ON/OFF
+// ============================================================
+
+// Default: SIMULATORS ON
+if (typeof gm.simulatorsEnabled !== 'boolean') {
+  gm.simulatorsEnabled = true;
+}
+
+// GET current simulator master status
+app.get('/api/admin/simulators-status', (req, res) => {
+  ok(res, {
+    enabled: gm.simulatorsEnabled
+  });
+});
+
+// Toggle simulator master switch
+app.post('/api/admin/simulators-toggle', (req, res) => {
+
+  gm.simulatorsEnabled =
+    !gm.simulatorsEnabled;
+
+  console.log(
+    gm.simulatorsEnabled
+      ? '🤖 SIMULATORS ENABLED'
+      : '🛑 SIMULATORS DISABLED'
+  );
+
+  ok(res, {
+    enabled: gm.simulatorsEnabled
+  });
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 

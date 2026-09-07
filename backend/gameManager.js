@@ -1,9 +1,48 @@
 'use strict';
-let recordWeeklyWin = null;
+function getEthiopiaDailyKey() {
+  const now = new Date();
 
-function setRecordWeeklyWin(fn) {
-  recordWeeklyWin = fn;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Addis_Ababa',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(now);
+
+  const getPart = type =>
+    Number(parts.find(p => p.type === type)?.value || 0);
+
+  let year = getPart('year');
+  let month = getPart('month');
+  let day = getPart('day');
+  const hour = getPart('hour');
+  const minute = getPart('minute');
+
+  // Before 10:30 PM Ethiopia time belongs to the previous daily period.
+  if (hour < 22 || (hour === 22 && minute < 30)) {
+    const previousDay = new Date(
+      Date.UTC(year, month - 1, day)
+    );
+
+    previousDay.setUTCDate(
+      previousDay.getUTCDate() - 1
+    );
+
+    year = previousDay.getUTCFullYear();
+    month = previousDay.getUTCMonth() + 1;
+    day = previousDay.getUTCDate();
+  }
+
+  return [
+    year,
+    String(month).padStart(2, '0'),
+    String(day).padStart(2, '0')
+  ].join('-');
 }
+
 /**
  * gamesManager.js
  * Manages all 3 Bingo room states: waiting → countdown → playing → winner
@@ -274,9 +313,10 @@ toJSON() {
 
 class GamesManager {
   constructor(db) {
-    this.db = db;   // Firebase Realtime Database instance
-    this.rooms = {};
-    this._cartelaCache = null;
+    this.db = db;
+this.rooms = {};
+this._cartelaCache = null;
+this._playerCache = new Map();
     this.simPlayerSettings = {
   '5br': 10,
   '10br': 3,
@@ -356,32 +396,81 @@ this._simulatorScheduler = setInterval(() => {
   // ── player ────────────────────────────────────────────────────────────────
 
   async getOrCreatePlayer(playerId, name, username = '') {
-    if (this.db) {
-      const ref = this.db.ref(`players/${playerId}`);
-const snap = await ref.once('value');
+  const key = String(playerId);
 
-if (snap.exists()) {
-  return { id: playerId, ...snap.val() };
-}
-
-const player = {
-  name,
-  username: '',
-  balance: 0,
-  history: []
-};
-
-await ref.set(player);
-
-return { id: playerId, ...player };
-    }
-    // memory fallback
-    if (!this._players) this._players = {};
-    if (!this._players[playerId]) {
-      this._players[playerId] = { id: playerId, name, balance: 100, history: [] };
-    }
-    return this._players[playerId];
+  // 1. Check memory cache first
+  if (this._playerCache && this._playerCache.has(key)) {
+    return {
+      id: key,
+      ...this._playerCache.get(key)
+    };
   }
+
+  if (this.db) {
+    const ref = this.db.ref(`players/${key}`);
+    const snap = await ref.once('value');
+
+    // 2. Existing player
+    if (snap.exists()) {
+      const player = snap.val();
+
+      if (!this._playerCache) {
+        this._playerCache = new Map();
+      }
+
+      this._playerCache.set(key, player);
+
+      return {
+        id: key,
+        ...player
+      };
+    }
+
+    // 3. New player
+    const player = {
+      name,
+      username: username || '',
+      balance: 0,
+      history: []
+    };
+
+    await ref.set(player);
+
+    if (!this._playerCache) {
+      this._playerCache = new Map();
+    }
+
+    this._playerCache.set(key, player);
+
+    return {
+      id: key,
+      ...player
+    };
+  }
+
+  // 4. Memory fallback
+  if (!this._players) {
+    this._players = {};
+  }
+
+  if (!this._players[key]) {
+    this._players[key] = {
+      id: key,
+      name,
+      username: username || '',
+      balance: 100,
+      history: []
+    };
+  }
+
+  if (!this._playerCache) {
+    this._playerCache = new Map();
+  }
+
+  this._playerCache.set(key, this._players[key]);
+
+  return this._players[key];
+}
 
   async updatePlayerBalance(playerId, delta, historyEntry) {
 
@@ -454,18 +543,28 @@ return { id: playerId, ...player };
         Number(data.gamesWon || 0) + 1;
     }
 
-    await ref.update(updates);
+await ref.update(updates);
 
-    return {
-      id: playerId,
-      ...data,
-      ...updates
-    };
-  }
+// Keep player cache synchronized with Firebase
+if (!this._playerCache) {
+  this._playerCache = new Map();
+}
 
-  // ─────────────────────────────────────────────
-  // MEMORY FALLBACK
-  // ─────────────────────────────────────────────
+this._playerCache.set(String(playerId), {
+  ...data,
+  ...updates
+});
+
+return {
+  id: playerId,
+  ...data,
+  ...updates
+};
+}
+
+// ─────────────────────────────────────────────
+// MEMORY FALLBACK
+// ─────────────────────────────────────────────
   if (this._players && this._players[playerId]) {
 
     const p = this._players[playerId];
@@ -1040,13 +1139,16 @@ if (this.db) {
     pot: room.pot,
     date: new Date().toISOString()
   });
+  const dailyKey = getEthiopiaDailyKey();
 
-  if (recordWeeklyWin) {
-    await recordWeeklyWin(
-      playerId,
-      playerName
-    );
-  }
+await this.db.ref(
+  `dailyLeaderboard/${dailyKey}/${playerId}`
+).transaction(current => ({
+  name: playerName,
+  wins: Number(current?.wins || 0) + 1
+}));
+
+
 }
 
     return room.toJSON();
@@ -1075,125 +1177,30 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
 async getDailyLeaderboard() {
   if (!this.db) return [];
 
-  const snap = await this.db.ref('winners').once('value');
+  const dailyKey = getEthiopiaDailyKey();
+
+  const snap = await this.db.ref(
+    `dailyLeaderboard/${dailyKey}`
+  ).once('value');
+
   const data = snap.val() || {};
 
-  // ─────────────────────────────────────────────
-  // DAILY RESET: 10:30 PM ETHIOPIA TIME
-  // ─────────────────────────────────────────────
-
-  const now = new Date();
-
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Africa/Addis_Ababa',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).formatToParts(now);
-
-  const getPart = type =>
-    Number(parts.find(p => p.type === type)?.value || 0);
-
-  let year = getPart('year');
-  let month = getPart('month');
-  let day = getPart('day');
-  const hour = getPart('hour');
-  const minute = getPart('minute');
-
-  // Before 10:30 PM:
-  // still belongs to the previous daily period.
-  if (hour < 22 || (hour === 22 && minute < 30)) {
-    const previousDay = new Date(
-      Date.UTC(year, month - 1, day)
-    );
-
-    previousDay.setUTCDate(
-      previousDay.getUTCDate() - 1
-    );
-
-    year = previousDay.getUTCFullYear();
-    month = previousDay.getUTCMonth() + 1;
-    day = previousDay.getUTCDate();
-  }
-
-  // 10:30 PM Ethiopia = 19:30 UTC
-  const dailyStart = Date.UTC(
-    year,
-    month - 1,
-    day,
-    19,
-    30,
-    0
-  );
-
-  const leaderboard = {};
-
-  for (const winner of Object.values(data)) {
-
-    if (!winner || !winner.date || !winner.playerId) {
-      continue;
-    }
-
-    const winnerDate = new Date(winner.date);
-
-    if (Number.isNaN(winnerDate.getTime())) {
-      continue;
-    }
-
-    // Only wins after the current 10:30 PM reset
-    if (winnerDate.getTime() < dailyStart) {
-      continue;
-    }
-
-    const playerId = String(winner.playerId);
-
-    if (!leaderboard[playerId]) {
-      leaderboard[playerId] = {
-        id: playerId,
-        name: winner.playerName || 'Player',
-        actualWins: 0
-      };
-    }
-
-    leaderboard[playerId].actualWins++;
-  }
-
-  const players = Object.values(leaderboard);
-
-  // Simulated players:
-  // 3 actual wins = 1 leaderboard win
-  for (const player of players) {
-
-    if (player.id.startsWith('sim_')) {
-      player.wins = Math.floor(
-        player.actualWins / 3
-      );
-    } else {
-      player.wins = player.actualWins;
-    }
-
-    delete player.actualWins;
-  }
-
-  return players
+  return Object.entries(data)
+    .map(([playerId, player]) => ({
+      id: String(playerId),
+      name: player.name || 'Player',
+      wins: Number(player.wins || 0)
+    }))
     .filter(player => player.wins > 0)
     .sort((a, b) => b.wins - a.wins)
     .slice(0, 10);
 }
 
-   // ── TOURNAMENT LEADERBOARD ──────────────────────────────────────────────
+// ── DAILY LEADERBOARD ──────────────────────────────────────────────
 
-  async getTournamentLeaderboard(type = 'daily') {
-
-    if (type === 'weekly') {
-      return await this.getWeeklyLeaderboard();
-    }
-
-    return await this.getDailyLeaderboard();
-  }
+async getTournamentLeaderboard() {
+  return await this.getDailyLeaderboard();
+}
 
   // ── getters ─────────────────────────────────────────────────────────────
 

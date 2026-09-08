@@ -21,8 +21,8 @@ const ADMIN_ID =
 // REFERRAL SYSTEM
 // ============================================================
 
-const REFERRAL_JOIN_BONUS = 20;
-const REFERRAL_DEPOSIT_BONUS = 20;
+const REFERRAL_JOIN_BONUS = 10;
+const REFERRAL_DEPOSIT_BONUS = 10;
 const REFERRAL_MIN_DEPOSIT = 50;
   
 function getEthiopiaTimeParts() {
@@ -763,7 +763,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     first_name: firstName,
     username: username,
     phone: '',
-    balance: 30,
+    balance: 15,
 referralBonusBalance: 0,
 games_played: 0,
 games_won: 0,
@@ -811,9 +811,9 @@ games_won: 0,
             referrerId,
             `🎉 *Referral Bonus!*\n\n` +
             `${firstName} joined ZA Bingo using your referral link.\n\n` +
-            `💰 You received *20 Br*!\n\n` +
+            `💰 You received *10 Br*!\n\n` +
             `🎁 If ${firstName} deposits at least 50 Br,\n` +
-            `you will receive another *20 Br*!`,
+            `you will receive another *10 Br*!`,
             { parse_mode: 'Markdown' }
           );
 
@@ -829,9 +829,9 @@ games_won: 0,
   {
     caption:
       `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
-      `🎁 *30 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
+      `🎁 *15 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
       `🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
-      `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*\n\n` +
+      `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 20 ብር!*\n\n` +
       `📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
       `****************👇👇👇****************`,
     parse_mode: 'Markdown',
@@ -874,7 +874,7 @@ bot.on('contact', async (msg) => {
   `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
   `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
   `📤 *ለማጋራት:* Bot 👉 Profile 👥\n\n` +
-  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 40 ብር!*`,
+  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 20 ብር!*`,
   {
       reply_markup: {
         remove_keyboard: true
@@ -1511,8 +1511,8 @@ if (
         `🎉 *Referral Deposit Bonus!*\n\n` +
         `${depositedPlayer.first_name || 'Your referral'} ` +
         `made a deposit of *${amount} Br*.\n\n` +
-        `💰 You received another *20 Br*!\n\n` +
-        `🏆 Total referral bonus earned from this player: *40 Br*`,
+        `💰 You received another *10 Br*!\n\n` +
+        `🏆 Total referral bonus earned from this player: *20 Br*`,
         { parse_mode: 'Markdown' }
       );
 
@@ -2948,14 +2948,14 @@ const promoMessage = `
 🏆 ብዙ ያሸንፉ
 💰 ብዙ ይሸለሙ!
 ━━━━━━━━━━━━━━━━━━
-🎁 30 ብር የመጫወቻ ቦነስ ያግኙ!
+🎁 15 ብር የመጫወቻ ቦነስ ያግኙ!
 ━━━━━━━━━━━━━━━━━━
-🔥 ጓደኛዎን ይጋብዙ — እስከ 40 ብር ይሸለሙ! 🔥
+🔥 ጓደኛዎን ይጋብዙ — እስከ 20 ብር ይሸለሙ! 🔥
 👥 ጓደኛዎ በReferral Linkዎ ተጠቅሞ ሲቀላቀል
-💰 20 ብር ያግኙ!
+💰 10 ብር ያግኙ!
 💳 ጓደኛዎ ቢያንስ 50 ብር ዴፖዚት ሲያደርግ
-💰 ተጨማሪ 20 ብር ያግኙ!
-🎉 ከአንድ ጓደኛ 40 ብር!
+💰 ተጨማሪ 10 ብር ያግኙ!
+🎉 ከአንድ ጓደኛ 20 ብር!
 🔥 ብዙ ጓደኞችን ይጋብዙ — ብዙ ይሸለሙ!
 ━━━━━━━━━━━━━━━━━━
 👉 አሁኑኑ ይጫወቱ:

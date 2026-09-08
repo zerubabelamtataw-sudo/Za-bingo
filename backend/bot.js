@@ -68,7 +68,7 @@ function parseDepositSMS(text) {
 }
 function parseCBEBirrDepositSMS(text) {
   const amountMatch = text.match(
-/you received\s+([\d,]+(?:\.\d{1,2})?)\s*Br\./i
+    /you (?:have )?received\s+([\d,]+(?:\.\d{1,2})?)\s*Br\./i
   );
 
   const transactionMatch = text.match(
@@ -86,6 +86,7 @@ function parseCBEBirrDepositSMS(text) {
     type: 'received'
   };
 }
+
 
 function parseWithdrawalSMS(text) {
   const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);

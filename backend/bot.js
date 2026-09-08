@@ -2740,5 +2740,95 @@ setInterval(async () => {
 
   }
 
+  }, 30 * 1000);
+
+
+// ============================================================
+// WITHDRAWAL APOLOGY BROADCAST
+// SENDS ONLY 2 TIMES: 10:00 AM AND 10:00 PM ETHIOPIA TIME
+// ============================================================
+
+const withdrawalApologyMessage = `
+🙏 ይቅርታ ውድ የEdel Bingo ተጫዋቾች
+
+በአሁኑ ጊዜ የWithdrawal አገልግሎታችን ላይ ጊዜያዊ ችግር እየተከሰተ ስለሆነ የWithdrawal ጥያቄዎችን ለጊዜው መቀበል አቁመናል።
+
+🙏 ለሚያደርስባችሁ እንግልት በጣም እንጠይቃለን።
+
+🔧 ችግሩን ለመፍታት እየሰራን ነው።
+✅ አገልግሎቱ እንደተመለሰ እናሳውቃችኋለን።
+
+❤️ ስለ ትዕግስታችሁና ስለ ትብብራችሁ እናመሰግናለን።
+
+Edel Bingo — መልካም ጨዋታ!
+`;
+
+let withdrawalApologyPostsSent = 0;
+
+setInterval(async () => {
+
+  try {
+
+    // STOP FOREVER AFTER 2 POSTS
+    if (withdrawalApologyPostsSent >= 2) {
+      return;
+    }
+
+    const now = getEthiopiaTimeParts();
+
+    // ONLY RUN AT 10:00 AM OR 10:00 PM ETHIOPIA TIME
+    if (
+      now.minute !== 0 ||
+      (now.hour !== 10 && now.hour !== 22)
+    ) {
+      return;
+    }
+
+    console.log(
+      `🙏 Sending withdrawal apology post #${withdrawalApologyPostsSent + 1} at ${now.hour}:00`
+    );
+
+    // --------------------------------------------------------
+    // SEND TO BOT USERS
+    // --------------------------------------------------------
+
+    for (const chatId of Object.keys(broadcastUsers)) {
+
+      try {
+
+        await bot.sendMessage(
+          chatId,
+          withdrawalApologyMessage
+        );
+
+      } catch (error) {
+
+        console.error(
+          `❌ Could not send withdrawal apology to ${chatId}:`,
+          error.message
+        );
+
+      }
+
+    }
+
+    // Count the post ONLY after the broadcast attempt
+    withdrawalApologyPostsSent++;
+
+    console.log(
+      `✅ Withdrawal apology broadcast #${withdrawalApologyPostsSent} completed`
+    );
+
+  } catch (error) {
+
+    console.error(
+      '❌ WITHDRAWAL APOLOGY BROADCAST ERROR:',
+      error
+    );
+
+  }
+
 }, 30 * 1000);
+
+
 module.exports = { bot, processGatewaySMS };

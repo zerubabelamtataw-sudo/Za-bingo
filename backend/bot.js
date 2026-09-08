@@ -1037,45 +1037,13 @@ else if (data.startsWith('deposit_method_')) {
 }
 // Withdraw method selection
 else if (data === 'withdraw_source_main') {
-  const source = 'main';
-
-  withdrawSessions[chatId] = {
-    source,
-    step: 'method'
-  };
-
-  const sourceName = 'Main Balance';
 
   await bot.sendMessage(
     chatId,
-    `*${sourceName} Withdrawal*\n\n` +
-    `የገንዘብ ማውጫ መንገድ ይምረጡ 👇`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '📱 Telebirr',
-              callback_data: 'withdraw_method_telebirr'
-            }
-          ],
-          [
-            {
-              text: '🏦 CBE',
-              callback_data: 'withdraw_method_cbe'
-            }
-          ],
-          [
-            {
-              text: '🔙 Back',
-              callback_data: 'back_to_menu'
-            }
-          ]
-        ]
-      }
-    }
+    '⚠️ የገንዘብ ማውጣት አገልግሎት ለጊዜው አይሰራም። እባክዎ ቆይተው እንደገና ይሞክሩ።'
   );
+
+  return;
 }
 
 else if (

@@ -17,13 +17,7 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const BONUS_CHANNEL = '@EdelBingoo';
 const ADMIN_ID =
   process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-  // ============================================================
-// REFERRAL SYSTEM
-// ============================================================
 
-const REFERRAL_JOIN_BONUS = 10;
-const REFERRAL_DEPOSIT_BONUS = 10;
-const REFERRAL_MIN_DEPOSIT = 50;
   
 function getEthiopiaTimeParts() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -320,14 +314,12 @@ async function processWithdrawal(text, smsData) {
     Number(transaction.amount || 0);
 
   const source =
-    transaction.withdrawSource ||
-    (
-      Number(transaction.mainAmount || 0) > 0
-        ? 'main'
-        : Number(transaction.referralAmount || 0) > 0
-          ? 'referral'
-          : null
-    );
+  transaction.withdrawSource ||
+  (
+    Number(transaction.mainAmount || 0) > 0
+      ? 'main'
+      : null
+  );
 
   if (!source || amount <= 0) {
     console.log('❌ Invalid withdrawal source:', transaction.key);
@@ -413,10 +405,7 @@ async function processWithdrawal(text, smsData) {
     confirmationSms: text
   });
 
-  const balanceName =
-    source === 'main'
-      ? 'Main balance'
-      : 'Referral balance';
+const balanceName = 'Main balance';
 
   await bot.sendMessage(
     transaction.telegramId,
@@ -714,19 +703,6 @@ let gameManager = null;
 // /start - Register user and show main menu
 bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
   const chatId = msg.chat.id;
-    // Referral code from /start ref_TELEGRAM_ID
-  const referralCode = match && match[1]
-    ? String(match[1]).trim()
-    : null;
-
-  let referrerId = null;
-
-  if (
-    referralCode &&
-    referralCode.startsWith('ref_')
-  ) {
-    referrerId = referralCode.replace('ref_', '');
-  }
 
   // Save user for future broadcasts
   broadcastUsers[String(chatId)] = true;
@@ -743,21 +719,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     if (!player) {
   // Register new player
 
-  // Prevent self-referral
-  if (referrerId === tgId) {
-    referrerId = null;
-  }
 
-  // Make sure referrer actually exists
-  if (referrerId) {
-    const referrerSnapshot = await db
-      .ref(`players/${referrerId}`)
-      .once('value');
-
-    if (!referrerSnapshot.exists()) {
-      referrerId = null;
-    }
-  }
 
   player = {
     telegram_id: tgId,
@@ -765,15 +727,11 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     username: username,
     phone: '',
     balance: 15,
-referralBonusBalance: 0,
 games_played: 0,
 games_won: 0,
     registration_date: new Date().toISOString(),
 
-    // Referral information
-    referredBy: referrerId || null,
-    referralJoinRewardGiven: false,
-    referralDepositRewardGiven: false
+
   };
 
       await playerRef.set(player);
@@ -832,7 +790,7 @@ games_won: 0,
       `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
       `🎁 *15 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
       `🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
-      `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 20 ብር!*\n\n` +
+    
       `📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
       `****************👇👇👇****************`,
     parse_mode: 'Markdown',
@@ -874,8 +832,7 @@ bot.on('contact', async (msg) => {
   `✅ *የስልክ ቁጥርዎ ተመዝግቧል!*\n\n` +
   `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
   `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
-  `📤 *ለማጋራት:* Bot 👉 Profile 👥\n\n` +
-  `💰 *ለጓደኞችዎ ያጋሩ — ከአንድ ሪፈራል እስከ 20 ብር!*`,
+  
   {
       reply_markup: {
         remove_keyboard: true
@@ -1123,25 +1080,16 @@ else if (data.startsWith('deposit_method_')) {
   );
 }
 }
-  // Withdraw method selection
-  else if (
-  data === 'withdraw_source_main' ||
-  data === 'withdraw_source_referral'
-) {
-  const source =
-    data === 'withdraw_source_main'
-      ? 'main'
-      : 'referral';
+// Withdraw method selection
+else if (data === 'withdraw_source_main') {
+  const source = 'main';
 
   withdrawSessions[chatId] = {
     source,
     step: 'method'
   };
 
-  const sourceName =
-    source === 'main'
-      ? 'Main Balance'
-      : 'Referral Bonus';
+  const sourceName = 'Main Balance';
 
   await bot.sendMessage(
     chatId,
@@ -1452,76 +1400,7 @@ if (
 
   const newBalance =
     Number(balanceResult.snapshot.val() || 0);
-      // ======================================================
-  // REFERRAL DEPOSIT BONUS
-  // B deposits 50+ Br for the first time
-  // A gets another 20 Br
-  // ======================================================
-
-  const depositedPlayerSnapshot =
-    await db.ref(`players/${tgId}`).once('value');
-
-  const depositedPlayer =
-    depositedPlayerSnapshot.val();
-
-  const referrerIdForDeposit =
-    depositedPlayer?.referredBy;
-
-  if (
-    referrerIdForDeposit &&
-    amount >= REFERRAL_MIN_DEPOSIT &&
-    depositedPlayer.referralDepositRewardGiven !== true
-  ) {
-
-    const referrerRef =
-      db.ref(`players/${referrerIdForDeposit}`);
-
-    const referrerSnapshot =
-      await referrerRef.once('value');
-
-    const referrer =
-      referrerSnapshot.val();
-
-    if (referrer) {
-
-      // Give referrer second 20 Br
-      await referrerRef.child('referralBonusBalance').transaction(
-  balance =>
-    Number(balance || 0) +
-    REFERRAL_DEPOSIT_BONUS
-);
-
-      // Mark reward as permanently given
-      await db.ref(`players/${tgId}`).update({
-        referralDepositRewardGiven: true,
-        referralDepositRewardAt:
-          new Date().toISOString()
-      });
-
-      // Save referral record
-      await referrerRef.update({
-        [`referrals/${tgId}/depositReward`]:
-          REFERRAL_DEPOSIT_BONUS,
-        [`referrals/${tgId}/depositRewardAt`]:
-          new Date().toISOString()
-      });
-
-      // Notify A
-      await bot.sendMessage(
-        referrerIdForDeposit,
-        `🎉 *Referral Deposit Bonus!*\n\n` +
-        `${depositedPlayer.first_name || 'Your referral'} ` +
-        `made a deposit of *${amount} Br*.\n\n` +
-        `💰 You received another *10 Br*!\n\n` +
-        `🏆 Total referral bonus earned from this player: *20 Br*`,
-        { parse_mode: 'Markdown' }
-      );
-
-      console.log(
-        `🎁 Referral deposit bonus: ${referrerIdForDeposit} +20 Br`
-      );
-    }
-  }
+      
 
   // Mark official SMS as used
   await officialRef.update({
@@ -1582,36 +1461,7 @@ if (withdrawSessions[chatId]) {
 
   }
 
-  // ==========================================
-  // REFERRAL BALANCE
-  // 10 WINS REQUIRED
-  // ==========================================
-  else if (session.source === 'referral') {
-
-    const gamesWon =
-      Number(
-        player.games_won ??
-        player.gamesWon ??
-        0
-      );
-
-    if (gamesWon < 10) {
-      await bot.sendMessage(
-        chatId,
-        `🎁 *Referral bonus is locked.*\n\n` +
-        `🏆 Wins: ${gamesWon}/10\n\n` +
-        `You need 10 wins before you can withdraw referral money.`,
-        {
-          parse_mode: 'Markdown'
-        }
-      );
-      return;
-    }
-
-    availableBalance =
-      Number(player.referralBonusBalance || 0);
-
-  }
+  // 
 
   else {
     await bot.sendMessage(
@@ -1826,10 +1676,7 @@ if (requestedAmount > availableBalance) {
   // CREATE PENDING WITHDRAWAL
   // ----------------------------------------------------------
 
-  const balanceField =
-  session.source === 'main'
-    ? 'balance'
-    : 'referralBonusBalance';
+  const balanceField = 'balance';
 
 const newBalance =
   availableBalance - requestedAmount;
@@ -1856,10 +1703,7 @@ await playerRef
       ? requestedAmount
       : 0,
 
-  referralAmount:
-    session.source === 'referral'
-      ? requestedAmount
-      : 0,
+  
 
   status: 'pending',
 balanceDeducted: true,
@@ -1925,7 +1769,7 @@ balanceDeducted: true,
     }: ${phone}\n\n` +
     `⏳ ሁኔታ: Pending\n` +
     `💰 Main balance: ${Number(freshPlayer.balance || 0).toFixed(2)} Br\n` +
-`🎁 Referral balance: ${Number(freshPlayer.referralBonusBalance || 0).toFixed(2)} Br`,
+
     {
       parse_mode: 'Markdown'
     }
@@ -2121,15 +1965,13 @@ async function approveWithdrawal(query, txnId) {
     const amount =
       Number(transaction.amount || 0);
 
-    const source =
-      transaction.withdrawSource ||
-      (
-        Number(transaction.mainAmount || 0) > 0
-          ? 'main'
-          : Number(transaction.referralAmount || 0) > 0
-            ? 'referral'
-            : null
-      );
+const source =
+  transaction.withdrawSource ||
+  (
+    Number(transaction.mainAmount || 0) > 0
+      ? 'main'
+      : null
+  );
 
     if (!source || amount <= 0) {
       await bot.answerCallbackQuery(query.id, {
@@ -2155,40 +1997,7 @@ const balanceSnapshot =
 remainingBalance =
   Number(balanceSnapshot.val() || 0);
 }
-    // ==========================================
-    // REFERRAL BALANCE WITHDRAWAL
-    // ==========================================
-    else if (source === 'referral') {
-
-      const playerSnapshot =
-        await playerRef.once('value');
-
-      const player =
-        playerSnapshot.val();
-
-      const gamesWon =
-        Number(
-          player.games_won ??
-          player.gamesWon ??
-          0
-        );
-
-      if (gamesWon < 10) {
-        await bot.answerCallbackQuery(query.id, {
-          text: `❌ Player has only ${gamesWon}/10 wins`,
-          show_alert: true
-        });
-        return;
-      }
-
-      const balanceSnapshot =
-  await playerRef
-    .child('referralBonusBalance')
-    .once('value');
-
-remainingBalance =
-  Number(balanceSnapshot.val() || 0);
-}
+    // 
     // ==========================================
     // MARK TRANSACTION APPROVED
     // ==========================================
@@ -2198,10 +2007,7 @@ remainingBalance =
       approvedBy: adminId
     });
 
-    const balanceName =
-      source === 'main'
-        ? 'Main balance'
-        : 'Referral balance';
+ const balanceName = 'Main balance';
 
     await bot.sendMessage(
       playerId,
@@ -2287,10 +2093,7 @@ async function rejectWithdrawal(query, txnId) {
     }
     const playerRef = db.ref(`players/${transaction.playerId}`);
 
-const balanceField =
-  transaction.withdrawSource === 'main'
-    ? 'balance'
-    : 'referralBonusBalance';
+const balanceField = 'balance';
 
 await playerRef.child(balanceField).transaction(current => {
   return Number(current || 0) + Number(transaction.amount || 0);
@@ -2379,53 +2182,26 @@ async function hasMadeDeposit(telegramId) {
 
 function handleWithdrawMenu(chatId, player) {
   const mainBalance = Number(player.balance || 0);
-  const referralBalance = Number(player.referralBonusBalance || 0);
 
   bot.sendMessage(
     chatId,
     `*ገንዘብ ለማውጣት*\n\n` +
-    `💰 Main balance: ${mainBalance.toFixed(2)} Br\n` +
-    `🎁 Referral balance: ${referralBalance.toFixed(2)} Br\n\n` +
+    `💰 Main balance: ${mainBalance.toFixed(2)} Br\n\n` +
     `የሚያወጡትን ሂሳብ ይምረጡ 👇`,
     {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
           [{ text: '💰 Main Balance', callback_data: 'withdraw_source_main' }],
-          [{ text: '🎁 Referral Bonus', callback_data: 'withdraw_source_referral' }],
           [{ text: '🔙 Back', callback_data: 'back_to_menu' }]
         ]
       }
     }
   );
 }
-
 function handleProfile(chatId, player) {
-  // ============================================================
-  // PROFILE
-  // SHOW MAIN + REFERRAL BALANCES SEPARATELY
-  // ============================================================
-
   const mainBalance =
     Number(player.balance || 0);
-
-  const referralBalance =
-    Number(player.referralBonusBalance || 0);
-
-  // ============================================================
-  // REFERRAL LINK
-  // ============================================================
-
-  const referralLink =
-    `https://t.me/ZABingo_bot?start=ref_${player.telegram_id}`;
-
-  const shareText =
-    `🎱 Join Edel Bingo and get your bonus!\n\n` +
-    `👉 ${referralLink}`;
-
-  const shareLink =
-    `https://t.me/share/url?url=${encodeURIComponent(referralLink)}` +
-    `&text=${encodeURIComponent(shareText)}`;
 
   bot.sendMessage(
     chatId,
@@ -2433,25 +2209,12 @@ function handleProfile(chatId, player) {
     `Name: ${player.first_name || 'N/A'}\n` +
     `Username: @${player.username || 'N/A'}\n` +
     `Phone: ${player.phone || 'Not set'}\n\n` +
-    `💰 *Main Balance:* ${mainBalance.toFixed(2)} Br\n` +
-    `🎁 *Referral Balance:* ${referralBalance.toFixed(2)} Br\n\n` +
+    `💰 *Main Balance:* ${mainBalance.toFixed(2)} Br\n\n` +
     `Games Played: ${player.games_played ?? player.gamesPlayed ?? 0}\n` +
     `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
-    `Joined: ${player.registration_date || 'N/A'}\n\n` +
-    `🔗 *Referral link:*\n` +
-    `[👉 የሬፈራል ሊንክዎን ይጫኑ](${referralLink})`,
+    `Joined: ${player.registration_date || 'N/A'}`,
     {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '📤 Share Referral Link',
-              url: shareLink
-            }
-          ]
-        ]
-      }
+      parse_mode: 'Markdown'
     }
   );
 }

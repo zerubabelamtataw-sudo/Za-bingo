@@ -300,36 +300,7 @@ app.post('/api/admin/add-referral-balance', async (req, res) => {
 
     });
 
-    return res.json({
 
-      success: true,
-
-      message:
-        'Referral balance added successfully',
-
-      previousReferralBalance:
-        currentReferralBalance,
-
-      newReferralBalance:
-        newReferralBalance
-
-    });
-
-  } catch (error) {
-
-    console.error(
-      '❌ Admin add referral balance error:',
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-
-  }
-
-});
 // ============================================================
 // ADMIN — APPROVE TRANSACTION
 // ============================================================

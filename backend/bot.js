@@ -2532,13 +2532,6 @@ function getEthiopiaDate(date) {
 // ============================================================
 
 function calculateLeaderboardWins(playerId, actualWins) {
-
-  // SIMULATED PLAYER
-  if (String(playerId).startsWith('sim_')) {
-    return Math.floor(actualWins / 3);
-  }
-
-  // REAL PLAYER
   return actualWins;
 }
 

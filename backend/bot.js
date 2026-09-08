@@ -734,53 +734,8 @@ games_won: 0,
 
   };
 
-      await playerRef.set(player);
-            // ======================================================
-      // REFERRAL JOIN BONUS
-      // ======================================================
-
-      if (referrerId) {
-
-        const referrerRef =
-          db.ref(`players/${referrerId}`);
-
-        const referrerSnapshot =
-          await referrerRef.once('value');
-
-        const referrer =
-          referrerSnapshot.val();
-
-        if (referrer) {
-
-          await referrerRef.child('referralBonusBalance').transaction(
-  balance =>
-    Number(balance || 0) +
-    REFERRAL_JOIN_BONUS
-);
-
-          await referrerRef.update({
-            [`referrals/${tgId}/joined`]: true,
-            [`referrals/${tgId}/joinReward`]:
-              REFERRAL_JOIN_BONUS,
-            [`referrals/${tgId}/joinRewardAt`]:
-              new Date().toISOString()
-          });
-
-          await bot.sendMessage(
-            referrerId,
-            `🎉 *Referral Bonus!*\n\n` +
-            `${firstName} joined ZA Bingo using your referral link.\n\n` +
-            `💰 You received *10 Br*!\n\n` +
-            `🎁 If ${firstName} deposits at least 50 Br,\n` +
-            `you will receive another *10 Br*!`,
-            { parse_mode: 'Markdown' }
-          );
-
-          console.log(
-            `🎁 Referral join bonus: ${referrerId} +20 Br`
-          );
-        }
-      }
+  await playerRef.set(player);
+            // 
 
       bot.sendPhoto(
   chatId,

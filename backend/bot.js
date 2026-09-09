@@ -2174,20 +2174,6 @@ function setGameManager(gm) {
 // ============================================================
 
 let lastDailyBonusDate = null;
-let lastWeeklyBonusDate = null;
-async function recordWeeklyWin(playerId, playerName) {
-  const ref = db.ref(`leaderboards/weekly/${playerId}`);
-  const snapshot = await ref.once('value');
-  const current = snapshot.val() || {};
-
-  await ref.set({
-    playerId: String(playerId),
-    playerName: playerName || 'Player',
-    actualWins: Number(current.actualWins || 0) + 1,
-    updatedAt: new Date().toISOString()
-  });
-}
-
 
 // ============================================================
 // ETHIOPIA DATE HELPER
@@ -2373,7 +2359,7 @@ setInterval(async () => {
 
 🎱 ይጫወቱ ያሸንፉ ይሸለሙ!
 
-🎁 የ30 ብር ቦነስ ያግኙ!
+🎁 የ15 ብር ቦነስ ያግኙ!
 
 https://t.me/ZABingo_bot
 
@@ -2409,187 +2395,94 @@ https://t.me/ZABingo_bot
         '🔄 DAILY LEADERBOARD RESET'
       );
     }
+    if (lastDailyBonusDate !== today) {
 
+  console.log('🏆 CALCULATING DAILY LEADERBOARD...');
 
-    // ========================================================
-    // WEEKLY BONUS
-    //
-    // SUNDAY ONLY
-    // WEEK = MONDAY → SUNDAY
-    // ========================================================
+  // The daily leaderboard period that just finished
+  // is the period BEFORE the current 10:30 PM cutoff.
+  const previousDate = new Date(
+    Date.UTC(now.year, now.month - 1, now.day - 1)
+  );
 
-    const todayDate =
-      new Date(
-        `${today}T12:00:00+03:00`
-      );
+  const dailyKey =
+    `${previousDate.getUTCFullYear()}-${String(
+      previousDate.getUTCMonth() + 1
+    ).padStart(2, '0')}-${String(
+      previousDate.getUTCDate()
+    ).padStart(2, '0')}`;
 
-    const dayOfWeek =
-      todayDate.getDay();
+  // Read the SAME leaderboard used by the website
+  const dailySnapshot = await db.ref(
+    `dailyLeaderboard/${dailyKey}`
+  ).once('value');
 
-    // Sunday = 0
-    const isSunday =
-      dayOfWeek === 0;
+  const dailyData = dailySnapshot.val() || {};
 
+  const dailyTop3 =
+    Object.entries(dailyData)
+      .map(([playerId, player]) => ({
+        playerId: String(playerId),
+        playerName: player.name || 'Player',
+        wins: Number(player.wins || 0)
+      }))
+      .filter(player => player.wins > 0)
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, 3);
 
-    if (
-      isSunday &&
-      lastWeeklyBonusDate !== today
-    ) {
+  const dailyNames = [
+    dailyTop3[0]
+      ? `${dailyTop3[0].playerName} (${dailyTop3[0].wins})`
+      : 'No winner',
 
-      console.log(
-        '🏆 CALCULATING WEEKLY LEADERBOARD...'
-      );
+    dailyTop3[1]
+      ? `${dailyTop3[1].playerName} (${dailyTop3[1].wins})`
+      : 'No winner',
 
+    dailyTop3[2]
+      ? `${dailyTop3[2].playerName} (${dailyTop3[2].wins})`
+      : 'No winner'
+  ];
 
-      // ------------------------------------------------------
-      // FIND MONDAY OF CURRENT WEEK
-      // ------------------------------------------------------
+  const dailyMessage =
+`🏆 የዕለታዊ ቦነስ ተሸላሚዎች 🏆
 
-      const weekStart =
-        new Date(todayDate);
+🥇 1ኛ ደረጃ — ${dailyNames[0]} 💰 500 ብር
+🥈 2ኛ ደረጃ — ${dailyNames[1]} 💰 250 ብር
+🥉 3ኛ ደረጃ — ${dailyNames[2]} 💰 100 ብር
 
-      // Sunday → go back 6 days
-      weekStart.setDate(
-        weekStart.getDate() - 6
-      );
+🎉 አሸናፊዎች እንኳን ደስ አላችሁ!
+🎱 ይጫወቱ ያሸንፉ ይሸለሙ!
+🎁 የ15 ብር ቦነስ ያግኙ!
 
-      weekStart.setHours(
-        0, 0, 0, 0
-      );
+https://t.me/ZABingo_bot
 
+❤️ Edel Bingo — መልካም ጨዋታ!`;
 
-      // ------------------------------------------------------
-      // WEEKLY LEADERBOARD
-      // ------------------------------------------------------
+  await bot.sendPhoto(
+    BONUS_CHANNEL,
+    DAILY_WINNER_IMAGE,
+    {
+      caption: dailyMessage
+    }
+  );
 
-      const weeklyLeaderboard = {};
+  console.log('✅ DAILY BONUS POSTED');
 
+  // DO NOT delete dailyLeaderboard/${dailyKey}.
+  // The website needs the historical daily period.
+  // The next period automatically uses a new dailyKey.
 
-      for (const winner of allWinners) {
+  lastDailyBonusDate = today;
 
-        if (!winner.date) continue;
-
-        const winnerDate =
-          new Date(winner.date);
-
-
-        // Convert winner date to Ethiopia date
-        const winnerDay =
-          getEthiopiaDate(
-            winner.date
-          );
-
-
-        const winnerEthiopiaDate =
-          new Date(
-            `${winnerDay}T12:00:00+03:00`
-          );
-
-
-        // Monday → Sunday
-        if (
-          winnerEthiopiaDate < weekStart ||
-          winnerEthiopiaDate > todayDate
-        ) {
-          continue;
-        }
-
-
-        const playerId = String(winner.playerId);
-
-if (!weeklyLeaderboard[playerId]) {
-  weeklyLeaderboard[playerId] = {
-    playerId: playerId,
-    playerName: winner.playerName || 'Player',
-    wins: 0,
-    actualWins: 0
-  };
+  console.log(
+    `✅ DAILY LEADERBOARD COMPLETED FOR ${dailyKey}`
+  );
 }
 
-// Count every actual win
-weeklyLeaderboard[playerId].actualWins++;
-      }
 
+    // 
 
-      // ------------------------------------------------------
-      // APPLY SIM 3:1 RULE
-      // ------------------------------------------------------
-
-      for (
-        const player
-        of Object.values(weeklyLeaderboard)
-      ) {
-
-        player.wins =
-          calculateLeaderboardWins(
-            player.playerId,
-            player.actualWins
-          );
-      }
-
-
-      // ------------------------------------------------------
-      // TOP 5
-      // ------------------------------------------------------
-
-      const weeklyTop5 =
-        Object.values(weeklyLeaderboard)
-          .filter(player => player.wins > 0)
-          .sort((a, b) => {
-
-            if (b.wins !== a.wins) {
-              return b.wins - a.wins;
-            }
-
-            return b.actualWins - a.actualWins;
-          })
-          .slice(0, 5);
-
-
-      // ------------------------------------------------------
-      // DISPLAY NAMES
-      // ------------------------------------------------------
-
-      const weeklyNames = [];
-
-      for (let i = 0; i < 5; i++) {
-
-        if (weeklyTop5[i]) {
-
-          weeklyNames.push(
-            `${weeklyTop5[i].playerName} (${weeklyTop5[i].wins})`
-          );
-
-        } else {
-
-          weeklyNames.push(
-            'No winner'
-          );
-
-        }
-      }
-
-
-
-
-
-
-
-
-      // ------------------------------------------------------
-      // RESET WEEKLY DATA ONLY
-      //
-      // winners/ IS NEVER TOUCHED
-      // ------------------------------------------------------
-
-      await db.ref('leaderboards/weekly').remove();
-
-      lastWeeklyBonusDate = today;
-
-      console.log(
-        '🔄 WEEKLY LEADERBOARD RESET'
-      );
-    }
 
   } catch (error) {
 

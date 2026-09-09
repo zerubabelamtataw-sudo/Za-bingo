@@ -1222,25 +1222,7 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
 async getDailyLeaderboard() {
   if (!this.db) return [];
 
-  // Use today's Ethiopia calendar date for the live leaderboard.
-  const now = new Date();
-
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Africa/Addis_Ababa',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(now);
-
-  const getPart = type =>
-    Number(parts.find(p => p.type === type)?.value || 0);
-
-  const year = getPart('year');
-  const month = getPart('month');
-  const day = getPart('day');
-
-  const dailyKey =
-    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+const dailyKey = getEthiopiaDailyKey();
 
   const snap = await this.db.ref(
     `dailyLeaderboard/${dailyKey}`

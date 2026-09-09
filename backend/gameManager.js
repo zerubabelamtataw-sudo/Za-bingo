@@ -55,8 +55,12 @@ const ROOMS_CONFIG = [
 ];
 
 const COUNTDOWN_SECONDS = 30;
-const DRAW_INTERVAL_MS  = 5000;
+const DRAW_INTERVAL_MS  = 4000;
 const WINNER_SHARE = 0.80;
+
+// Starting balance for each simulated player's account.
+// This is only created once when the sim account does not exist.
+const SIM_STARTING_BALANCE = 999999;
 
 const SIMULATED_PLAYERS = [
   // ───── 5 BR GROUP: 1–20 ─────
@@ -474,42 +478,7 @@ this._simulatorScheduler = setInterval(() => {
 
   async updatePlayerBalance(playerId, delta, historyEntry) {
 
-  // ─────────────────────────────────────────────
-  // SIMULATED PLAYER
-  // ─────────────────────────────────────────────
-  if (String(playerId).startsWith('sim_')) {
 
-    // Find the simulated player in any active room
-    for (const room of Object.values(this.rooms)) {
-
-      const simPlayer = room.players.find(
-        p => String(p.id) === String(playerId)
-      );
-
-      if (simPlayer) {
-
-        simPlayer.balance =
-          Number(simPlayer.balance || 0) + Number(delta || 0);
-
-        // ONLY wins are counted.
-        // Simulated games are NOT counted as gamesPlayed.
-        if (historyEntry?.type === 'win') {
-  simPlayer.gamesWon =
-    Number(simPlayer.gamesWon || 0) + 1;
-
-  simPlayer.tournamentWins =
-  Number(simPlayer.gamesWon || 0);
-}
-
-        return {
-          id: playerId,
-          ...simPlayer
-        };
-      }
-    }
-
-    throw new Error(`Simulated player ${playerId} not found`);
-  }
 
   // ─────────────────────────────────────────────
   // REAL PLAYER
@@ -798,19 +767,94 @@ const selectedPlayers = players.slice(
       room.reservedCartelas.add(c.id);
     });
 
-    // Add simulated player
-    room.players.push({
+// ─────────────────────────────────────────────
+// CREATE / LOAD THE SIMULATED PLAYER ACCOUNT
+// ─────────────────────────────────────────────
+if (!this.db) {
+  throw new Error('Firebase Realtime Database is not connected');
+}
+
+const simRef = this.db.ref(`players/${playerId}`);
+const simSnap = await simRef.once('value');
+
+let simAccount;
+
+if (!simSnap.exists()) {
+  // Create the simulated player account ONCE.
+  simAccount = {
+    name,
+    username: '',
+    balance: SIM_STARTING_BALANCE,
+    gamesPlayed: 0,
+    gamesWon: 0,
+    history: [],
+    isSimulated: true
+  };
+
+  await simRef.set(simAccount);
+
+  console.log(
+    `🤖 Created simulated account ${playerId} with balance ${SIM_STARTING_BALANCE}`
+  );
+} else {
+  simAccount = simSnap.val();
+
+  // Keep the name/current sim identity correct.
+  await simRef.update({
+    name,
+    username: '',
+    isSimulated: true
+  });
+}
+
+// ─────────────────────────────────────────────
+// DEDUCT THE SIM'S STAKE EXACTLY LIKE A REAL PLAYER
+// ─────────────────────────────────────────────
+const totalFee = room.entryFee * count;
+
+if (Number(simAccount.balance || 0) < totalFee) {
+  console.error(
+    `❌ ${name} (${playerId}) has insufficient balance`
+  );
+
+  // Release the cartelas because the sim cannot afford them.
+  selected.forEach(c => {
+    room.reservedCartelas.delete(c.id);
+  });
+
+  continue;
+}
+
+const updatedSim = await this.updatePlayerBalance(
+  playerId,
+  -totalFee,
+  {
+    type: 'join',
+    roomId: room.id,
+    amount: -totalFee,
+    paymentSource: 'main',
+    date: new Date().toISOString()
+  }
+);
+
+// ─────────────────────────────────────────────
+// ADD SIM TO THE ROOM
+// ─────────────────────────────────────────────
+room.players.push({
   id: playerId,
   name,
   username: '',
-  balance: 999999,
-  gamesWon: 0
+  balance: Number(updatedSim.balance || 0),
+  gamesWon: Number(updatedSim.gamesWon || 0),
+  paymentSource: 'main',
+  isSimulated: true
 });
 
-    room.playerCartelas[playerId] = selected;
+room.playerCartelas[playerId] = selected;
 
-    // Add their cartela fees to pot
-    room.pot += room.entryFee * count;
+// The exact amount deducted from the sim account
+// enters the game pot.
+room.pot += totalFee;
 
     console.log(
       `🤖 ${name} joined ${room.id} with ${count} cartelas:`,

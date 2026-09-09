@@ -1769,8 +1769,7 @@ header {
   .logo {
     font-size: 1rem;
   }
-
-  /* ──────────────── BOTTOM NAVIGATION ──────────────── */
+/* ──────────────── BOTTOM NAVIGATION ──────────────── */
 
 .nav-tabs {
   position: fixed;
@@ -1785,8 +1784,8 @@ header {
   align-items: stretch;
 
   /* NAV BAR STAYS THE SAME */
-  background:#dcc7ee;
-  border-top: 2px
+  background: #dcc7ee;
+  border-top: 2px solid var(--border);
 
   padding-bottom: 0;
   gap: 4px;
@@ -2601,6 +2600,7 @@ opacity: 1;
     inset 0 1px 3px rgba(255,255,255,.05);
 }
 
+
 /* CARD TITLE */
 
 .info-card-title {
@@ -2623,6 +2623,48 @@ opacity: 1;
 
   line-height: 1.6;
 }
+/* CUSTOMER SUPPORT BUTTON */
+
+.support-button {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 16px;
+
+  padding: 12px 16px;
+
+  background: var(--gold);
+
+  color: #111;
+
+  border-radius: 10px;
+
+  text-align: center;
+
+  text-decoration: none;
+
+  font-size: .85rem;
+
+  font-weight: 900;
+
+  letter-spacing: .5px;
+
+  box-shadow:
+    0 4px 0 #a88735,
+    0 6px 12px rgba(0,0,0,.25);
+
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.support-button:active {
+  transform: translateY(3px);
+
+  box-shadow:
+    0 1px 0 #a88735,
+    0 3px 6px rgba(0,0,0,.2);
+}
+
 
 /* HOW TO PLAY RULES */
 

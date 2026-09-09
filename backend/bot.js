@@ -1171,52 +1171,88 @@ if (
 
 
 let smsData = null;
-// ============================================================
-// PLAYER CBE BIRR SMS
-// ============================================================
-if (method === 'cbe') {
 
-  // English CBE
-  let match = sms.match(
-    /you have sent\s+([\d,]+(?:\.\d{1,2})?)Br\..*?Txn ID\s+([A-Z0-9]+)/i
+// ============================================================
+// PLAYER PAYMENT SMS PARSER
+// Extract amount + transaction ID without depending on language
+// ============================================================
+
+// Convert common numeral systems to normal 0-9 digits
+const normalizeDigits = (value) =>
+  String(value || '')
+    .replace(/[٠-٩]/g, d =>
+      String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    )
+    .replace(/[۰-۹]/g, d =>
+      String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    );
+
+const normalizedSms = normalizeDigits(sms);
+
+// ------------------------------------------------------------
+// 1. Find the amount
+// ------------------------------------------------------------
+
+const numberMatches =
+  normalizedSms.match(
+    /\d+(?:[\s,]\d{3})*(?:\.\d{1,2})?/g
+  ) || [];
+
+let parsedAmount = null;
+
+for (const value of numberMatches) {
+  const numericValue = Number(
+    value.replace(/[\s,]/g, '')
   );
 
-  // Amharic CBE
-  if (!match) {
-    match = sms.match(
-      /([\d,]+(?:\.\d{1,2})?)Br\.\s+ለ.*?በደረሰኝ ቁጥር\s*([A-Z0-9]+)/i
-    );
-  }
-
-  if (match) {
-    smsData = {
-      amount: Number(match[1].replace(/,/g, '')),
-      transactionId: match[2].toUpperCase()
-    };
+  if (
+    Number.isFinite(numericValue) &&
+    numericValue === amount
+  ) {
+    parsedAmount = amount;
+    break;
   }
 }
 
+// ------------------------------------------------------------
+// 2. Find the official transaction ID inside the SMS
+// ------------------------------------------------------------
 
-// PLAYER TELEBIRR SMS
-if (method === 'telebirr') {
+if (parsedAmount !== null) {
 
-  // Amharic Telebirr
-  let match = sms.match(
-    /([\d,]+\.\d{2})\s*ብር[\s\S]*?የሂሳብ\s+እንቅስቃሴ\s+ቁጥርዎ\s+([A-Z0-9]+)/i
-  );
+  const officialSnapshot =
+    await db.ref('officialDeposits').once('value');
 
-  // English Telebirr
-  if (!match) {
-    match = sms.match(
-      /You\s+have\s+transferred\s+ETB\s+([\d,]+\.\d{2})[\s\S]*?Your\s+transaction\s+number\s+is\s+([A-Z0-9]+)/i
-    );
-  }
+  const officialDeposits =
+    officialSnapshot.val() || {};
 
-  if (match) {
-    smsData = {
-      amount: Number(match[1].replace(/,/g, '')),
-      transactionId: match[2].toUpperCase()
-    };
+  const compactSms =
+    normalizedSms
+      .replace(/[\s-]/g, '')
+      .toUpperCase();
+
+  for (const [id, official] of Object.entries(officialDeposits)) {
+
+    if (!official) continue;
+
+    if (official.status !== 'available') continue;
+
+    if (Number(official.amount) !== parsedAmount) continue;
+
+    const compactId =
+      String(id)
+        .replace(/[\s-]/g, '')
+        .toUpperCase();
+
+    if (compactSms.includes(compactId)) {
+
+      smsData = {
+        amount: parsedAmount,
+        transactionId: String(id).toUpperCase()
+      };
+
+      break;
+    }
   }
 }
 

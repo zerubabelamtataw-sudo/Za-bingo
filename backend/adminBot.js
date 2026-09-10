@@ -37,6 +37,7 @@ function showAdminPanel(chatId) {
     reply_markup: {
       keyboard: [
         ['👤 Players', '💰 Balances'],
+['⚠️ Below 50 Br'],
         ['📩 Official SMS', '👁 View Deposit'],
 ['✅ Approved']
       ],
@@ -622,7 +623,64 @@ async function viewOfficialDeposit(chatId, transactionId) {
   }
 }
 
+// ============================================================
+// PLAYERS BELOW 50 BR
+// ============================================================
 
+async function showPlayersBelow50(chatId) {
+  try {
+    const snapshot = await db.ref('players').once('value');
+    const players = snapshot.val() || {};
+
+    const below50 = Object.entries(players)
+      .filter(([_, player]) => {
+        if (!player || typeof player !== 'object') return false;
+        if (player.isSimulated === true) return false;
+
+        const main = Number(player.balance || 0);
+        const bonus = Number(player.referralBonusBalance || 0);
+
+        return (main + bonus) < 50;
+      })
+      .sort((a, b) => {
+        const aTotal = Number(a[1].balance || 0) + Number(a[1].referralBonusBalance || 0);
+        const bTotal = Number(b[1].balance || 0) + Number(b[1].referralBonusBalance || 0);
+        return aTotal - bTotal;
+      });
+
+    if (below50.length === 0) {
+      await adminBot.sendMessage(chatId, '👤 PLAYERS BELOW 50 Br\n\nNo players found.');
+      return;
+    }
+
+    let message = `👤 *PLAYERS BELOW 50 Br*\n\n`;
+
+    below50.forEach(([playerId, player], index) => {
+      const main = Number(player.balance || 0);
+      const bonus = Number(player.referralBonusBalance || 0);
+      const total = main + bonus;
+
+      message +=
+        `${index + 1}. ${player.phone || player.phoneNumber || 'N/A'}\n` +
+        `🆔 ${playerId}\n` +
+        `💰 Main: ${main.toFixed(2)} Br\n` +
+        `🎁 Bonus: ${bonus.toFixed(2)} Br\n` +
+        `💵 Combined: ${total.toFixed(2)} Br\n\n`;
+    });
+
+    await adminBot.sendMessage(chatId, message, {
+      parse_mode: 'Markdown'
+    });
+
+  } catch (error) {
+    console.error('❌ Below 50 error:', error);
+
+    await adminBot.sendMessage(
+      chatId,
+      '❌ Failed to load players below 50 Br.'
+    );
+  }
+}
 // ============================================================
 // MESSAGE HANDLER
 // ============================================================
@@ -753,6 +811,10 @@ adminBot.on('message', async (msg) => {
       await showBalanceTotals(chatId);
       return;
     }
+    if (text === '⚠️ Below 50 Br') {
+  await showPlayersBelow50(chatId);
+  return;
+}
     if (text === '📩 Official SMS') {
   await showPendingOfficialSMS(chatId);
   return;

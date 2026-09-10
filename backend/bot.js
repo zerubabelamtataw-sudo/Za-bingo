@@ -17,6 +17,14 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const BONUS_CHANNEL = '@EdelBingoo';
 const ADMIN_ID =
   process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+// ============================================================
+// PRIVATE SUPPORT BOT
+// ============================================================
+const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
+
+const supportBot = SUPPORT_BOT_TOKEN
+  ? new TelegramBot(SUPPORT_BOT_TOKEN, { polling: true })
+  : null;
 
   
 function getEthiopiaTimeParts() {
@@ -2610,5 +2618,82 @@ setInterval(async () => {
 
 }, 30 * 1000);
 
+// ============================================================
+// PRIVATE SUPPORT SYSTEM
+// ============================================================
+
+if (supportBot) {
+
+  // Player starts support
+  supportBot.onText(/\/start/, async (msg) => {
+    await supportBot.sendMessage(
+      msg.chat.id,
+      '👋 Welcome to እድል Bingo Support.\n\nSend your question here. Only the support admin can see your messages.'
+    );
+  });
+
+  // Handle all support messages
+  supportBot.on('message', async (msg) => {
+    try {
+      if (!msg.chat || !msg.from) return;
+
+      const playerId = String(msg.from.id);
+
+      // Admin replying to a player's message
+      if (playerId === String(ADMIN_ID)) {
+
+        if (!msg.reply_to_message) return;
+
+        const adminMessageId = String(
+          msg.reply_to_message.message_id
+        );
+
+        const snapshot = await db
+          .ref(`supportMessages/${adminMessageId}`)
+          .once('value');
+
+        const ticket = snapshot.val();
+
+        if (!ticket || !ticket.playerId) return;
+
+        await supportBot.copyMessage(
+          ticket.playerId,
+          msg.chat.id,
+          msg.message_id
+        );
+
+        return;
+      }
+
+      // Ignore commands other than /start
+      if (msg.text && msg.text.startsWith('/')) return;
+
+      // Forward player's message privately to admin
+      const forwarded = await supportBot.forwardMessage(
+        ADMIN_ID,
+        msg.chat.id,
+        msg.message_id
+      );
+
+      // Save connection between admin message and player
+      await db.ref(`supportMessages/${forwarded.message_id}`).set({
+        playerId,
+        username: msg.from.username || '',
+        firstName: msg.from.first_name || '',
+        createdAt: Date.now()
+      });
+
+      await supportBot.sendMessage(
+        msg.chat.id,
+        '✅ Your message has been sent to support. We will reply here.'
+      );
+
+    } catch (error) {
+      console.error('❌ Support bot error:', error);
+    }
+  });
+
+  console.log('✅ Private Support Bot started');
+}
 
 module.exports = { bot, processGatewaySMS };

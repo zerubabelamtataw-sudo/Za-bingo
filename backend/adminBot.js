@@ -623,8 +623,8 @@ async function viewOfficialDeposit(chatId, transactionId) {
   }
 }
 
-// ============================================================
-// PLAYERS BELOW 50 BR
+// // ============================================================
+// PLAYERS BELOW 50 BR - SUMMARY
 // ============================================================
 
 async function showPlayersBelow50(chatId) {
@@ -632,52 +632,36 @@ async function showPlayersBelow50(chatId) {
     const snapshot = await db.ref('players').once('value');
     const players = snapshot.val() || {};
 
-    const below50 = Object.entries(players)
-      .filter(([_, player]) => {
-        if (!player || typeof player !== 'object') return false;
-        if (player.isSimulated === true) return false;
+    let count = 0;
+    let combinedTotal = 0;
 
-        const main = Number(player.balance || 0);
-        const bonus = Number(player.referralBonusBalance || 0);
+    for (const player of Object.values(players)) {
+      if (!player || typeof player !== 'object') continue;
+      if (player.isSimulated === true) continue;
 
-        return (main + bonus) < 50;
-      })
-      .sort((a, b) => {
-        const aTotal = Number(a[1].balance || 0) + Number(a[1].referralBonusBalance || 0);
-        const bTotal = Number(b[1].balance || 0) + Number(b[1].referralBonusBalance || 0);
-        return aTotal - bTotal;
-      });
-
-    if (below50.length === 0) {
-      await adminBot.sendMessage(chatId, '👤 PLAYERS BELOW 50 Br\n\nNo players found.');
-      return;
-    }
-
-    let message = `👤 *PLAYERS BELOW 50 Br*\n\n`;
-
-    below50.forEach(([playerId, player], index) => {
       const main = Number(player.balance || 0);
       const bonus = Number(player.referralBonusBalance || 0);
-      const total = main + bonus;
+      const combined = main + bonus;
 
-      message +=
-        `${index + 1}. ${player.phone || player.phoneNumber || 'N/A'}\n` +
-        `🆔 ${playerId}\n` +
-        `💰 Main: ${main.toFixed(2)} Br\n` +
-        `🎁 Bonus: ${bonus.toFixed(2)} Br\n` +
-        `💵 Combined: ${total.toFixed(2)} Br\n\n`;
-    });
+      if (combined < 50) {
+        count++;
+        combinedTotal += combined;
+      }
+    }
 
-    await adminBot.sendMessage(chatId, message, {
-      parse_mode: 'Markdown'
-    });
+    await adminBot.sendMessage(
+      chatId,
+      `⚠️ BELOW 50 Br\n\n` +
+      `👤 Players: ${count}\n` +
+      `💵 Combined Balance: ${combinedTotal.toFixed(2)} Br`
+    );
 
   } catch (error) {
     console.error('❌ Below 50 error:', error);
 
     await adminBot.sendMessage(
       chatId,
-      '❌ Failed to load players below 50 Br.'
+      '❌ Failed to calculate players below 50 Br.'
     );
   }
 }

@@ -1073,19 +1073,19 @@ _checkSimulatedBingo(room) {
       );
 
       if (valid) {
-  // Wait 1.5 seconds before declaring simulated-player Bingo
-  setTimeout(() => {
-    this.claimBingo(
-      room.id,
-      player.id,
-      cartela.id
-    ).catch(err => {
-      console.error(
-        `❌ Simulated Bingo error for ${player.name}:`,
-        err.message
-      );
-    });
-  }, 1500);
+  // Wait 1/3 second before declaring simulated-player Bingo
+setTimeout(() => {
+  this.claimBingo(
+    room.id,
+    player.id,
+    cartela.id
+  ).catch(err => {
+    console.error(
+      `❌ Simulated Bingo error for ${player.name}:`,
+      err.message
+    );
+  });
+}, 333);
 
   return;
 }

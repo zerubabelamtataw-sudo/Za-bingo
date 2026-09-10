@@ -154,7 +154,7 @@ const SIMULATOR_SCHEDULES = {
 ],
 
 '20br': [
-  { start: '18:45', end: '22:44', counts: [9, 10, 11] }
+  { start: '18:45', end: '2:44', counts: [9, 10, 11] }
 ]
 };
 

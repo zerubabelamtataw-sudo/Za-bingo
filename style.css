@@ -2509,9 +2509,7 @@ opacity: 1;
   margin: 0;
   width: 100%;
   min-height: calc(100vh - 64px);
-  position: relative;
-  z-index: 1;
-  transform: translateZ(0);
+  padding-top: 0;
 }
 /* ──────────────── INFO SCREEN ──────────────── */
 
@@ -2721,12 +2719,10 @@ opacity: 1;
 
 .info-version {
   text-align: center;
-
   color: #6b7280;
-
   font-size: .7rem;
-
   margin-top: 20px;
+  margin-bottom: 80px;
 }
 /* ─────────────────────────────────────────────
    BONUS / TOURNAMENT

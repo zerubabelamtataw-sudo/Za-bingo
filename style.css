@@ -776,6 +776,7 @@ header {
   grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 5px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
@@ -2278,9 +2279,11 @@ opacity: 1;
   background: #DECADB;
   position: relative;
   min-height: 100vh;
-  max-width: none;
-  margin: 0;
   width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 #backToRoomsBtn {
@@ -2506,6 +2509,9 @@ opacity: 1;
   margin: 0;
   width: 100%;
   min-height: calc(100vh - 64px);
+  position: relative;
+  z-index: 1;
+  transform: translateZ(0);
 }
 /* ──────────────── INFO SCREEN ──────────────── */
 
@@ -2566,7 +2572,7 @@ opacity: 1;
   width: 100%;
   max-width: none;
   margin: 0;
-  padding-bottom: 90px;
+  padding-bottom: 0;
 }
 
 /* INFO CARD */

@@ -54,9 +54,14 @@ function getEthiopiaTimeParts() {
 // ============================================================
 
 function parseDepositSMS(text) {
-  const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);
+  if (!text) return null;
+
+  const amountMatch = text.match(
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:Br|ETB|ብር)/i
+  );
+
   const transactionMatch = text.match(
-    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
+    /\b([A-Z0-9]{8,})\b/
   );
 
   if (!amountMatch || !transactionMatch) {
@@ -68,13 +73,16 @@ function parseDepositSMS(text) {
     transactionId: transactionMatch[1].toUpperCase()
   };
 }
+
 function parseCBEBirrDepositSMS(text) {
+  if (!text) return null;
+
   const amountMatch = text.match(
-    /you (?:have )?received\s+([\d,]+(?:\.\d{1,2})?)\s*Br\./i
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:Br|ETB|ብር)/i
   );
 
   const transactionMatch = text.match(
-    /Txn ID\s+([A-Z0-9]+)/i
+    /\b([A-Z0-9]{8,})\b/
   );
 
   if (!amountMatch || !transactionMatch) {
@@ -86,51 +94,6 @@ function parseCBEBirrDepositSMS(text) {
     transactionId: transactionMatch[1].toUpperCase(),
     bank: 'CBE Birr',
     type: 'received'
-  };
-}
-
-
-function parseWithdrawalSMS(text) {
-  const amountMatch = text.match(/([\d,]+\.\d{2})\s*ብር/);
-  const transactionMatch = text.match(
-    /የሂሳብ እንቅስቃሴ ቁጥርዎ\s+([A-Z0-9]+)/
-  );
-
-  if (!amountMatch || !transactionMatch) {
-    return null;
-  }
-
-  return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: transactionMatch[1].toUpperCase()
-  };
-}
-function parseCBEWithdrawalSMS(text) {
-  const amountMatch = text.match(
-    /successfully transferred ETB\s*([\d,]+(?:\.\d{2})?)/i
-  );
-
-  const receiverMatch = text.match(
-    /to account\s+\d+\*+\d+\s+\(([^)]+)\)/i
-  );
-
-  const receiptMatch = text.match(
-    /https:\/\/mbreciept\.cbe\.com\.et\/([A-Za-z0-9_-]+)/i
-  );
-
-  if (!amountMatch || !receiverMatch || !receiptMatch) {
-    return null;
-  }
-
-  const receiverName = receiverMatch[1].trim();
-  const firstName = receiverName.split(/\s+/)[0];
-
-  return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: receiptMatch[1],
-    receiverName,
-    receiverFirstName: firstName,
-    bank: 'CBE'
   };
 }
 
@@ -483,40 +446,20 @@ console.log(`✅ Authorized SMS sender: ${sender}`);
     // --------------------------------------------------------
 // DEPOSIT SMS — EXISTING FORMAT
 // --------------------------------------------------------
-if (
-  smsText.includes('ተቀብለዋል') &&
-  smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
-) {
+const smsData = parseDepositSMS(smsText);
 
-  const smsData = parseDepositSMS(smsText);
-
-  if (!smsData) {
-    console.log('❌ Could not parse deposit SMS');
-    return;
-  }
-
+if (smsData) {
   await storeOfficialDeposit(smsText, smsData);
-
   return;
 }
 
 // --------------------------------------------------------
 // CBE BIRR DEPOSIT SMS
 // --------------------------------------------------------
-if (
-  /you have received\s+[\d,]+(?:\.\d{1,2})?\s*Br\./i.test(smsText) &&
-  /Txn ID\s+[A-Z0-9]+/i.test(smsText)
-) {
+const cbeBirrData = parseCBEBirrDepositSMS(smsText);
 
-  const smsData = parseCBEBirrDepositSMS(smsText);
-
-  if (!smsData) {
-    console.log('❌ Could not parse CBE Birr deposit SMS');
-    return;
-  }
-
-  await storeOfficialDeposit(smsText, smsData);
-
+if (cbeBirrData) {
+  await storeOfficialDeposit(smsText, cbeBirrData);
   return;
 }
 

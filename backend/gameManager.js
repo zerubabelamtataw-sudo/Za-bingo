@@ -402,6 +402,13 @@ this._simulatorScheduler = setInterval(() => {
   async getOrCreatePlayer(playerId, name, username = '') {
   const key = String(playerId);
 
+  // 1. Check memory cache first
+  if (this._playerCache && this._playerCache.has(key)) {
+    return {
+      id: key,
+      ...this._playerCache.get(key)
+    };
+  }
 
   if (this.db) {
     const ref = this.db.ref(`players/${key}`);
@@ -469,7 +476,9 @@ this._simulatorScheduler = setInterval(() => {
   return this._players[key];
 }
 
-async updatePlayerBalance(playerId, delta, historyEntry) {
+  async updatePlayerBalance(playerId, delta, historyEntry) {
+
+
 
   // ─────────────────────────────────────────────
   // REAL PLAYER
@@ -477,54 +486,54 @@ async updatePlayerBalance(playerId, delta, historyEntry) {
   if (this.db) {
 
     const ref = this.db.ref(`players/${playerId}`);
+    const snap = await ref.once('value');
 
-    const result = await ref.transaction((currentData) => {
-
-      if (!currentData) {
-        return;
-      }
-
-      const balance =
-        Number(currentData.balance || 0) + Number(delta || 0);
-
-      const history =
-        [...(currentData.history || []), historyEntry];
-
-      const updated = {
-        ...currentData,
-        balance,
-        history
-      };
-
-      // ONLY increment gamesWon when the transaction is a win.
-      // Do NOT increment gamesPlayed here.
-      if (historyEntry?.type === 'win') {
-        updated.gamesWon =
-          Number(currentData.gamesWon || 0) + 1;
-      }
-
-      return updated;
-    });
-
-    if (!result.committed || !result.snapshot.exists()) {
+    if (!snap.exists()) {
       throw new Error(`Player ${playerId} not found`);
     }
 
-    const updatedPlayer = result.snapshot.val();
+    const data = snap.val();
 
-    // Keep player cache synchronized with Firebase
-    if (!this._playerCache) {
-      this._playerCache = new Map();
+    const balance =
+      Number(data.balance || 0) + Number(delta || 0);
+
+    const history =
+      [...(data.history || []), historyEntry];
+
+    const updates = {
+      balance,
+      history
+    };
+
+    // ONLY increment gamesWon when the transaction is a win.
+    // Do NOT increment gamesPlayed here.
+    if (historyEntry?.type === 'win') {
+      updates.gamesWon =
+        Number(data.gamesWon || 0) + 1;
     }
 
-    this._playerCache.set(String(playerId), updatedPlayer);
+await ref.update(updates);
 
-    return updatedPlayer;
-  }
+// Keep player cache synchronized with Firebase
+if (!this._playerCache) {
+  this._playerCache = new Map();
+}
 
-  // ─────────────────────────────────────────────
-  // MEMORY FALLBACK
-  // ─────────────────────────────────────────────
+this._playerCache.set(String(playerId), {
+  ...data,
+  ...updates
+});
+
+return {
+  id: playerId,
+  ...data,
+  ...updates
+};
+}
+
+// ─────────────────────────────────────────────
+// MEMORY FALLBACK
+// ─────────────────────────────────────────────
   if (this._players && this._players[playerId]) {
 
     const p = this._players[playerId];
@@ -558,9 +567,6 @@ async updatePlayerBalance(playerId, delta, historyEntry) {
     if (cartelaIds.length === 0 || cartelaIds.length > 4) {
       throw new Error('Select 1–4 cartelas');
     }
-    if (new Set(cartelaIds).size !== cartelaIds.length) {
-  throw new Error('Duplicate cartela selected');
-}
 
     // Reserve cartelas
     const cartelas = await this.getCartelas();
@@ -597,21 +603,11 @@ if (mainBalance >= totalFee) {
 
 } else if (bonusBalance >= totalFee) {
   // Bonus balance pays the entire fee
-  const playerRef = this.db.ref(`players/${player.id}/referralBonusBalance`);
+  const playerRef = this.db.ref(`players/${player.id}`);
 
-const result = await playerRef.transaction((currentBonus) => {
-  const balance = Number(currentBonus || 0);
-
-  if (balance < totalFee) {
-    return;
-  }
-
-  return balance - totalFee;
-});
-
-if (!result.committed) {
-  throw new Error('Insufficient bonus balance');
-}
+  await playerRef.update({
+    referralBonusBalance: bonusBalance - totalFee
+  });
 
   paymentSource = 'bonus';
 
@@ -1036,10 +1032,7 @@ _startGame(room) {
   const numbers = [];
   for (let n = 1; n <= 75; n++) numbers.push(n);
 
-  for (let i = numbers.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
-  [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-}
+  numbers.sort(() => Math.random() - 0.5);
 
   let idx = 0;
 
@@ -1050,18 +1043,9 @@ _startGame(room) {
     }
 
     if (idx >= numbers.length) {
-  clearInterval(room._drawTimer);
-
-  // No winner after all 75 numbers
-  room.status = 'winner';
-  room.winner = null;
-
-  room._resetTimer = setTimeout(() => {
-    this._resetRoom(room);
-  }, 1000);
-
-  return;
-}
+      clearInterval(room._drawTimer);
+      return;
+    }
 
     room.calledNumbers.push(numbers[idx++]);
 
@@ -1169,16 +1153,13 @@ if (player.paymentSource === 'bonus') {
   // Bonus-funded game → winnings go back to bonus balance
   if (this.db) {
     const bonusRef = this.db.ref(
-  `players/${playerId}/referralBonusBalance`
-);
+      `players/${playerId}/referralBonusBalance`
+    );
 
-const result = await bonusRef.transaction((currentBonus) => {
-  return Number(currentBonus || 0) + winAmt;
-});
+    const snapshot = await bonusRef.once('value');
+    const currentBonus = Number(snapshot.val() || 0);
 
-if (!result.committed) {
-  throw new Error('Failed to credit bonus winnings');
-}
+    await bonusRef.set(currentBonus + winAmt);
   }
 } else {
   // Main-funded game → winnings go back to main balance

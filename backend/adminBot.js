@@ -35,13 +35,23 @@ const selectedPlayers = new Map();
 function showAdminPanel(chatId) {
   return adminBot.sendMessage(chatId, '🏠 ADMIN PANEL', {
     reply_markup: {
-      keyboard: [
-        ['👤 Players', '💰 Balances'],
-['⚠️ Below 50 Br'],
-        ['📩 Official SMS', '👁 View Deposit'],
-['✅ Approved']
-      ],
-      resize_keyboard: true
+      inline_keyboard: [
+        [
+          { text: '👤 Players', callback_data: 'admin_players' },
+          { text: '💰 Balances', callback_data: 'admin_balances' }
+        ],
+        [
+          { text: '⚠️ Below 50 Br', callback_data: 'admin_below50' },
+          { text: '📊 Data Analysis', callback_data: 'admin_analysis' }
+        ],
+        [
+          { text: '📩 Official SMS', callback_data: 'admin_sms' },
+          { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
+        ],
+        [
+          { text: '✅ Approved', callback_data: 'admin_approved' }
+        ]
+      ]
     }
   });
 }
@@ -584,6 +594,119 @@ async function showPendingOfficialSMS(chatId) {
       '❌ Failed to load official SMS.'
     );
   }
+// ============================================================
+// TOP 15 RICHEST REAL PLAYERS
+// ============================================================
+
+async function showTop15Players(chatId) {
+  try {
+    const snapshot = await db.ref('players').once('value');
+    const players = snapshot.val() || {};
+
+    const topPlayers = Object.values(players)
+      .filter(player =>
+        player &&
+        typeof player === 'object' &&
+        player.isSimulated !== true
+      )
+      .map(player => {
+        const main = Number(player.balance || 0);
+        const bonus = Number(player.referralBonusBalance || 0);
+
+        return {
+          name: player.first_name || player.username || 'Player',
+          main,
+          bonus,
+          combined: main + bonus
+        };
+      })
+      .sort((a, b) => b.combined - a.combined)
+      .slice(0, 15);
+
+    if (topPlayers.length === 0) {
+      await adminBot.sendMessage(
+        chatId,
+        '🏆 TOP 15 RICHEST PLAYERS\n\nNo real players found.'
+      );
+      return;
+    }
+
+    let message = '🏆 TOP 15 RICHEST REAL PLAYERS\n\n';
+
+    topPlayers.forEach((player, index) => {
+      message +=
+        `${index + 1}. ${player.name}   ` +
+        `Main: ${player.main.toFixed(2)} Br   ` +
+        `Bonus: ${player.bonus.toFixed(2)} Br\n`;
+    });
+
+    await adminBot.sendMessage(chatId, message);
+
+  } catch (error) {
+    console.error('❌ Top 15 players error:', error);
+
+    await adminBot.sendMessage(
+      chatId,
+      '❌ Failed to load Top 15 players.'
+    );
+  }
+}
+// ============================================================
+// TOP 15 RICHEST REAL PLAYERS
+// ============================================================
+
+async function showTop15Players(chatId) {
+  try {
+    const snapshot = await db.ref('players').once('value');
+    const players = snapshot.val() || {};
+
+    const topPlayers = Object.values(players)
+      .filter(player =>
+        player &&
+        typeof player === 'object' &&
+        player.isSimulated !== true
+      )
+      .map(player => {
+        const main = Number(player.balance || 0);
+        const bonus = Number(player.referralBonusBalance || 0);
+
+        return {
+          name: player.first_name || player.username || 'Player',
+          main,
+          bonus,
+          combined: main + bonus
+        };
+      })
+      .sort((a, b) => b.combined - a.combined)
+      .slice(0, 15);
+
+    if (topPlayers.length === 0) {
+      await adminBot.sendMessage(
+        chatId,
+        '🏆 TOP 15 RICHEST PLAYERS\n\nNo real players found.'
+      );
+      return;
+    }
+
+    let message = '🏆 TOP 15 RICHEST REAL PLAYERS\n\n';
+
+    topPlayers.forEach((player, index) => {
+      message +=
+        `${index + 1}. ${player.name}   ` +
+        `Main: ${player.main.toFixed(2)} Br   ` +
+        `Bonus: ${player.bonus.toFixed(2)} Br\n`;
+    });
+
+    await adminBot.sendMessage(chatId, message);
+
+  } catch (error) {
+    console.error('❌ Top 15 players error:', error);
+
+    await adminBot.sendMessage(
+      chatId,
+      '❌ Failed to load Top 15 players.'
+    );
+  }
 }
 
 // ============================================================
@@ -665,6 +788,158 @@ async function showPlayersBelow50(chatId) {
     );
   }
 }
+async function showDataAnalysis(chatId) {
+  try {
+    const snapshot = await db.ref('winners').once('value');
+    const winners = snapshot.val() || {};
+
+    let games = 0;
+    let totalCollected = 0;
+    let totalPrizes = 0;
+    let houseEarnings = 0;
+
+    const rooms = {
+      '5br': { games: 0, collected: 0, prizes: 0, house: 0 },
+      '10br': { games: 0, collected: 0, prizes: 0, house: 0 },
+      '20br': { games: 0, collected: 0, prizes: 0, house: 0 }
+    };
+
+    for (const game of Object.values(winners)) {
+      if (!game || !game.roomId) continue;
+
+      const pot = Number(game.pot || 0);
+      const prize = Number(game.amount || 0);
+      const house = pot - prize;
+
+      games++;
+      totalCollected += pot;
+      totalPrizes += prize;
+      houseEarnings += house;
+
+      if (rooms[game.roomId]) {
+        rooms[game.roomId].games++;
+        rooms[game.roomId].collected += pot;
+        rooms[game.roomId].prizes += prize;
+        rooms[game.roomId].house += house;
+      }
+    }
+
+    const money = amount =>
+      `${Number(amount).toFixed(2)} Br`;
+
+    const message =
+      `📊 DATA ANALYSIS\n\n` +
+
+      `🎮 Games Completed: ${games}\n` +
+      `💰 Total Collected: ${money(totalCollected)}\n` +
+      `🏆 Total Prizes: ${money(totalPrizes)}\n` +
+      `🏠 House Earnings: ${money(houseEarnings)}\n\n` +
+
+      `5️⃣ 5 Br Room\n` +
+      `Games: ${rooms['5br'].games}\n` +
+      `Collected: ${money(rooms['5br'].collected)}\n` +
+      `Prize: ${money(rooms['5br'].prizes)}\n` +
+      `House: ${money(rooms['5br'].house)}\n\n` +
+
+      `🔟 10 Br Room\n` +
+      `Games: ${rooms['10br'].games}\n` +
+      `Collected: ${money(rooms['10br'].collected)}\n` +
+      `Prize: ${money(rooms['10br'].prizes)}\n` +
+      `House: ${money(rooms['10br'].house)}\n\n` +
+
+      `2️⃣0️⃣ 20 Br Room\n` +
+      `Games: ${rooms['20br'].games}\n` +
+      `Collected: ${money(rooms['20br'].collected)}\n` +
+      `Prize: ${money(rooms['20br'].prizes)}\n` +
+      `House: ${money(rooms['20br'].house)}`;
+
+    await adminBot.sendMessage(chatId, message);
+
+  } catch (error) {
+    console.error('❌ Data analysis error:', error);
+    await adminBot.sendMessage(
+      chatId,
+      '❌ Failed to load data analysis.'
+    );
+  }
+}
+
+// ============================================================
+// INLINE ADMIN PANEL BUTTONS
+// ============================================================
+
+adminBot.on('callback_query', async (query) => {
+  if (!isAdmin({ from: query.from })) return;
+
+  const chatId = query.message.chat.id;
+
+  try {
+    await adminBot.answerCallbackQuery(query.id);
+
+    switch (query.data) {
+
+      case 'admin_players':
+        await showPlayersMenu(chatId);
+        break;
+
+      case 'admin_balances':
+        await showBalanceTotals(chatId);
+        break;
+
+      case 'admin_below50':
+        await showPlayersBelow50(chatId);
+        break;
+
+      case 'admin_analysis':
+        await showDataAnalysis(chatId);
+        break;
+
+      case 'admin_sms':
+        await showPendingOfficialSMS(chatId);
+        break;
+
+        case 'admin_top15':
+  await showTop15Players(chatId);
+  break;
+    }
+
+  } catch (error) {
+    console.error('❌ Admin inline button error:', error);
+  }
+});
+adminBot.on('callback_query', async (query) => {
+  if (!isAdmin({ from: query.from })) return;
+
+  const chatId = query.message.chat.id;
+
+  try {
+    await adminBot.answerCallbackQuery(query.id);
+
+    switch (query.data) {
+      case 'admin_players':
+        await showPlayersMenu(chatId);
+        break;
+
+      case 'admin_balances':
+        await showBalanceTotals(chatId);
+        break;
+
+      case 'admin_below50':
+        await showPlayersBelow50(chatId);
+        break;
+
+      case 'admin_analysis':
+        await showDataAnalysis(chatId);
+        break;
+
+      case 'admin_sms':
+        await showPendingOfficialSMS(chatId);
+        break;
+    }
+  } catch (error) {
+    console.error('❌ Admin inline button error:', error);
+  }
+});
 // ============================================================
 // MESSAGE HANDLER
 // ============================================================
@@ -790,19 +1065,25 @@ adminBot.on('message', async (msg) => {
     // ----------------------------
     // BALANCES
     // ----------------------------
-
     if (text === '💰 Balances') {
       await showBalanceTotals(chatId);
       return;
     }
+
+    if (text === '📊 Data Analysis') {
+      await showDataAnalysis(chatId);
+      return;
+    }
+
     if (text === '⚠️ Below 50 Br') {
-  await showPlayersBelow50(chatId);
-  return;
-}
+      await showPlayersBelow50(chatId);
+      return;
+    }
+
     if (text === '📩 Official SMS') {
-  await showPendingOfficialSMS(chatId);
-  return;
-}
+      await showPendingOfficialSMS(chatId);
+      return;
+    }
 
   } catch (error) {
     console.error('❌ Admin bot error:', error);

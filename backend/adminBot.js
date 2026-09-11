@@ -594,9 +594,10 @@ async function showPendingOfficialSMS(chatId) {
       '❌ Failed to load official SMS.'
     );
   }
+}
+
 // ============================================================
 // TOP 15 RICHEST REAL PLAYERS
-// ============================================================
 
 async function showTop15Players(chatId) {
   try {

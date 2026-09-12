@@ -428,10 +428,7 @@ app.get('/api/cartelas', async (req, res) => {
 
 // GET /api/rooms — list all 3 rooms
 app.get('/api/rooms', (req, res) => {
-  ok(res, {
-    rooms: gm.getAllRooms(),
-    maintenanceMode: gm.maintenanceMode
-  });
+  ok(res, { rooms: gm.getAllRooms() });
 });
 
 // GET /api/tournament/leaderboard
@@ -495,30 +492,6 @@ app.get('/api/player/:playerId', async (req, res) => {
     const player = await gm.getOrCreatePlayer(req.params.playerId, 'Player');
     ok(res, { player });
   } catch (e) { err(res, e.message); }
-});
-
-// GET /api/player/:playerId/balance — LIVE Firebase balance
-app.get('/api/player/:playerId/balance', async (req, res) => {
-  try {
-    if (!db) {
-      return err(res, 'Firebase is not connected');
-    }
-
-    const playerId = String(req.params.playerId);
-    const snapshot = await db
-      .ref(`players/${playerId}/balance`)
-      .once('value');
-
-    if (!snapshot.exists()) {
-      return err(res, 'Player not found', 404);
-    }
-
-    ok(res, {
-      balance: Number(snapshot.val() || 0)
-    });
-  } catch (e) {
-    err(res, e.message);
-  }
 });
 
 // POST /api/rooms/:roomId/join
@@ -600,11 +573,7 @@ app.post('/api/rooms/:roomId/start-game', async (req, res) => {
 app.get('/api/game/:roomId', (req, res) => {
   const room = gm.getRoom(req.params.roomId);
   if (!room) return err(res, 'Room not found', 404);
-
-  ok(res, {
-    game: room.toJSON(),
-    maintenanceMode: gm.maintenanceMode
-  });
+  ok(res, { game: room.toJSON() });
 });
 
 // POST /api/rooms/:roomId/bingo

@@ -15,9 +15,6 @@ const db = admin.database();
 const adminBot = new TelegramBot(token, {
   polling: true
 });
-async function setMaintenanceFromAdmin(enabled) {
-  await db.ref('system/maintenanceMode').set(Boolean(enabled));
-}
 
 function isAdmin(msg) {
   return String(msg.from?.id) === ADMIN_ID;
@@ -52,11 +49,8 @@ function showAdminPanel(chatId) {
           { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
         ],
         [
-  { text: '✅ Approved', callback_data: 'admin_approved' }
-],
-[
-  { text: '🛠 Maintenance ON/OFF', callback_data: 'admin_maintenance' }
-]
+          { text: '✅ Approved', callback_data: 'admin_approved' }
+        ]
       ]
     }
   });
@@ -900,19 +894,6 @@ adminBot.on('callback_query', async (query) => {
       case 'admin_analysis':
         await showDataAnalysis(chatId);
         break;
-
-        case 'admin_maintenance': {
-  const snap = await db.ref('system/maintenanceMode').once('value');
-  const currentlyOn = snap.val() === true;
-
-  await setMaintenanceFromAdmin(!currentlyOn);
-
-  await adminBot.sendMessage(
-    chatId,
-    `🛠 Maintenance mode: ${!currentlyOn ? 'ON' : 'OFF'}`
-  );
-  break;
-}
 
       case 'admin_sms':
         await showPendingOfficialSMS(chatId);

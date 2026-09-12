@@ -34,53 +34,67 @@
       padding: 18px 16px 30px;
     }
 
-    /* HEADER */
     .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 22px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-    .logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 15px;
-      background: linear-gradient(135deg, #ffb300, #ff6f00);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 25px;
-      font-weight: 900;
-      box-shadow: 0 0 25px rgba(255, 179, 0, 0.25);
-    }
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px rgba(245,200,66,.4);
+}
 
-    .brand-text h1 {
-      font-size: 22px;
-      font-weight: 900;
-    }
+.logo span {
+  color: var(--text);
+  font-size: .75rem;
+  display: block;
+  letter-spacing: 4px;
+  font-weight: 400;
+}
 
-    .brand-text p {
-      color: #888894;
-      font-size: 12px;
-      margin-top: 3px;
-    }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    .profile-btn {
-      width: 43px;
-      height: 43px;
-      border-radius: 50%;
-      border: 1px solid #292934;
-      background: #15151e;
-      color: white;
-      font-size: 19px;
-    }
+.live-bingo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #1f2937, #111827);
+  border: 1px solid var(--gold-dim);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: .60rem;
+  font-weight: 900;
+  letter-spacing: .8px;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
+  background: #ff0000;
+  box-shadow: 0 0 5px rgba(255, 0, 0, .7);
+  animation: livePulse 1.2s ease-in-out infinite;
+}
 
     /* BALANCE */
     .balance-card {
@@ -301,22 +315,33 @@ const db = firebase.database();
   <div class="app">
 
     <!-- HEADER -->
-    <header class="header">
+<header class="header">
 
-      <div class="brand">
+  <div class="brand">
 
-        <div class="logo">እ</div>
+    <div class="logo">
+      እድል
+      <span>BINGO</span>
+    </div>
 
-        <div class="brand-text">
-          <h1>እድል</h1>
-          <p>Welcome back, Player</p>
-        </div>
+    <div class="brand-text">
+      <p>Welcome back, Player</p>
+    </div>
 
-      </div>
+  </div>
 
-      <button class="profile-btn">👤</button>
+  <div class="header-right">
 
-    </header>
+    <div class="live-bingo">
+      <span class="live-dot"></span>
+      <span>LIVE</span>
+    </div>
+
+    <button class="profile-btn">👤</button>
+
+  </div>
+
+</header>
 
 
     <!-- BALANCE -->

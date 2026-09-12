@@ -444,6 +444,7 @@
   }
 
   const playerId = String(telegramUser.id);
+    alert("Telegram ID: " + playerId);
 
   try {
     const response = await fetch(`${API}/api/player/${playerId}`);

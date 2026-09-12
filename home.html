@@ -166,26 +166,31 @@
       gap: 14px;
     }
 
-    .game-card {
-      position: relative;
-      overflow: hidden;
-      min-height: 155px;
-      border-radius: 24px;
-      padding: 20px;
-      border: 1px solid #30303b;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
+  .game-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 155px;
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid #30303b;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  
+}
 
     .game-card:active {
       transform: scale(0.97);
     }
 
     .bingo {
-      background:
-        radial-gradient(circle at 90% 10%, rgba(255, 179, 0, 0.25), transparent 35%),
-        linear-gradient(135deg, #201a0d, #15130f);
-    }
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255,255,255,.65), transparent 35%),
+    linear-gradient(135deg, #dcc7ee 0%, #c9b0e8 50%, #b795dc 100%);
+}
 
     .numbers {
       background:
@@ -208,6 +213,13 @@
       font-size: 12px;
       margin-bottom: 15px;
     }
+    .bingo h3 {
+  color: #000000;
+}
+
+.bingo p {
+  color: #000000;
+}
 
     .play-btn {
       display: inline-flex;
@@ -227,7 +239,7 @@
 
     .numbers .play-btn {
       background: #4d9cff;
-      color: white;
+      color: #000;
     }
 
     /* ANNOUNCEMENT */
@@ -470,17 +482,17 @@ const db = firebase.database();
     <section class="games">
 
       <!-- BINGO -->
-      <a href="index.html" class="game-card bingo">
+      <button class="game-card bingo" onclick="window.location.href='index.html'">
 
-  <div class="game-icon">🎱</div>
+  <div class="game-icon">🅞</div>
 
   <h3>እድል Bingo</h3>
 
   <p>
-    Play Bingo and compete for real prizes.
+     ባለ 5,10,15 የጨዋታ ክፍሎች
   </p>
 
-</a>
+</button>
 
 
       <!-- NUMBERS -->

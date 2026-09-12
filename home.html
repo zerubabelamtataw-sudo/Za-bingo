@@ -107,6 +107,22 @@
       font-size: 15px;
       margin-left: 3px;
     }
+    .balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.bonus-box {
+  text-align: right;
+}
+
+.bonus-balance {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffb300;
+}
 
     /* SECTION TITLE */
     .section-title {
@@ -304,17 +320,33 @@ const db = firebase.database();
 
 
     <!-- BALANCE -->
-    <section class="balance-card">
+<section class="balance-card">
 
+  <div class="balance-row">
+
+    <div>
       <div class="balance-label">
         YOUR BALANCE
       </div>
 
       <div class="balance" id="homeBalance">
-  0.00 <span class="currency">Br</span>
-</div>
+        0.00 <span class="currency">Br</span>
+      </div>
+    </div>
 
-    </section>
+    <div class="bonus-box">
+      <div class="balance-label">
+        BONUS BALANCE
+      </div>
+
+      <div class="bonus-balance" id="homeBonusBalance">
+        0.00 <span class="currency">Br</span>
+      </div>
+    </div>
+
+  </div>
+
+</section>
 
 
     <!-- GAMES -->
@@ -453,12 +485,18 @@ const telegramUser = tg.initDataUnsafe?.user;
 if (telegramUser) {
   const playerId = String(telegramUser.id);
 
-  db.ref(`players/${playerId}/balance`).on('value', (snapshot) => {
-    const balance = Number(snapshot.val() || 0);
+  db.ref(`players/${playerId}`).on('value', (snapshot) => {
+  const player = snapshot.val() || {};
 
-    document.getElementById('homeBalance').innerHTML =
-      `${balance.toFixed(2)} <span class="currency">Br</span>`;
-  });
+  const balance = Number(player.balance || 0);
+  const bonusBalance = Number(player.referralBonusBalance || 0);
+
+  document.getElementById('homeBalance').innerHTML =
+    `${balance.toFixed(2)} <span class="currency">Br</span>`;
+
+  document.getElementById('homeBonusBalance').textContent =
+    bonusBalance.toFixed(2);
+});
 }
 </script>
 </body>

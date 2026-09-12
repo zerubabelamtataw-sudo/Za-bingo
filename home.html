@@ -444,15 +444,15 @@
   }
 
   const playerId = String(telegramUser.id);
-    alert("Telegram ID: " + playerId);
+  alert("Telegram ID: " + playerId);
 
   try {
-    const response = await fetch(`${API}/api/player/${playerId}`);
+    const response = await fetch(`${API}/api/player/${playerId}/balance`);
     const data = await response.json();
 
-    if (data.player) {
+    if (data.balance !== undefined) {
       document.getElementById('homeBalance').innerHTML =
-        `${Number(data.player.balance ?? 0).toFixed(2)} <span class="currency">Br</span>`;
+        `${Number(data.balance ?? 0).toFixed(2)} <span class="currency">Br</span>`;
     }
   } catch (error) {
     console.error('Could not load balance:', error);

@@ -497,6 +497,30 @@ app.get('/api/player/:playerId', async (req, res) => {
   } catch (e) { err(res, e.message); }
 });
 
+// GET /api/player/:playerId/balance — LIVE Firebase balance
+app.get('/api/player/:playerId/balance', async (req, res) => {
+  try {
+    if (!db) {
+      return err(res, 'Firebase is not connected');
+    }
+
+    const playerId = String(req.params.playerId);
+    const snapshot = await db
+      .ref(`players/${playerId}/balance`)
+      .once('value');
+
+    if (!snapshot.exists()) {
+      return err(res, 'Player not found', 404);
+    }
+
+    ok(res, {
+      balance: Number(snapshot.val() || 0)
+    });
+  } catch (e) {
+    err(res, e.message);
+  }
+});
+
 // POST /api/rooms/:roomId/join
 // body: { playerId, cartelaIds: string[] }
 app.post('/api/rooms/:roomId/join', async (req, res) => {

@@ -446,14 +446,25 @@
     const playerId = String(telegramUser.id);
 
     try {
-      const response = await fetch(`${API}/api/player/${playerId}`);
-      const data = await response.json();
+  const response = await fetch(`${API}/api/player`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      playerId,
+      name: telegramUser.first_name || telegramUser.username || 'Player',
+      username: telegramUser.username || ''
+    })
+  });
 
-      if (data.player) {
-        document.getElementById('homeBalance').innerHTML =
-          `${Number(data.player.balance ?? 0).toFixed(2)} <span class="currency">Br</span>`;
-      }
-    } catch (error) {
+  const data = await response.json();
+
+  if (data.player) {
+    document.getElementById('homeBalance').innerHTML =
+      `${Number(data.player.balance ?? 0).toFixed(2)} <span class="currency">Br</span>`;
+  }
+} catch (error) {
       console.error('Could not load balance:', error);
     }
   }

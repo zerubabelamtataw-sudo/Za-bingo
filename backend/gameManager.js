@@ -321,6 +321,15 @@ class GamesManager {
 this.rooms = {};
 this._cartelaCache = null;
 this._playerCache = new Map();
+    this.maintenanceMode = false;
+    if (this.db) {
+  this.db.ref('system/maintenanceMode').on('value', snapshot => {
+    this.maintenanceMode = snapshot.val() === true;
+    console.log(
+      `🛠 Maintenance mode: ${this.maintenanceMode ? 'ON' : 'OFF'}`
+    );
+  });
+}
     this.simPlayerSettings = {
   '5br': 10,
   '10br': 3,
@@ -558,6 +567,9 @@ return {
   async joinRoom(roomId, player, cartelaIds) {
     const room = this.rooms[roomId];
     if (!room) throw new Error('Room not found');
+    if (this.maintenanceMode) {
+  throw new Error('Game is under maintenance');
+}
     if (room.status !== 'waiting' && room.status !== 'countdown') {
       throw new Error('Room is not accepting players right now');
     }
@@ -639,6 +651,10 @@ return room.toJSON();
 async addSimulatedPlayers(roomId = '5br') {
   const room = this.rooms[roomId];
     // MASTER SIMULATOR SWITCH
+  if (this.maintenanceMode) {
+  console.log(`🛑 ${roomId}: maintenance mode is ON`);
+  return;
+}
   if (this.simulatorsEnabled === false) {
     console.log(
       `🛑 ${roomId}: simulators are OFF`
@@ -1025,6 +1041,7 @@ async startGameFromClient(roomId, playerId) {
 }
 
 _startGame(room) {
+  if (this.maintenanceMode) return;
   room.status = 'playing';
   room.calledNumbers = [];
   room._gameStartTime = Date.now();
@@ -1085,7 +1102,7 @@ setTimeout(() => {
       err.message
     );
   });
-}, 333);
+}, 100);
 
   return;
 }
@@ -1098,6 +1115,9 @@ setTimeout(() => {
   async claimBingo(roomId, playerId, cartelaId) {
     const room = this.rooms[roomId];
     if (!room) throw new Error('Room not found');
+    if (this.maintenanceMode) {
+  throw new Error('Game is under maintenance');
+}
     if (room.status !== 'playing') throw new Error('Game not in progress');
     if (room.burnedCartelas.has(cartelaId)) {
   throw new Error('Cartela is burned');
@@ -1213,6 +1233,53 @@ console.log(`✅ AFTER RESET: ${room.id} = ${room.status}`);
   this.addSimulatedPlayers(room.id).catch(err => {
     console.error('❌ Failed to restart simulated players:', err);
   });
+}
+  async setMaintenanceMode(enabled) {
+  this.maintenanceMode = Boolean(enabled);
+
+  if (!this.maintenanceMode) return;
+
+  for (const room of Object.values(this.rooms)) {
+    clearInterval(room._drawTimer);
+    clearTimeout(room._countdownTimer);
+    clearTimeout(room._resetTimer);
+
+    if (room.status === 'winner') {
+      room.reset();
+      continue;
+    }
+
+    for (const player of [...room.players]) {
+      const playerId = String(player.id);
+      const cartelas = room.playerCartelas[playerId] || [];
+      const refundAmount = room.entryFee * cartelas.length;
+
+      if (refundAmount <= 0) continue;
+
+      if (player.paymentSource === 'bonus') {
+        const playerRef = this.db.ref(`players/${playerId}`);
+        const snap = await playerRef.once('value');
+        const currentPlayer = snap.val() || {};
+
+        await playerRef.update({
+          referralBonusBalance:
+            Number(currentPlayer.referralBonusBalance || 0) + refundAmount
+        });
+      } else {
+        await this.updatePlayerBalance(playerId, refundAmount, {
+          type: 'maintenance_refund',
+          roomId: room.id,
+          amount: refundAmount,
+          paymentSource: 'main',
+          date: new Date().toISOString()
+        });
+      }
+    }
+
+    room.reset();
+  }
+
+  console.log('🛑 MAINTENANCE MODE: all games stopped and players refunded');
 }
 
   // ── tournament leaderboard ────────────────────────────────────────────────

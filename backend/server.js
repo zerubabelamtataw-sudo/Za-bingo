@@ -428,7 +428,10 @@ app.get('/api/cartelas', async (req, res) => {
 
 // GET /api/rooms — list all 3 rooms
 app.get('/api/rooms', (req, res) => {
-  ok(res, { rooms: gm.getAllRooms() });
+  ok(res, {
+    rooms: gm.getAllRooms(),
+    maintenanceMode: gm.maintenanceMode
+  });
 });
 
 // GET /api/tournament/leaderboard
@@ -573,7 +576,11 @@ app.post('/api/rooms/:roomId/start-game', async (req, res) => {
 app.get('/api/game/:roomId', (req, res) => {
   const room = gm.getRoom(req.params.roomId);
   if (!room) return err(res, 'Room not found', 404);
-  ok(res, { game: room.toJSON() });
+
+  ok(res, {
+    game: room.toJSON(),
+    maintenanceMode: gm.maintenanceMode
+  });
 });
 
 // POST /api/rooms/:roomId/bingo

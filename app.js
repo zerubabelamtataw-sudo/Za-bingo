@@ -923,19 +923,8 @@ $('leaveGameBtn').addEventListener('click', async () => {
       if (!state.activeRoomId) return;
       try {
         const data = await apiFetch(`/api/game/${state.activeRoomId}`);
-
-if (data.maintenanceMode) {
-  if (state.pollTimer) {
-    clearInterval(state.pollTimer);
-    state.pollTimer = null;
-  }
-
-  $('maintenanceScreen').style.display = 'flex';
-  return;
-}
-
-const game = data.game;
-applyGameState(game);
+        const game = data.game;
+        applyGameState(game);
       } catch {}
     }
     

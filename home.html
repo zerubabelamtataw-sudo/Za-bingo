@@ -102,7 +102,7 @@
       border: 1px solid #292933;
       border-radius: 22px;
       padding: 18px;
-      margin-bottom: 25px;
+      margin-bottom: 10px;
     }
 
     .balance-label {
@@ -139,22 +139,26 @@
 }
 
     /* SECTION TITLE */
-    .section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 13px;
-    }
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  margin-top: 10px;
+}
 
-    .section-title h2 {
-      font-size: 18px;
-      font-weight: 800;
-    }
+.section-title h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
 
-    .section-title span {
-      color: #777783;
-      font-size: 11px;
-    }
+.section-title span {
+  color: #f5c842;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 10px rgba(245, 200, 66, 0.35);
+}
 
     /* GAME CARDS */
     .games {
@@ -261,38 +265,85 @@
       text-overflow: ellipsis;
     }
 
-    /* QUICK ACTIONS */
-    .quick-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    /* PLAYER ACTION BUTTONS */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
-    .quick-btn {
-      min-height: 65px;
-      border-radius: 17px;
-      border: 1px solid #292934;
-      background: #15151e;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding: 13px;
-      text-align: left;
-      font-size: 12px;
-      font-weight: 700;
-    }
+.quick-btn {
+  min-height: 72px;
+  border-radius: 19px;
+  border: 1px solid #2d2d38;
+  background: linear-gradient(145deg, #1b1b25, #111119);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 5px 15px rgba(0,0,0,.18);
+}
 
-    .quick-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 11px;
-      background: #20202b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 17px;
-    }
+.quick-btn:active {
+  transform: scale(0.97);
+}
+
+.quick-btn .quick-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+
+.quick-btn strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.quick-btn span {
+  display: block;
+  color: #858591;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* DEPOSIT */
+.deposit-btn {
+  border-color: rgba(245, 200, 66, .30);
+}
+
+.deposit-btn .quick-icon {
+  background: rgba(245, 200, 66, .12);
+  box-shadow: 0 0 12px rgba(245, 200, 66, .08);
+}
+
+.deposit-btn strong {
+  color: #22c55e;
+}
+
+/* WITHDRAW */
+.withdraw-btn {
+  border-color: rgba(255, 95, 95, .25);
+}
+
+.withdraw-btn .quick-icon {
+  background: rgba(255, 95, 95, .10);
+}
+
+.withdraw-btn strong {
+  color: #ff8b8b;
+}
   </style>
   <script>
 const firebaseConfig = {
@@ -325,7 +376,7 @@ const db = firebase.database();
     </div>
 
     <div class="brand-text">
-      <p>Welcome back</p>
+      <p>🅆🄴🄻🄲🄾🄼🄴</p>
     </div>
 
   </div>
@@ -373,43 +424,45 @@ const db = firebase.database();
 
 </section>
     <!-- QUICK ACTIONS -->
-    <div class="section-title">
-
-      <h2>Quick Actions</h2>
-
-    </div>
+    
 
 
     <section class="quick-actions">
 
-      <button class="quick-btn">
+      <button class="quick-btn deposit-btn">
 
-        <div class="quick-icon">
-          💰
-        </div>
+  <div class="quick-icon">
+    💰
+  </div>
 
-        Deposit
+  <div>
+    <strong>Wallet</strong>
+    <span>Add money</span>
+  </div>
 
-      </button>
+</button>
 
 
-      <button class="quick-btn">
+      <button class="quick-btn withdraw-btn">
 
-        <div class="quick-icon">
-          💸
-        </div>
+  <div class="quick-icon">
+    🧙‍♂️
+  </div>
 
-        Withdraw
+  <div>
+    <strong>Profile</strong>
+    <span>◈</span>
+  </div>
 
-      </button>
+</button>
      </section>
 
     <!-- GAMES -->
     <div class="section-title">
 
-      <h2>Choose Your Game</h2>
+      <h2></h2>
 
-      <span>PLAY & WIN</span>
+      <span>የጫወቱ ይሸለሙ</span>
 
     </div>
 
@@ -417,21 +470,17 @@ const db = firebase.database();
     <section class="games">
 
       <!-- BINGO -->
-      <div class="game-card bingo">
+      <a href="index.html" class="game-card bingo">
 
-        <div class="game-icon">🎱</div>
+  <div class="game-icon">🎱</div>
 
-        <h3>እድል Bingo</h3>
+  <h3>እድል Bingo</h3>
 
-        <p>
-          Play Bingo and compete for real prizes.
-        </p>
+  <p>
+    Play Bingo and compete for real prizes.
+  </p>
 
-        <a href="index.html" class="play-btn">
-  PLAY BINGO →
 </a>
-
-      </div>
 
 
       <!-- NUMBERS -->

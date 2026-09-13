@@ -20,6 +20,7 @@ let gamesManager = null;
 
 function setGamesManager(manager) {
   gamesManager = manager;
+  console.log('✅ GamesManager connected to Admin Bot');
 }
 
 function isAdmin(msg) {

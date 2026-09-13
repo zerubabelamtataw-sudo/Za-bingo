@@ -762,7 +762,7 @@ bot.on('contact', async (msg) => {
 // ============================================================
 function showMainMenu(chatId) {
   bot.sendMessage(chatId,
-    ` *ZA BINGO*\n\n` +
+    ` *እድል BINGO*\n\n` +
     `Choose an option below:`,
     {
       parse_mode: 'Markdown',
@@ -2360,14 +2360,6 @@ const promoMessage = `
 💰 ብዙ ይሸለሙ!
 ━━━━━━━━━━━━━━━━━━
 🎁 15 ብር የመጫወቻ ቦነስ ያግኙ!
-━━━━━━━━━━━━━━━━━━
-🔥 ጓደኛዎን ይጋብዙ — እስከ 20 ብር ይሸለሙ! 🔥
-👥 ጓደኛዎ በReferral Linkዎ ተጠቅሞ ሲቀላቀል
-💰 10 ብር ያግኙ!
-💳 ጓደኛዎ ቢያንስ 50 ብር ዴፖዚት ሲያደርግ
-💰 ተጨማሪ 10 ብር ያግኙ!
-🎉 ከአንድ ጓደኛ 20 ብር!
-🔥 ብዙ ጓደኞችን ይጋብዙ — ብዙ ይሸለሙ!
 ━━━━━━━━━━━━━━━━━━
 👉 አሁኑኑ ይጫወቱ:
 https://t.me/ZABingo_bot

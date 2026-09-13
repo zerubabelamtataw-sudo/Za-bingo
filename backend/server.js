@@ -43,10 +43,10 @@ console.log('✅ Firebase Realtime Database connected');
 }
 
 // ── App setup ─────────────────────────────────────────────────────────────────
-require('./adminBot');
+const { setGamesManager } = require('./adminBot');
 const app    = express();
 const gm     = new GamesManager(db);
-
+setGamesManager(gm);
 gm.addSimulatedPlayers('5br');
 const PORT   = process.env.PORT || 3000;
 

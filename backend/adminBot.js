@@ -16,6 +16,12 @@ const adminBot = new TelegramBot(token, {
   polling: true
 });
 
+let gamesManager = null;
+
+function setGamesManager(manager) {
+  gamesManager = manager;
+}
+
 function isAdmin(msg) {
   return String(msg.from?.id) === ADMIN_ID;
 }
@@ -64,6 +70,9 @@ function showAdminPanel(chatId) {
   { text: '📩 Official SMS', callback_data: 'admin_sms' },
   { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
 ],
+        [
+  { text: '🤖 Sim Players', callback_data: 'admin_sim_players' }
+],
 [
   { text: '💵 Balance Ranges', callback_data: 'admin_balance_ranges' }
 ],
@@ -81,6 +90,42 @@ function showAdminPanel(chatId) {
 // ============================================================
 // PLAYERS MENU
 // ============================================================
+
+function showSimPlayersMenu(chatId) {
+  if (!gamesManager) {
+    return adminBot.sendMessage(
+      chatId,
+      '❌ Game manager is not connected.'
+    );
+  }
+
+  const status = gamesManager.simulatorsEnabled;
+
+  return adminBot.sendMessage(chatId, '🤖 SIM PLAYERS', {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: `5 Br Room ${status['5br'] ? '🟢 ON' : '🔴 OFF'}`,
+            callback_data: 'sim_toggle_5br'
+          }
+        ],
+        [
+          {
+            text: `10 Br Room ${status['10br'] ? '🟢 ON' : '🔴 OFF'}`,
+            callback_data: 'sim_toggle_10br'
+          }
+        ],
+        [
+          {
+            text: `20 Br Room ${status['20br'] ? '🟢 ON' : '🔴 OFF'}`,
+            callback_data: 'sim_toggle_20br'
+          }
+        ]
+      ]
+    }
+  });
+}
 
 function showPlayersMenu(chatId) {
   return adminBot.sendMessage(chatId, '👤 PLAYERS', {
@@ -950,6 +995,34 @@ adminBot.on('callback_query', async (query) => {
 
     switch (query.data) {
 
+      case 'admin_sim_players':
+        await showSimPlayersMenu(chatId);
+        break;
+
+      case 'sim_toggle_5br':
+        gamesManager.setSimulatorEnabled(
+          '5br',
+          !gamesManager.simulatorsEnabled['5br']
+        );
+        await showSimPlayersMenu(chatId);
+        break;
+
+      case 'sim_toggle_10br':
+        gamesManager.setSimulatorEnabled(
+          '10br',
+          !gamesManager.simulatorsEnabled['10br']
+        );
+        await showSimPlayersMenu(chatId);
+        break;
+
+      case 'sim_toggle_20br':
+        gamesManager.setSimulatorEnabled(
+          '20br',
+          !gamesManager.simulatorsEnabled['20br']
+        );
+        await showSimPlayersMenu(chatId);
+        break;
+
       case 'admin_players':
         await showPlayersMenu(chatId);
         break;
@@ -970,32 +1043,45 @@ adminBot.on('callback_query', async (query) => {
         await showPendingOfficialSMS(chatId);
         break;
 
-        case 'admin_balance_ranges':
-  await showBalanceRanges(chatId);
-  break;
+      case 'admin_balance_ranges':
+        await showBalanceRanges(chatId);
+        break;
 
-        case 'admin_top15':
-  await showTop15Players(chatId);
-  break;
+      case 'admin_top15':
+        await showTop15Players(chatId);
+        break;
 
       case 'admin_maintenance':
-  await toggleMaintenance(chatId);
-  break;  
+        await toggleMaintenance(chatId);
+        break;
     }
 
   } catch (error) {
     console.error('❌ Admin inline button error:', error);
   }
 });
+
+
 adminBot.on('callback_query', async (query) => {
   if (!isAdmin({ from: query.from })) return;
 
   const chatId = query.message.chat.id;
 
+  // Simulator callbacks are handled by the first handler above.
+  if (
+    query.data === 'admin_sim_players' ||
+    query.data === 'sim_toggle_5br' ||
+    query.data === 'sim_toggle_10br' ||
+    query.data === 'sim_toggle_20br'
+  ) {
+    return;
+  }
+
   try {
     await adminBot.answerCallbackQuery(query.id);
 
     switch (query.data) {
+
       case 'admin_players':
         await showPlayersMenu(chatId);
         break;
@@ -1016,6 +1102,7 @@ adminBot.on('callback_query', async (query) => {
         await showPendingOfficialSMS(chatId);
         break;
     }
+
   } catch (error) {
     console.error('❌ Admin inline button error:', error);
   }
@@ -1172,4 +1259,4 @@ adminBot.on('message', async (msg) => {
 
 console.log('✅ Admin bot started');
 
-module.exports = { adminBot };
+module.exports = { adminBot, setGamesManager };

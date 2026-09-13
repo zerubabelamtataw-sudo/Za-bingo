@@ -319,16 +319,17 @@ class GamesManager {
   constructor(db) {
     this.db = db;
 this.rooms = {};
+this.simulatorsEnabled = {
+  '5br': true,
+  '10br': true,
+  '20br': true
+};
 this._cartelaCache = null;
 this._playerCache = new Map();
-    this.simPlayerSettings = {
-  '5br': 10,
-  '10br': 3,
-  '20br': 1
-};
 
     for (const cfg of ROOMS_CONFIG) {
       this.rooms[cfg.id] = new Room(cfg);
+      
     }
 
 // ─────────────────────────────────────────────
@@ -639,12 +640,10 @@ return room.toJSON();
 async addSimulatedPlayers(roomId = '5br') {
   const room = this.rooms[roomId];
     // MASTER SIMULATOR SWITCH
-  if (this.simulatorsEnabled === false) {
-    console.log(
-      `🛑 ${roomId}: simulators are OFF`
-    );
-    return;
-  }
+  if (this.simulatorsEnabled[roomId] === false) {
+  console.log(`🛑 ${roomId}: simulators are OFF`);
+  return;
+}
   if (!room) throw new Error('Room not found');
 
   if (room.status !== 'waiting') return;
@@ -1249,12 +1248,20 @@ async getTournamentLeaderboard() {
 
   // ── getters ─────────────────────────────────────────────────────────────
 
-  getRoom(roomId) {
+    getRoom(roomId) {
     return this.rooms[roomId] || null;
   }
 
   getAllRooms() {
     return Object.values(this.rooms).map(r => r.toJSON());
+  }
+
+  setSimulatorEnabled(roomId, enabled) {
+    if (!Object.prototype.hasOwnProperty.call(this.simulatorsEnabled, roomId)) {
+      throw new Error('Invalid room');
+    }
+
+    this.simulatorsEnabled[roomId] = Boolean(enabled);
   }
 
 }

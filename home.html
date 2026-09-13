@@ -826,7 +826,15 @@ const db = firebase.database();
     
 
   </div>
+  <script>
+db.ref('maintenance/enabled').on('value', (snapshot) => {
+  if (snapshot.val() === true) {
+    window.location.href = 'maintenance.html';
+  }
+});
+</script>
 <script>
+
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();

@@ -52,6 +52,194 @@ const PORT   = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// ============================================================
+// PLAYER — SUBMIT DEPOSIT
+// ============================================================
+
+app.post('/api/deposit', async (req, res) => {
+  try {
+    const { telegramId, amount, sms, method } = req.body || {};
+
+    if (!telegramId || !sms) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing Telegram ID or payment SMS'
+      });
+    }
+
+    const playerId = String(telegramId);
+    const requestedAmount = Number(amount);
+
+    if (!Number.isFinite(requestedAmount) || requestedAmount < 50) {
+      return res.status(400).json({
+        success: false,
+        error: 'Minimum deposit is 50 Br'
+      });
+    }
+
+    const playerRef = db.ref(`players/${playerId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
+
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        error: 'Player not found'
+      });
+    }
+
+    const normalizeDigits = (value) =>
+      String(value || '')
+        .replace(/[٠-٩]/g, d =>
+          String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+        )
+        .replace(/[۰-۹]/g, d =>
+          String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+        );
+
+    const normalizedSms = normalizeDigits(sms);
+
+    const numberMatches =
+      normalizedSms.match(
+        /\d+(?:[\s,]\d{3})*(?:\.\d{1,2})?/g
+      ) || [];
+
+    let parsedAmount = null;
+
+    for (const value of numberMatches) {
+      const numericValue = Number(
+        value.replace(/[\s,]/g, '')
+      );
+
+      if (
+        Number.isFinite(numericValue) &&
+        numericValue === requestedAmount
+      ) {
+        parsedAmount = requestedAmount;
+        break;
+      }
+    }
+
+    if (parsedAmount === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'The SMS amount does not match your deposit amount'
+      });
+    }
+
+    const officialSnapshot =
+      await db.ref('officialDeposits').once('value');
+
+    const officialDeposits =
+      officialSnapshot.val() || {};
+
+    const compactSms =
+      normalizedSms
+        .replace(/[\s-]/g, '')
+        .toUpperCase();
+
+    let transactionId = null;
+    let official = null;
+
+    for (const [id, deposit] of Object.entries(officialDeposits)) {
+      if (!deposit) continue;
+      if (deposit.status !== 'available') continue;
+      if (Number(deposit.amount) !== parsedAmount) continue;
+
+      const compactId =
+        String(id)
+          .replace(/[\s-]/g, '')
+          .toUpperCase();
+
+      if (compactSms.includes(compactId)) {
+        transactionId = String(id).toUpperCase();
+        official = deposit;
+        break;
+      }
+    }
+
+    if (!transactionId || !official) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment SMS could not be verified'
+      });
+    }
+
+    if (
+      official.expiresAt &&
+      Date.now() > new Date(official.expiresAt).getTime()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'This payment SMS has expired'
+      });
+    }
+
+    if (
+      Number(official.amount) !== parsedAmount ||
+      String(official.transactionId).toUpperCase() !==
+        transactionId.toUpperCase()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'The SMS does not match the official payment record'
+      });
+    }
+
+    const transactionRef =
+      db.ref('transactions').push();
+
+    await transactionRef.set({
+      playerId: playerId,
+      telegramId: playerId,
+      type: 'deposit',
+      amount: requestedAmount,
+      status: 'approved',
+      paymentMethod: method || 'unknown',
+      sms: sms,
+      transactionId: transactionId,
+      officialDepositId: transactionId,
+      createdAt: new Date().toISOString(),
+      confirmedAt: new Date().toISOString()
+    });
+
+    const balanceRef =
+      db.ref(`players/${playerId}/balance`);
+
+    const balanceResult =
+      await balanceRef.transaction(
+        balance => Number(balance || 0) + requestedAmount
+      );
+
+    const newBalance =
+      Number(balanceResult.snapshot.val() || 0);
+
+    await db
+      .ref(`officialDeposits/${transactionId}`)
+      .update({
+        status: 'used',
+        usedBy: playerId,
+        usedTransaction: transactionRef.key,
+        usedAt: new Date().toISOString()
+      });
+
+    return res.json({
+      success: true,
+      message: 'Deposit approved successfully',
+      transactionId: transactionId,
+      newBalance: newBalance
+    });
+
+  } catch (error) {
+    console.error('❌ Player deposit error:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 // ============================================================
 // PLAYER — SUBMIT WITHDRAWAL
 // ============================================================

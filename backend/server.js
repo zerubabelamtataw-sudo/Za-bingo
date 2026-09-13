@@ -776,9 +776,26 @@ app.post('/api/sms', async (req, res) => {
   }
 });
 
-// Catch-all → serve frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+// Catch-all → maintenance or frontend
+app.get('*', async (req, res) => {
+  try {
+    if (db) {
+      const snapshot = await db.ref('maintenance/enabled').once('value');
+      const maintenanceOn = snapshot.val() === true;
+
+      if (maintenanceOn) {
+        return res.sendFile(
+          path.join(__dirname, '..', 'maintenance.html')
+        );
+      }
+    }
+
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+
+  } catch (error) {
+    console.error('❌ Maintenance check error:', error);
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+  }
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

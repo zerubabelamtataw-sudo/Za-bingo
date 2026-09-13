@@ -61,9 +61,12 @@ function showAdminPanel(chatId) {
           { text: '📊 Data Analysis', callback_data: 'admin_analysis' }
         ],
         [
-          { text: '📩 Official SMS', callback_data: 'admin_sms' },
-          { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
-        ],
+  { text: '📩 Official SMS', callback_data: 'admin_sms' },
+  { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
+],
+[
+  { text: '💵 Balance Ranges', callback_data: 'admin_balance_ranges' }
+],
         [
           { text: '🔧 Maintenance OFF', callback_data: 'admin_maintenance' }
         ],
@@ -614,7 +617,56 @@ async function showPendingOfficialSMS(chatId) {
     );
   }
 }
+// ============================================================
+// PLAYER BALANCE RANGES
+// ============================================================
 
+async function showBalanceRanges(chatId) {
+  try {
+    const snapshot = await db.ref('players').once('value');
+    const players = snapshot.val() || {};
+
+    let from50To1000 = 0;
+    let above1000 = 0;
+
+    for (const player of Object.values(players)) {
+      if (!player || typeof player !== 'object') continue;
+
+      // Ignore simulator players
+      if (player.isSimulated === true) continue;
+
+      const balance =
+        Number(player.balance || 0) +
+        Number(player.referralBonusBalance || 0);
+
+      if (balance >= 50 && balance <= 1000) {
+        from50To1000++;
+      }
+
+      if (balance > 1000) {
+        above1000++;
+      }
+    }
+
+    const total = from50To1000 + above1000;
+
+    await adminBot.sendMessage(
+      chatId,
+      `💵 PLAYER BALANCE RANGES\n\n` +
+      `50 – 1,000 Br: ${from50To1000} players\n` +
+      `Above 1,000 Br: ${above1000} players\n\n` +
+      `Total: ${total} players`
+    );
+
+  } catch (error) {
+    console.error('❌ Balance ranges error:', error);
+
+    await adminBot.sendMessage(
+      chatId,
+      '❌ Failed to load player balance ranges.'
+    );
+  }
+}
 // ============================================================
 // TOP 15 RICHEST REAL PLAYERS
 
@@ -917,6 +969,10 @@ adminBot.on('callback_query', async (query) => {
       case 'admin_sms':
         await showPendingOfficialSMS(chatId);
         break;
+
+        case 'admin_balance_ranges':
+  await showBalanceRanges(chatId);
+  break;
 
         case 'admin_top15':
   await showTop15Players(chatId);

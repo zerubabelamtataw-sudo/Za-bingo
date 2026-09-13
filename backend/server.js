@@ -44,7 +44,6 @@ console.log('✅ Firebase Realtime Database connected');
 }
 
 // ── App setup ─────────────────────────────────────────────────────────────────
-const { setGamesManager } = require('./adminBot');
 const app    = express();
 const gm     = new GamesManager(db);
 setGamesManager(gm);

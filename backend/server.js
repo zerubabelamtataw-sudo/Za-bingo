@@ -52,6 +52,144 @@ const PORT   = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+// ============================================================
+// PLAYER — SUBMIT WITHDRAWAL
+// ============================================================
+
+app.post('/api/withdraw', async (req, res) => {
+  try {
+    const {
+      telegramId,
+      amount,
+      method,
+      account
+    } = req.body || {};
+
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Firebase is not connected'
+      });
+    }
+
+    if (!telegramId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Player ID required'
+      });
+    }
+
+    const requestedAmount = Number(amount);
+
+    if (!Number.isFinite(requestedAmount) || requestedAmount < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Minimum withdrawal is 50 Br'
+      });
+    }
+
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account number required'
+      });
+    }
+
+    const allowedMethods = ['cbeBirr', 'telebirr', 'cbe'];
+
+    if (!allowedMethods.includes(method)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid withdrawal method'
+      });
+    }
+
+    const playerId = String(telegramId);
+
+    const playerRef = db.ref(`players/${playerId}`);
+    const playerSnapshot = await playerRef.once('value');
+    const player = playerSnapshot.val();
+
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        message: 'Player not found'
+      });
+    }
+
+    // Player must have at least one approved deposit
+    const transactionsSnapshot = await db
+      .ref('transactions')
+      .orderByChild('telegramId')
+      .equalTo(playerId)
+      .once('value');
+
+    const transactions = transactionsSnapshot.val() || {};
+
+    const hasApprovedDeposit = Object.values(transactions).some(transaction =>
+      transaction &&
+      transaction.type === 'deposit' &&
+      transaction.status === 'approved'
+    );
+
+    if (!hasApprovedDeposit) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must make at least one approved deposit before withdrawing'
+      });
+    }
+
+    const currentBalance = Number(player.balance || 0);
+
+    // Must leave at least 50 Br
+    if (currentBalance - requestedAmount < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must leave at least 50 Br in your balance'
+      });
+    }
+
+    const newBalance = currentBalance - requestedAmount;
+
+    // Deduct balance
+    await playerRef.child('balance').set(newBalance);
+
+    // Create pending withdrawal transaction
+    const transactionRef = db.ref('transactions').push();
+
+    await transactionRef.set({
+      playerId: playerId,
+      telegramId: playerId,
+      type: 'withdrawal',
+      amount: requestedAmount,
+      withdrawSource: 'main',
+      mainAmount: requestedAmount,
+      status: 'pending',
+      balanceDeducted: true,
+      paymentMethod: method,
+      withdrawalPhone: String(account).trim(),
+      firstName: method === 'cbe'
+        ? (player.first_name || '')
+        : '',
+      createdAt: new Date().toISOString()
+    });
+
+    return res.json({
+      success: true,
+      message: 'Withdrawal submitted successfully',
+      transactionId: transactionRef.key,
+      remainingBalance: newBalance
+    });
+
+  } catch (error) {
+    console.error('❌ Player withdrawal error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
 app.use(express.static(path.join(__dirname, '..')));
 
 // ── Health check ─────────────────────────────────────────────

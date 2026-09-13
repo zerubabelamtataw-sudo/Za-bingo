@@ -19,6 +19,22 @@ const adminBot = new TelegramBot(token, {
 function isAdmin(msg) {
   return String(msg.from?.id) === ADMIN_ID;
 }
+async function toggleMaintenance(chatId) {
+  const ref = db.ref('maintenance/enabled');
+
+  const snapshot = await ref.once('value');
+  const current = snapshot.val() === true;
+  const next = !current;
+
+  await ref.set(next);
+
+  await adminBot.sendMessage(
+    chatId,
+    next
+      ? '🔧 Maintenance mode is now ON.'
+      : '🔧 Maintenance mode is now OFF.'
+  );
+}
 
 // ============================================================
 // STATE
@@ -47,6 +63,9 @@ function showAdminPanel(chatId) {
         [
           { text: '📩 Official SMS', callback_data: 'admin_sms' },
           { text: '🏆 Top 15 Richest', callback_data: 'admin_top15' }
+        ],
+        [
+          { text: '🔧 Maintenance OFF', callback_data: 'admin_maintenance' }
         ],
         [
           { text: '✅ Approved', callback_data: 'admin_approved' }
@@ -902,6 +921,10 @@ adminBot.on('callback_query', async (query) => {
         case 'admin_top15':
   await showTop15Players(chatId);
   break;
+
+      case 'admin_maintenance':
+  await toggleMaintenance(chatId);
+  break;  
     }
 
   } catch (error) {

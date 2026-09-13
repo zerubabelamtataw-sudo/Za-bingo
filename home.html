@@ -955,6 +955,67 @@ async function submitWithdrawal() {
   
 </script>
 <script>
+  async function submitDeposit() {
+  const sms = document.getElementById('depositSms').value.trim();
+
+  if (!sms) {
+    alert('Please paste your payment SMS.');
+    return;
+  }
+
+  if (!telegramUser) {
+    alert('Telegram user not found. Please reopen the app.');
+    return;
+  }
+
+  const amountText = prompt('Enter the exact amount you deposited:');
+
+  if (!amountText) {
+    return;
+  }
+
+  const amount = Number(amountText);
+
+  if (!Number.isFinite(amount) || amount < 50) {
+    alert('Minimum deposit is 50 Br.');
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      'https://za-bingo-5a7e.onrender.com/api/deposit',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          telegramId: String(telegramUser.id),
+          amount: amount,
+          sms: sms,
+          method: 'payment'
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      alert(result.error || 'Deposit could not be verified.');
+      return;
+    }
+
+    alert(
+      `Deposit approved!\n\nAmount: ${amount.toFixed(2)} Br`
+    );
+
+    document.getElementById('depositSms').value = '';
+
+  } catch (error) {
+    console.error('Deposit error:', error);
+    alert('Unable to connect to the server. Please try again.');
+  }
+}
 function copyNumber(number) {
   navigator.clipboard.writeText(number).then(() => {
     alert("Number copied!");

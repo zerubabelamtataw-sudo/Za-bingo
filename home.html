@@ -637,7 +637,7 @@ const db = firebase.database();
 </button>
 
 
-      <button class="quick-btn withdraw-btn">
+      <button class="quick-btn withdraw-btn" onclick="openProfile()">
 
   <div class="quick-icon">
     🧙‍♂️
@@ -838,6 +838,8 @@ if (telegramUser) {
 
   db.ref(`players/${playerId}`).on('value', (snapshot) => {
   const player = snapshot.val() || {};
+    window.currentPlayer = player;
+window.telegramUser = telegramUser;
 
   const balance = Number(player.balance || 0);
 window.playerBalance = balance;
@@ -952,5 +954,33 @@ async function submitWithdrawal() {
 }
   
 </script>
+<script>
+function copyNumber(number) {
+  navigator.clipboard.writeText(number).then(() => {
+    alert("Number copied!");
+  }).catch(() => {
+    const input = document.createElement("input");
+    input.value = number;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+    alert("Number copied!");
+  });
+}
+  function openProfile() {
+  const player = window.currentPlayer || {};
+  const user = window.telegramUser || {};
+
+  alert(
+    "PROFILE\n\n" +
+    "Name: " + (player.name || user.first_name || "N/A") + "\n" +
+    "Phone: " + (player.phone || user.phone_number || "N/A") + "\n" +
+    "Player ID: " + (user.id || "N/A") + "\n" +
+    "Balance: " + Number(player.balance || 0).toFixed(2) + " Br"
+  );
+}
+</script>
+
 </body>
 </html>

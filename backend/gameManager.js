@@ -1257,24 +1257,28 @@ async getTournamentLeaderboard() {
   }
 
     setSimulatorEnabled(roomId, enabled) {
-    if (!this.simulatorsEnabled) {
-      this.simulatorsEnabled = {
-        '5br': true,
-        '10br': true,
-        '20br': true
-      };
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(this.simulatorsEnabled, roomId)) {
-      this.simulatorsEnabled[roomId] = true;
-    }
-
-    this.simulatorsEnabled[roomId] = Boolean(enabled);
-
-    console.log(
-      `🤖 Simulator ${roomId}: ${this.simulatorsEnabled[roomId] ? 'ON' : 'OFF'}`
-    );
+  if (
+    typeof this.simulatorsEnabled !== 'object' ||
+    this.simulatorsEnabled === null ||
+    Array.isArray(this.simulatorsEnabled)
+  ) {
+    this.simulatorsEnabled = {
+      '5br': true,
+      '10br': true,
+      '20br': true
+    };
   }
+
+  if (!Object.prototype.hasOwnProperty.call(this.simulatorsEnabled, roomId)) {
+    this.simulatorsEnabled[roomId] = true;
+  }
+
+  this.simulatorsEnabled[roomId] = Boolean(enabled);
+
+  console.log(
+    `🤖 Simulator ${roomId}: ${this.simulatorsEnabled[roomId] ? 'ON' : 'OFF'}`
+  );
+}
 
 }
 

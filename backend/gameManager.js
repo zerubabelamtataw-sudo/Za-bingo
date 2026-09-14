@@ -1256,12 +1256,24 @@ async getTournamentLeaderboard() {
     return Object.values(this.rooms).map(r => r.toJSON());
   }
 
-  setSimulatorEnabled(roomId, enabled) {
+    setSimulatorEnabled(roomId, enabled) {
+    if (!this.simulatorsEnabled) {
+      this.simulatorsEnabled = {
+        '5br': true,
+        '10br': true,
+        '20br': true
+      };
+    }
+
     if (!Object.prototype.hasOwnProperty.call(this.simulatorsEnabled, roomId)) {
-      throw new Error('Invalid room');
+      this.simulatorsEnabled[roomId] = true;
     }
 
     this.simulatorsEnabled[roomId] = Boolean(enabled);
+
+    console.log(
+      `🤖 Simulator ${roomId}: ${this.simulatorsEnabled[roomId] ? 'ON' : 'OFF'}`
+    );
   }
 
 }

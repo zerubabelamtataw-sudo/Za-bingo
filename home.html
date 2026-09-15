@@ -551,7 +551,7 @@
 
 #depositHistoryList,
 #withdrawHistoryList {
-  background: #fff;
+  background: linear-gradient(145deg, #171720, #101018);
   border-radius: 10px;
   padding: 0 10px;
   overflow: hidden;
@@ -560,7 +560,7 @@
 #depositHistoryList > div,
 #withdrawHistoryList > div {
   padding: 8px 0 !important;
-  border-bottom: 1px solid #eee !important;
+  border-bottom: 1px solid #2d2d38 !important;
 }
 
 #depositHistoryList > div:last-child,
@@ -575,6 +575,7 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  color: #f5c842;
 }
   </style>
   <script>
@@ -1104,7 +1105,15 @@ async function submitWithdrawal() {
     list.innerHTML = data.transactions.map(tx => `
       <div style="padding:12px 0;border-bottom:1px solid #ddd;">
         <strong>+${Number(tx.amount).toFixed(2)} Br</strong><br>
-        <span>${tx.status}</span><br>
+        <span style="
+  color: ${
+    tx.status === 'approved' ? '#22c55e' :
+    tx.status === 'pending' ? '#f5c842' :
+    tx.status === 'rejected' ? '#ef4444' :
+    '#fff'
+  };
+  font-weight: 700;
+">${tx.status}</span><br>
         <small>${new Date(tx.createdAt).toLocaleString()}</small>
       </div>
     `).join('');
@@ -1140,7 +1149,15 @@ async function submitWithdrawal() {
     list.innerHTML = data.transactions.map(tx => `
       <div style="padding:12px 0;border-bottom:1px solid #ddd;">
         <strong>-${Number(tx.amount).toFixed(2)} Br</strong><br>
-        <span>${tx.status}</span><br>
+        <span style="
+  color: ${
+    tx.status === 'approved' ? '#22c55e' :
+    tx.status === 'pending' ? '#f5c842' :
+    tx.status === 'rejected' ? '#ef4444' :
+    '#fff'
+  };
+  font-weight: 700;
+">${tx.status}</span><br>
         <small>${new Date(tx.createdAt).toLocaleString()}</small>
       </div>
     `).join('');

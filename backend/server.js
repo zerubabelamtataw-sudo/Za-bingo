@@ -186,6 +186,23 @@ app.post('/api/deposit', async (req, res) => {
         error: 'The SMS does not match the official payment record'
       });
     }
+    const transactionsSnapshot = await db
+  .ref('transactions')
+  .orderByChild('telegramId')
+  .equalTo(playerId)
+  .once('value');
+
+const previousTransactions = transactionsSnapshot.val() || {};
+
+const hasPreviousDeposit = Object.values(previousTransactions).some(
+  transaction =>
+    transaction &&
+    transaction.type === 'deposit' &&
+    transaction.status === 'approved'
+);
+
+const bonusRate = hasPreviousDeposit ? 0.25 : 0.50;
+const bonusAmount = requestedAmount * bonusRate;
 
     const transactionRef =
       db.ref('transactions').push();
@@ -203,6 +220,16 @@ app.post('/api/deposit', async (req, res) => {
       createdAt: new Date().toISOString(),
       confirmedAt: new Date().toISOString()
     });
+    const bonusRef =
+  db.ref(`players/${playerId}/referralBonusBalance`);
+
+const bonusResult =
+  await bonusRef.transaction(
+    bonus => Number(bonus || 0) + bonusAmount
+  );
+
+const newBonusBalance =
+  Number(bonusResult.snapshot.val() || 0);
 
     const balanceRef =
       db.ref(`players/${playerId}/balance`);
@@ -225,11 +252,13 @@ app.post('/api/deposit', async (req, res) => {
       });
 
     return res.json({
-      success: true,
-      message: 'Deposit approved successfully',
-      transactionId: transactionId,
-      newBalance: newBalance
-    });
+  success: true,
+  message: 'Deposit approved successfully',
+  transactionId: transactionId,
+  newBalance: newBalance,
+  bonusAmount: bonusAmount,
+  newBonusBalance: newBonusBalance
+});
 
   } catch (error) {
     console.error('❌ Player deposit error:', error);
@@ -378,6 +407,43 @@ app.post('/api/withdraw', async (req, res) => {
     });
   }
 });
+// ============================================================
+// PLAYER — WALLET HISTORY
+// ============================================================
+app.get('/api/wallet-history/:telegramId', async (req, res) => {
+  try {
+    const telegramId = String(req.params.telegramId);
+
+    const snapshot = await db
+      .ref('transactions')
+      .orderByChild('telegramId')
+      .equalTo(telegramId)
+      .once('value');
+
+    const allTransactions = snapshot.val() || {};
+
+    const type = req.query.type;
+
+    const transactions = Object.values(allTransactions)
+      .filter(tx => !type || tx.type === type)
+      .sort((a, b) =>
+        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+
+    res.json({
+      success: true,
+      transactions
+    });
+
+  } catch (error) {
+    console.error('Wallet history error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Unable to load wallet history.'
+    });
+  }
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 
 // ── Health check ─────────────────────────────────────────────

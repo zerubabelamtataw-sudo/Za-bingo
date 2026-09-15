@@ -1279,6 +1279,10 @@ if (
   );
   return;
 }
+  const isFirstDeposit = !(await hasMadeDeposit(tgId));
+
+const bonusRate = isFirstDeposit ? 0.50 : 0.25;
+const bonusAmount = amount * bonusRate;
 
   // Create approved transaction
   const transactionRef =
@@ -1310,6 +1314,16 @@ if (
 
   const newBalance =
     Number(balanceResult.snapshot.val() || 0);
+  const bonusRef =
+  db.ref(`players/${tgId}/referralBonusBalance`);
+
+const bonusResult =
+  await bonusRef.transaction(
+    bonus => Number(bonus || 0) + bonusAmount
+  );
+
+const newBonusBalance =
+  Number(bonusResult.snapshot.val() || 0);
       
 
   // Mark official SMS as used
@@ -1326,7 +1340,9 @@ if (
   `Receiver phone:  ${player.phone || 'N/A'}\n` +
   `Amount:          ${amount.toFixed(2)} ETB\n` +
   `Reference:       ${transactionId}\n\n` +
-  `💰 New balance:   ${newBalance.toFixed(2)} ETB`,
+  `🎁 Deposit Bonus: +${bonusAmount.toFixed(2)} Br\n` +
+`💰 New balance:   ${newBalance.toFixed(2)} ETB\n` +
+`🎁 Bonus balance: ${newBonusBalance.toFixed(2)} Br`,
   { parse_mode: 'Markdown' }
 );
 

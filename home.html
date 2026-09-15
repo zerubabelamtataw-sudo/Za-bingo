@@ -924,6 +924,17 @@ window.playerBalance = balance;
   document.getElementById('walletScreen').style.display = 'block';
     loadDepositHistory();
 }
+function closeWallet() {
+  document.getElementById('walletScreen').style.display = 'none';
+
+  document.querySelector('.balance-card').style.display = 'block';
+  document.querySelector('.quick-actions').style.display = 'grid';
+  document.querySelector('.section-title').style.display = 'block';
+  document.querySelector('.games').style.display = 'grid';
+  document.querySelector('.announcement').style.display = 'block';
+  document.querySelector('.support-btn').style.display = 'block';
+}
+  
   function showDeposit() {
   document.getElementById('depositSection').style.display = 'block';
   document.getElementById('withdrawSection').style.display = 'none';

@@ -766,6 +766,12 @@ const db = firebase.database();
     <button onclick="submitDeposit()">SUBMIT</button>
 
   </div>
+      <div id="depositHistory" style="margin-top:20px;">
+      <h3>Deposit History</h3>
+      <div id="depositHistoryList">
+        Loading...
+      </div>
+    </div>
 
 <div id="withdrawSection" style="display:none;">
 
@@ -812,6 +818,13 @@ const db = firebase.database();
     SUBMIT
   </button>
 
+</div>
+
+<div id="withdrawHistory" style="margin-top:20px;">
+  <h3>Withdrawal History</h3>
+  <div id="withdrawHistoryList">
+    Loading...
+  </div>
 </div>
 
 </section>
@@ -869,6 +882,7 @@ window.playerBalance = balance;
   document.querySelector('.support-btn').style.display = 'none';
 
   document.getElementById('walletScreen').style.display = 'block';
+    loadDepositHistory();
 }
   function showDeposit() {
   document.getElementById('depositSection').style.display = 'block';
@@ -881,6 +895,7 @@ window.playerBalance = balance;
 function showWithdraw() {
   document.getElementById('depositSection').style.display = 'none';
   document.getElementById('withdrawSection').style.display = 'block';
+  loadWithdrawalHistory();
 
   document.querySelector('.wallet-tabs button:nth-child(1)').classList.remove('active');
   document.querySelector('.wallet-tabs button:nth-child(2)').classList.add('active');
@@ -1024,6 +1039,79 @@ async function submitWithdrawal() {
     alert('Unable to connect to the server. Please try again.');
   }
 }
+  async function loadDepositHistory() {
+  if (!telegramUser) return;
+
+  const list = document.getElementById('depositHistoryList');
+  list.innerHTML = 'Loading...';
+
+  try {
+    const response = await fetch(
+      `https://za-bingo-5a7e.onrender.com/api/wallet-history/${telegramUser.id}?type=deposit`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      list.innerHTML = 'Unable to load history.';
+      return;
+    }
+
+    if (!data.transactions.length) {
+      list.innerHTML = 'No deposit history yet.';
+      return;
+    }
+
+    list.innerHTML = data.transactions.map(tx => `
+      <div style="padding:12px 0;border-bottom:1px solid #ddd;">
+        <strong>+${Number(tx.amount).toFixed(2)} Br</strong><br>
+        <span>${tx.status}</span><br>
+        <small>${new Date(tx.createdAt).toLocaleString()}</small>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Deposit history error:', error);
+    list.innerHTML = 'Unable to load history.';
+  }
+}
+  async function loadWithdrawalHistory() {
+  if (!telegramUser) return;
+
+  const list = document.getElementById('withdrawHistoryList');
+  list.innerHTML = 'Loading...';
+
+  try {
+    const response = await fetch(
+      `https://za-bingo-5a7e.onrender.com/api/wallet-history/${telegramUser.id}?type=withdrawal`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      list.innerHTML = 'Unable to load history.';
+      return;
+    }
+
+    if (!data.transactions.length) {
+      list.innerHTML = 'No withdrawal history yet.';
+      return;
+    }
+
+    list.innerHTML = data.transactions.map(tx => `
+      <div style="padding:12px 0;border-bottom:1px solid #ddd;">
+        <strong>-${Number(tx.amount).toFixed(2)} Br</strong><br>
+        <span>${tx.status}</span><br>
+        <small>${new Date(tx.createdAt).toLocaleString()}</small>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Withdrawal history error:', error);
+    list.innerHTML = 'Unable to load history.';
+  }
+}
+  
 function copyNumber(number) {
   navigator.clipboard.writeText(number).then(() => {
     alert("Number copied!");

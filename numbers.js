@@ -1305,6 +1305,8 @@ $("stake-chips-row").closest(".bet-controls-card").style.display = "none";
 
     updateBalance();
 
+    loadNumbersState();
+
     updatePlayers();
 
     $("round-number")

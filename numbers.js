@@ -82,7 +82,7 @@ const playerId = telegramUser?.id ? String(telegramUser.id) : null;
 
 async function loadNumbersState() {
     if (!playerId) {
-        console.error('Numbers: Telegram player ID not found');
+        console.error("Numbers: Telegram player ID not found");
         return;
     }
 
@@ -93,18 +93,51 @@ async function loadNumbersState() {
 
         const data = await response.json();
 
-        if (!data.success) {
-            console.error('Numbers state error:', data.error);
+        if (!data.success || !data.state) {
+            console.error("Numbers state error:", data.error);
             return;
         }
 
-        if (data.state?.balance !== undefined) {
-            balance = Number(data.state.balance);
-        }
+        const state = data.state;
+
+        roundNumber = Number(state.roundNumber || roundNumber);
+
+        phase =
+            state.phase === "finished"
+                ? "results"
+                : state.phase;
+
+        seconds = Number(state.seconds || 0);
+
+        drawnNumbers =
+            Array.isArray(state.drawnNumbers)
+                ? state.drawnNumbers
+                : [];
+
+        drawnSet = new Set(drawnNumbers);
+
+        tickets =
+            Array.isArray(state.tickets)
+                ? state.tickets
+                : [];
+
+        balance = Number(state.balance || 0);
 
         updateBalance();
+
+        $("round-number").textContent =
+            "#" + roundNumber;
+
+        updateTimer();
+        updateDrawDisplay();
+        renderTickets();
+        updatePotentialWin();
+
     } catch (error) {
-        console.error('Numbers connection error:', error);
+        console.error(
+            "Numbers connection error:",
+            error
+        );
     }
 }
 
@@ -482,99 +515,74 @@ async function loadNumbersState() {
      BUY TICKET
   ================================= */
 
-  function buyTicket() {
-
+  async function buyTicket() {
     if (phase !== "betting") {
-
-      showToast(
-        "Betting is closed"
-      );
-
-      return;
+        showToast("Betting is closed");
+        return;
     }
 
-    if (
-      tickets.length >=
-      MAX_TICKETS
-    ) {
-
-      showToast(
-        "Maximum 20 tickets per round"
-      );
-
-      return;
+    if (!playerId) {
+        showToast("Telegram user not found");
+        return;
     }
 
-    if (
-      selectedNumbers.size < 1
-    ) {
-
-      showToast(
-        "Select at least 1 number"
-      );
-
-      return;
+    if (selectedNumbers.size < 1) {
+        showToast("Select at least 1 number");
+        return;
     }
 
-    if (
-      selectedNumbers.size >
-      MAX_SELECTIONS
-    ) {
-
-      showToast(
-        "Maximum 10 numbers"
-      );
-
-      return;
+    if (selectedNumbers.size > MAX_SELECTIONS) {
+        showToast("Maximum 10 numbers");
+        return;
     }
 
-    if (
-      balance < currentStake
-    ) {
-
-      showToast(
-        "Insufficient balance"
-      );
-
-      return;
+    if (tickets.length >= MAX_TICKETS) {
+        showToast("Maximum 20 tickets");
+        return;
     }
 
+    const numbers = [...selectedNumbers].sort((a, b) => a - b);
 
-    const ticket = {
+    try {
+        const response = await fetch(
+            `${API_URL}/api/numbers/ticket`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    playerId: String(playerId),
+                    numbers: numbers,
+                    stake: Number(currentStake)
+                })
+            }
+        );
 
-      id: ticketId++,
+        const data = await response.json();
 
-      numbers:
-        [...selectedNumbers]
-          .sort((a, b) => a - b),
+        if (!response.ok || !data.success) {
+            showToast(
+                data.error ||
+                data.message ||
+                "Ticket purchase failed"
+            );
+            return;
+        }
 
-      stake:
-        currentStake,
+        selectedNumbers.clear();
 
-      matches: 0,
+        await loadNumbersState();
 
-      payout: 0,
+        updateNumberGrid();
+        updatePotentialWin();
 
-      status: "pending"
-    };
-
-
-    balance -= currentStake;
-
-    tickets.push(ticket);
-
-    selectedNumbers.clear();
-
-    updateBalance();
-    updateNumberGrid();
-    updatePotentialWin();
-
-    renderTickets();
-
-    showToast(
-      "Ticket purchased"
-    );
-  }
+        showToast("Ticket purchased");
+    } catch (error) {
+        console.error("Numbers ticket error:", error);
+        showToast("Unable to connect to server");
+    }
+}
 
 
   /* ================================
@@ -808,217 +816,40 @@ async function loadNumbersState() {
      BETTING
   ================================= */
 
-  function startBetting() {
-
-    clearInterval(timer);
-    clearInterval(drawTimer);
-
-    phase = "betting";
-
-    seconds =
-      BETTING_TIME;
-    $("numbers-80-grid").style.display = "";
-
-    drawnNumbers = [];
-
-    drawnSet.clear();
-
-    selectedNumbers.clear();
-
-    tickets = [];
-
-    ticketId = 1;
-
-    createDrawSlots();
-
-    updateDrawDisplay();
-
-    renderTickets();
-
-    updatePotentialWin();
-
-    updateTimer();
-
-
-    timer =
-      setInterval(() => {
-
-        seconds--;
-
-        updateTimer();
-
-        if (seconds <= 0) {
-
-          clearInterval(timer);
-
-          startDrawing();
-        }
-
-      }, 1000);
-  }
-
-
-  /* ================================
-     DRAWING
-  ================================= */
-
-  function startDrawing() {
-
-    clearInterval(timer);
-    clearInterval(drawTimer);
-
-    phase = "drawing";
-seconds = DRAW_TIME;
-
-selectedNumbers.clear();
-drawnNumbers = [];
-drawnSet.clear();
-
-$("numbers-80-grid").style.display = "none";
-$("numbers-80-grid").parentElement.style.display = "none";
-$("stake-chips-row").closest(".bet-controls-card").style.display = "none";
-    updateTimer();
-
-    updateDrawDisplay();
-
-    renderTickets();
-
-
-    const pool =
-      shuffle(
-        Array.from(
-          { length: MAX_NUMBERS },
-          (_, i) => i + 1
-        )
-      );
-
-
-    let index = 0;
-
-
-    drawTimer =
-      setInterval(() => {
-
-        const number =
-          pool[index];
-
-        drawnNumbers.push(number);
-
-        drawnSet.add(number);
-
-        index++;
-
-        seconds =
-          DRAW_COUNT - index;
-
-        updateDrawDisplay();
-
-        updateNumberGrid();
-
-        renderTickets();
-
-        updateTimer();
-
-
-        if (
-          index >= DRAW_COUNT
-        ) {
-
-          clearInterval(
-            drawTimer
-          );
-
-          finishRound();
-        }
-
-      }, 1000);
-  }
-
-
-  /* ================================
-     RESULTS
-  ================================= */
-
-  function finishRound() {
-
-    phase = "results";
-
-    seconds = 0;
-
-    let winnings = 0;
-
-
-    tickets.forEach(ticket => {
-
-      ticket.matches =
-        ticket.numbers.filter(
-          number =>
-            drawnSet.has(number)
-        ).length;
-
-
-      ticket.payout =
-        payout(
-          ticket.numbers.length,
-          ticket.matches,
-          ticket.stake
-        );
-
-
-      if (
-        ticket.payout > 0
-      ) {
-
-        ticket.status = "won";
-
-        winnings +=
-          ticket.payout;
-
-      } else {
-
-        ticket.status = "lost";
-      }
-    });
-
-
-    if (winnings > 0) {
-
-      balance += winnings;
-
-      showToast(
-        `You won ${br(winnings)}`
-      );
+let stateTimer = null;
+
+function syncNumbersUI() {
+    if (phase === "betting") {
+        $("numbers-80-grid").style.display = "";
+        $("numbers-80-grid").parentElement.style.display = "";
+        $("stake-chips-row").closest(".bet-controls-card").style.display = "";
+    } else {
+        $("numbers-80-grid").style.display = "none";
+        $("numbers-80-grid").parentElement.style.display = "none";
+        $("stake-chips-row").closest(".bet-controls-card").style.display = "none";
     }
 
-
-    updateBalance();
-
-    renderTickets();
-
     updateTimer();
+    updateDrawDisplay();
+    renderTickets();
+}
+
+function startNumbersSync() {
+    if (stateTimer) {
+        clearInterval(stateTimer);
+    }
+
+    loadNumbersState();
+    syncNumbersUI();
+
+    stateTimer = setInterval(async () => {
+        await loadNumbersState();
+        syncNumbersUI();
+    }, 1000);
+}
 
 
-    setTimeout(
-      startNewRound,
-      3000
-    );
-  }
-
-
-  /* ================================
-     NEW ROUND
-  ================================= */
-
-  function startNewRound() {
-
-    roundNumber++;
-
-    $("round-number")
-      .textContent =
-      "#" + roundNumber;
-
-    startBetting();
-  }
+        
 
 
   /* ================================
@@ -1319,7 +1150,7 @@ $("stake-chips-row").closest(".bet-controls-card").style.display = "none";
 
     renderTickets();
 
-    startBetting();
+    startNumbersSync();
 
     setInterval(
       updatePlayers,

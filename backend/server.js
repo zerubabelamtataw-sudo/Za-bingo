@@ -755,7 +755,7 @@ app.post('/api/admin/approve-transaction', async (req, res) => {
 // ============================================================
 
 // GET Numbers game state
-app.get('/api/numbers/state', (req, res) => {
+app.get('/api/numbers/state', async (req, res) => {
   try {
     const playerId = req.query.playerId || null;
 

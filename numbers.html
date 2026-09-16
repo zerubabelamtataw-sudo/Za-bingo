@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="am">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>እድል Numbers</title>
+
+  <meta
+    name="description"
+    content="እድል Numbers - Keno game with numbers 1-80."
+  >
+
+  <link
+    rel="stylesheet"
+    href="./numbers.css"
+  >
+</head>
+
+<body>
+
+  <!-- CELEBRATION TOAST -->
+  <div
+    id="celebration-toast"
+    class="celebration-toast"
+  >
+    <span id="celebration-message">
+      እንኳን ደስ አለዎት!
+    </span>
+  </div>
+
+
+  <div class="app-container">
+
+
+    <!-- ================================
+         HEADER
+    ================================= -->
+
+    <header class="game-header">
+
+      <div class="brand-section">
+
+        <div class="brand-logo-badge">
+          እ
+        </div>
+
+        <div class="brand-title">
+          <span class="eth">
+            እድል
+          </span>
+
+          <span class="latin">
+            Numbers
+          </span>
+        </div>
+
+      </div>
+
+
+      <div class="header-status-group">
+
+        <div class="players-counter">
+
+          <div class="live-indicator"></div>
+
+          <span>
+            LIVE:
+            <span
+              class="player-count-num"
+              id="player-count"
+            >
+              45
+            </span>
+          </span>
+
+        </div>
+
+
+        <div class="balance-container">
+
+          <span class="balance-label">
+            Bal =
+          </span>
+
+          <span
+            class="balance-amount"
+            id="player-balance"
+          >
+            1,000 Br
+          </span>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+
+    <!-- ================================
+         GAME PAGE
+    ================================= -->
+
+    <main id="game-page" class="main-content-grid">
+
+
+      <!-- ================================
+           LEFT COLUMN
+      ================================= -->
+
+      <div class="board-column">
+
+
+        <!-- LIVE DRAW -->
+
+        <section class="draw-monitor-card">
+
+          <div class="draw-monitor-header">
+
+            <div class="draw-monitor-title">
+              🔴 የተጠሩ ቁጥሮች
+            </div>
+
+
+            <div class="draw-status-row">
+
+              <div class="status-pill">
+
+                <span
+                  class="round-badge"
+                  id="round-number"
+                >
+                  #1001
+                </span>
+
+
+                <div class="timer-box">
+
+                  <span
+                    class="timer-phase betting"
+                    id="timer-phase"
+                  >
+                    BETTING
+                  </span>
+
+                  <span
+                    class="timer-seconds"
+                    id="timer-seconds"
+                  >
+                    30
+                  </span>
+
+                  <span>
+                    s
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              <div
+                class="draw-counter-badge"
+                id="draw-count-badge"
+              >
+                Drawn:
+                <span class="active">
+                  0
+                </span>
+                / 20
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="draw-balls-row"
+            id="draw-balls-row"
+          ></div>
+
+        </section>
+
+
+
+        <!-- ================================
+             NUMBER GRID
+        ================================= -->
+
+        <section class="grid-card">
+
+          <div class="grid-card-header">
+
+            <div class="grid-title-info">
+
+              <span class="grid-title">
+                ቁጥሮች ይምረጡ
+                (Select 1–10 Numbers)
+              </span>
+
+
+              <div class="selection-tracker">
+
+                የተመረጡ:
+
+                <span
+                  class="count"
+                  id="selection-count"
+                >
+                  0
+                </span>
+
+                / 10
+
+              </div>
+
+            </div>
+
+
+            <div class="grid-quick-actions">
+
+              <button
+                type="button"
+                class="btn-secondary"
+                id="btn-random-5"
+              >
+                🎲 Random 5
+              </button>
+
+
+              <button
+                type="button"
+                class="btn-secondary"
+                id="btn-random-10"
+              >
+                ⚡ Lucky 10
+              </button>
+
+
+              <button
+                type="button"
+                class="btn-secondary"
+                id="btn-clear-selection"
+              >
+                ✖ Clear
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="numbers-80-grid"
+            id="numbers-80-grid"
+          ></div>
+
+        </section>
+
+
+
+        <!-- ================================
+             STAKE
+        ================================= -->
+
+        <section class="bet-controls-card">
+
+
+          <div class="stake-group">
+
+            <div
+              class="stake-chips-row"
+              id="stake-chips-row"
+            >
+
+
+              <button
+                type="button"
+                class="stake-chip active"
+                data-stake="2"
+              >
+                2 Br
+              </button>
+
+
+              <button
+                type="button"
+                class="stake-chip"
+                data-stake="3"
+              >
+                3 Br
+              </button>
+
+
+              <button
+                type="button"
+                class="stake-chip"
+                data-stake="5"
+              >
+                5 Br
+              </button>
+
+
+              <button
+                type="button"
+                class="stake-chip"
+                data-stake="10"
+              >
+                10 Br
+              </button>
+
+
+              <button
+                type="button"
+                class="stake-chip"
+                data-stake="20"
+              >
+                20 Br
+              </button>
+
+
+              <button
+                type="button"
+                class="stake-chip"
+                data-stake="50"
+              >
+                50 Br
+              </button>
+
+
+            </div>
+
+          </div>
+
+
+
+          <div class="purchase-action-group">
+
+            <button
+              type="button"
+              class="btn-buy-ticket"
+              id="btn-buy-ticket"
+            >
+
+              BUY TICKET
+
+              (
+              <span id="buy-ticket-cost">
+                2 Br
+              </span>
+              )
+
+              <span class="button-max-win">
+
+                · Max Win
+
+                <span id="potential-win-val">
+                  0 Br
+                </span>
+
+              </span>
+
+            </button>
+
+          </div>
+
+
+        </section>
+
+
+      </div>
+
+
+
+      <!-- ================================
+           RIGHT COLUMN
+      ================================= -->
+
+      <aside class="sidebar-column">
+
+
+        <!-- TICKETS -->
+
+        <section class="tickets-card">
+
+          <div class="tickets-card-header">
+
+            <div class="tickets-title">
+              🎟️ የእርስዎ ትኬቶች
+            </div>
+
+
+            <span
+              class="tickets-quota-badge"
+              id="tickets-quota"
+            >
+              0 / 20 this round
+            </span>
+
+          </div>
+
+
+          <div
+            class="tickets-list-container"
+            id="tickets-list-container"
+          ></div>
+
+        </section>
+
+
+
+        
+
+
+      </aside>
+
+
+    </main>
+
+
+
+    <!-- ================================
+         PROFILE PAGE
+    ================================= -->
+
+    <section
+      id="profile-page"
+      class="page"
+    >
+
+      <div class="profile-container">
+
+
+        <!-- PROFILE HEADER -->
+
+        <div class="profile-card profile-header-card">
+
+          <div class="profile-avatar">
+            👤
+          </div>
+
+
+          <div class="profile-user-info">
+
+            <h2 id="profile-name">
+              Player
+            </h2>
+
+            <p id="profile-username">
+              @username
+            </p>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- BALANCE -->
+
+        <div class="profile-card profile-balance-card">
+
+          <div class="profile-card-title">
+            Balance
+          </div>
+
+
+          <div
+            id="profile-balance"
+            class="profile-balance"
+          >
+            0 Br
+          </div>
+
+        </div>
+
+
+
+        <!-- STATISTICS -->
+
+        <div class="profile-card">
+
+          <div class="profile-card-title">
+            Statistics
+          </div>
+
+
+          <div class="profile-stats">
+
+
+            <div class="profile-stat">
+
+              <span
+                id="profile-games-played"
+                class="profile-stat-value"
+              >
+                0
+              </span>
+
+              <span class="profile-stat-label">
+                Games Played
+              </span>
+
+            </div>
+
+
+            <div class="profile-stat">
+
+              <span
+                id="profile-games-won"
+                class="profile-stat-value"
+              >
+                0
+              </span>
+
+              <span class="profile-stat-label">
+                Games Won
+              </span>
+
+            </div>
+
+
+            <div class="profile-stat">
+
+              <span
+                id="profile-win-rate"
+                class="profile-stat-value"
+              >
+                0%
+              </span>
+
+              <span class="profile-stat-label">
+                Win Rate
+              </span>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+
+
+        <!-- ACCOUNT INFORMATION -->
+
+        <div class="profile-card">
+
+          <div class="profile-card-title">
+            Account Information
+          </div>
+
+
+          <div class="profile-info-list">
+
+
+            <div class="profile-info-row">
+
+              <span>
+                Player ID
+              </span>
+
+              <strong id="profile-player-id">
+                —
+              </strong>
+
+            </div>
+
+
+            <div class="profile-info-row">
+
+              <span>
+                Username
+              </span>
+
+              <strong id="profile-account-username">
+                —
+              </strong>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+
+      </div>
+
+    </section>
+
+
+
+ 
+<!-- WALLET PAGE -->
+<section id="wallet-page" class="page">
+
+  <div class="profile-container">
+
+    <div class="profile-card profile-balance-card">
+      <div class="profile-card-title">Wallet Balance</div>
+      <div id="wallet-balance" class="profile-balance">0 Br</div>
+    </div>
+
+    <div class="profile-card">
+
+      <div class="profile-card-title">Wallet</div>
+
+      <div class="profile-info-list">
+
+        <div class="profile-info-row">
+          <span>Current Balance</span>
+          <strong id="wallet-current-balance">0 Br</strong>
+        </div>
+
+        <div class="profile-info-row">
+          <span>Available for Play</span>
+          <strong id="wallet-available">0 Br</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- INFO PAGE -->
+<section id="info-page" class="page">
+
+  <div class="profile-container">
+
+    <div class="profile-card">
+
+      <div class="profile-card-title">
+        About እድል Numbers
+      </div>
+
+      <p>
+        እድል Numbers is a numbers game where you select
+        numbers and purchase tickets for the current round.
+      </p>
+
+    </div>
+
+
+    <div class="profile-card">
+
+      <div class="profile-card-title">
+        How To Play
+      </div>
+
+      <div class="profile-info-list">
+
+        <div class="profile-info-row">
+          <span>1</span>
+          <strong>Select your numbers</strong>
+        </div>
+
+        <div class="profile-info-row">
+          <span>2</span>
+          <strong>Select your stake</strong>
+        </div>
+
+        <div class="profile-info-row">
+          <span>3</span>
+          <strong>Buy your ticket</strong>
+        </div>
+
+        <div class="profile-info-row">
+          <span>4</span>
+          <strong>Wait for the draw</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- PAYOUT -->
+
+    <section class="payout-card">
+
+      <div class="payout-card-header">
+
+        <span class="payout-card-title">
+          💰 የክፍያ ሰንጠረዥ
+        </span>
+
+
+        <button
+          type="button"
+          class="btn-open-modal"
+          id="btn-open-payouts"
+        >
+          ሙሉ ሰንጠረዥ
+        </button>
+
+      </div>
+
+
+      <table class="payout-preview-table">
+
+        <thead>
+
+          <tr>
+
+            <th>
+              ምርጫ
+            </th>
+
+            <th>
+              ተዛምዶ
+            </th>
+
+            <th>
+              2 Br
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+
+          <tr>
+
+            <td>
+              10
+            </td>
+
+            <td>
+              10 / 10
+            </td>
+
+            <td class="reward">
+              15,000 Br
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              9
+            </td>
+
+            <td>
+              9 / 9
+            </td>
+
+            <td class="reward">
+              10,000 Br
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              8
+            </td>
+
+            <td>
+              8 / 8
+            </td>
+
+            <td class="reward">
+              5,000 Br
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              7
+            </td>
+
+            <td>
+              7 / 7
+            </td>
+
+            <td class="reward">
+              2,500 Br
+            </td>
+
+          </tr>
+
+
+          <tr>
+
+            <td>
+              6
+            </td>
+
+            <td>
+              6 / 6
+            </td>
+
+            <td class="reward">
+              1,000 Br
+            </td>
+
+          </tr>
+
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+
+  </div>
+
+</section>
+
+
+<!-- HISTORY PAGE -->
+<section id="history-page" class="page">
+
+  <div class="profile-container">
+
+    <div class="profile-card">
+
+      <div class="profile-card-title">
+        Game History
+      </div>
+
+      <div
+        id="history-list"
+        class="profile-info-list"
+      >
+        <div class="profile-info-row">
+          <span>No games yet</span>
+          <strong>—</strong>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+ </div>
+
+  <!-- ================================
+       PAYOUT MODAL
+  ================================= -->
+
+  <div
+    class="modal-backdrop"
+    id="payout-modal"
+  >
+
+
+    <div class="modal-content">
+
+
+      <div class="modal-header">
+
+        <h3 class="modal-title">
+          የክፍያ ሰንጠረዥ
+        </h3>
+
+
+        <button
+          type="button"
+          class="btn-close-modal"
+          id="btn-close-modal"
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      <div
+        id="modal-payout-body"
+      ></div>
+
+
+    </div>
+
+
+  </div>
+
+
+
+  <!-- ================================
+       BOTTOM NAVIGATION
+  ================================= -->
+
+  <nav class="bottom-nav">
+
+
+    <button
+      class="bottom-nav-btn"
+      data-page="profile"
+    >
+
+      <span class="nav-icon">
+        ♙
+      </span>
+
+      <span class="nav-label">
+        Profile
+      </span>
+
+    </button>
+
+
+    <button
+      class="bottom-nav-btn active"
+      data-page="game"
+    >
+
+      <span class="nav-icon">
+        ◈
+      </span>
+
+      <span class="nav-label">
+        Game
+      </span>
+
+    </button>
+
+
+    <button
+      class="bottom-nav-btn"
+      data-page="wallet"
+    >
+
+      <span class="nav-icon">
+        ▱
+      </span>
+
+      <span class="nav-label">
+        Wallet
+      </span>
+
+    </button>
+
+
+    <button
+      class="bottom-nav-btn"
+      data-page="info"
+    >
+
+      <span class="nav-icon">
+        ⓘ
+      </span>
+
+      <span class="nav-label">
+        Info
+      </span>
+
+    </button>
+
+
+    <button
+      class="bottom-nav-btn"
+      data-page="history"
+    >
+
+      <span class="nav-icon">
+        ⟳
+      </span>
+
+      <span class="nav-label">
+        History
+      </span>
+
+    </button>
+
+
+  </nav>
+
+
+
+  <!-- JAVASCRIPT -->
+
+  <script src="./numbers.js"></script>
+
+</body>
+
+</html>

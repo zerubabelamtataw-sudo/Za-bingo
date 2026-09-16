@@ -496,6 +496,7 @@ class NumbersGameManager {
     let referralBonusBalance = 0;
 
     if (id && this.db) {
+
         const snapshot =
             await this.db
                 .ref(`players/${id}`)
@@ -514,7 +515,6 @@ class NumbersGameManager {
     }
 
     return {
-
         roundNumber:
             this.round.roundNumber,
 

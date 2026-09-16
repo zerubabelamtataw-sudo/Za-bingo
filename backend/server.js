@@ -14,6 +14,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const { GamesManager, setRecordWeeklyWin } = require('./gameManager');
+const { NumbersGameManager } = require('./numbersGameManager');
 const { bot, processGatewaySMS } = require('./bot');
 const { setGamesManager } = require('./adminBot');
 // ── Firebase init (graceful if credentials missing) ───────────────────────────
@@ -46,6 +47,7 @@ console.log('✅ Firebase Realtime Database connected');
 // ── App setup ─────────────────────────────────────────────────────────────────
 const app    = express();
 const gm     = new GamesManager(db);
+const numbersGM = new NumbersGameManager(db);
 setGamesManager(gm);
 gm.addSimulatedPlayers('5br');
 const PORT   = process.env.PORT || 3000;
@@ -746,6 +748,58 @@ app.post('/api/admin/approve-transaction', async (req, res) => {
 
   }
 
+});
+
+// ============================================================
+// NUMBERS GAME API
+// ============================================================
+
+// GET Numbers game state
+app.get('/api/numbers/state', (req, res) => {
+  try {
+    const playerId = req.query.playerId || null;
+
+    const state = await numbersGM.getState(playerId);
+
+    if (!state) {
+      return err(res, 'Numbers game not available', 503);
+    }
+
+    ok(res, { state });
+  } catch (e) {
+    console.error('❌ Numbers state error:', e);
+    err(res, e.message);
+  }
+});
+
+// POST buy Numbers ticket
+app.post('/api/numbers/ticket', async (req, res) => {
+  try {
+    const { playerId, numbers, stake } = req.body || {};
+
+    if (!playerId) {
+      return err(res, 'playerId required');
+    }
+
+    if (!Array.isArray(numbers)) {
+      return err(res, 'numbers[] required');
+    }
+
+    if (stake === undefined || stake === null) {
+      return err(res, 'stake required');
+    }
+
+    const result = await numbersGM.buyTicket(
+      String(playerId),
+      numbers,
+      Number(stake)
+    );
+
+    ok(res, result);
+  } catch (e) {
+    console.error('❌ Numbers ticket error:', e);
+    err(res, e.message);
+  }
 });
 
 // ── Helper ────────────────────────────────────────────────────────────────────

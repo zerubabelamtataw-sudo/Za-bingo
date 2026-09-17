@@ -767,7 +767,7 @@ app.get('/api/numbers/state', async (req, res) => {
 
     ok(res, { state });
   } catch (e) {
-    console.error('❌ Numbers state error:', e);
+    console.error('❌ Numbers state error:', e);w2wesew3dfes3aq
     err(res, e.message);
   }
 });
@@ -798,6 +798,33 @@ app.post('/api/numbers/ticket', async (req, res) => {
     ok(res, result);
   } catch (e) {
     console.error('❌ Numbers ticket error:', e);
+    err(res, e.message);
+  }
+});
+
+// GET Numbers player history
+app.get('/api/numbers/history', async (req, res) => {
+  try {
+    const playerId = String(req.query.playerId || '').trim();
+
+    if (!playerId) {
+      return err(res, 'playerId required');
+    }
+
+    const snapshot = await db
+      .ref(`numbers/playerHistory/${playerId}`)
+      .once('value');
+
+    const history = snapshot.val() || {};
+
+    const games = Object.values(history)
+      .sort((a, b) => Number(b.roundNumber) - Number(a.roundNumber))
+      .slice(0, 30);
+
+    ok(res, { history: games });
+
+  } catch (e) {
+    console.error('❌ Numbers history error:', e);
     err(res, e.message);
   }
 });

@@ -247,6 +247,34 @@ class NumbersGameManager {
                         )
                 });
         }
+              // Save each participating player's history
+        const historyWrites = {};
+
+        for (const ticket of tickets) {
+            const playerId = String(ticket.playerId);
+
+            if (!historyWrites[playerId]) {
+                historyWrites[playerId] = {
+                    roundNumber: this.round.roundNumber,
+                    drawnNumbers: [...this.round.drawnNumbers],
+                    finishedAt: new Date().toISOString(),
+                    tickets: {}
+                };
+            }
+
+            historyWrites[playerId].tickets[ticket.id] = ticket;
+        }
+
+        await Promise.all(
+            Object.entries(historyWrites).map(
+                ([playerId, history]) =>
+                    this.db
+                        .ref(
+                            `numbers/playerHistory/${playerId}/${this.round.roundNumber}`
+                        )
+                        .set(history)
+            )
+        );
 
         setTimeout(() => {
             this.startRound();

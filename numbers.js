@@ -230,9 +230,21 @@ async function loadNumbersState() {
 
   function updateBalance() {
 
-    $("player-balance").textContent =
-      br(balance);
-  }
+  $("player-balance").textContent =
+    br(balance);
+
+  $("profile-balance").textContent =
+    br(balance);
+
+  $("wallet-balance").textContent =
+    br(balance);
+
+  $("wallet-current-balance").textContent =
+    br(balance);
+
+  $("wallet-available").textContent =
+    br(balance);
+}
 
 
   /* ================================

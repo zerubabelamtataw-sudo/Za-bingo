@@ -847,8 +847,8 @@
         class="profile-info-list"
       >
         <div class="profile-info-row">
-          <span>No games yet</span>
-          <strong>—</strong>
+          <span>Loading...</span>
+          <strong>...</strong>
         </div>
       </div>
 
@@ -857,7 +857,53 @@
   </div>
 
 </section>
- </div>
+
+<!-- NUMBERS HISTORY DETAILS -->
+<div
+  id="numbers-history-modal"
+  class="modal-backdrop"
+  style="display:none;"
+>
+  <div
+    class="modal"
+    style="
+      max-width:500px;
+      width:92%;
+      max-height:85vh;
+      overflow-y:auto;
+    "
+  >
+
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:16px;
+      "
+    >
+      <strong id="history-detail-title">
+        Round Details
+      </strong>
+
+      <button
+        type="button"
+        id="close-history-modal"
+        style="
+          border:0;
+          background:none;
+          font-size:24px;
+          cursor:pointer;
+        "
+      >
+        ×
+      </button>
+    </div>
+
+    <div id="history-detail-body"></div>
+
+  </div>
+</div>
 
   <!-- ================================
        PAYOUT MODAL

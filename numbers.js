@@ -1011,6 +1011,9 @@ function startNumbersSync() {
         });
 
         btn.classList.add("active");
+                if (page === "history") {
+            loadNumbersHistory();
+        }
       });
     });
 
@@ -1226,5 +1229,345 @@ function startNumbersSync() {
     init();
 
   }
+/* ================================
+   NUMBERS GAME HISTORY
+================================ */
 
+async function loadNumbersHistory() {
+
+    const list = $("history-list");
+
+    if (!playerId) {
+        list.innerHTML = `
+            <div class="profile-info-row">
+                <span>Player ID not found</span>
+                <strong>—</strong>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = `
+        <div class="profile-info-row">
+            <span>Loading history...</span>
+            <strong>...</strong>
+        </div>
+    `;
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/numbers/history?playerId=${encodeURIComponent(playerId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.error || "Unable to load history"
+            );
+        }
+
+        const history = Array.isArray(data.history)
+            ? data.history
+            : [];
+
+        if (!history.length) {
+
+            list.innerHTML = `
+                <div class="profile-info-row">
+                    <span>No games yet</span>
+                    <strong>—</strong>
+                </div>
+            `;
+
+            return;
+        }
+
+        list.innerHTML = history.map(game => {
+
+            const date = game.finishedAt
+                ? new Date(game.finishedAt).toLocaleString(
+                    "en-GB",
+                    {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                )
+                : "—";
+
+            return `
+                <div
+                    class="profile-info-row numbers-history-item"
+                    data-round="${game.roundNumber}"
+                    style="cursor:pointer;"
+                >
+                    <span>
+                        <strong>
+                            Round #${game.roundNumber}
+                        </strong>
+                        <br>
+                        <small>${date}</small>
+                    </span>
+
+                    <strong>›</strong>
+                </div>
+            `;
+
+        }).join("");
+
+    } catch (error) {
+
+        console.error(
+            "Numbers history error:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="profile-info-row">
+                <span>Unable to load history</span>
+                <strong>—</strong>
+            </div>
+        `;
+    }
+}
+
+
+function openNumbersHistoryDetails(game) {
+
+    const modal =
+        $("numbers-history-modal");
+
+    const title =
+        $("history-detail-title");
+
+    const body =
+        $("history-detail-body");
+
+    title.textContent =
+        `Round #${game.roundNumber}`;
+
+    const tickets =
+        Object.values(game.tickets || {});
+
+    const drawnNumbers =
+        Array.isArray(game.drawnNumbers)
+            ? game.drawnNumbers
+            : [];
+
+    let ticketsHTML = "";
+
+    tickets.forEach(ticket => {
+
+        const numbers =
+            Array.isArray(ticket.numbers)
+                ? ticket.numbers
+                : [];
+
+        const result =
+            ticket.status === "won"
+                ? "WON"
+                : "LOST";
+
+        const winnings =
+            Number(ticket.payout || 0);
+
+        ticketsHTML += `
+            <div
+                style="
+                  padding:14px 0;
+                  border-bottom:1px solid rgba(128,128,128,.25);
+                "
+            >
+
+                <div style="margin-bottom:8px;">
+                    <strong>Your Numbers</strong>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                    ${numbers.map(number => `
+                        <span
+                            style="
+                              display:inline-flex;
+                              align-items:center;
+                              justify-content:center;
+                              min-width:34px;
+                              height:34px;
+                              margin:3px;
+                              border-radius:50%;
+                              background:rgba(128,128,128,.15);
+                              font-weight:700;
+                            "
+                        >
+                            ${number}
+                        </span>
+                    `).join("")}
+                </div>
+
+                <div>
+                    <strong>Stake:</strong>
+                    ${Number(ticket.stake || 0).toFixed(2)} Br
+                </div>
+
+                <div>
+                    <strong>Paid from:</strong>
+                    ${
+                        ticket.paymentSource === "bonus"
+                            ? "Bonus"
+                            : "Main Balance"
+                    }
+                </div>
+
+                <div>
+                    <strong>Matches:</strong>
+                    ${Number(ticket.matches || 0)}
+                </div>
+
+                <div>
+                    <strong>Result:</strong>
+                    ${result}
+                </div>
+
+                <div>
+                    <strong>Winnings:</strong>
+                    ${winnings.toFixed(2)} Br
+                </div>
+
+            </div>
+        `;
+    });
+
+    body.innerHTML = `
+        <div style="margin-bottom:18px;">
+
+            <div style="margin-bottom:8px;">
+                <strong>Drawn Numbers</strong>
+            </div>
+
+            <div>
+                ${drawnNumbers.map(number => `
+                    <span
+                        style="
+                          display:inline-flex;
+                          align-items:center;
+                          justify-content:center;
+                          min-width:34px;
+                          height:34px;
+                          margin:3px;
+                          border-radius:50%;
+                          background:rgba(128,128,128,.15);
+                          font-weight:700;
+                        "
+                    >
+                        ${number}
+                    </span>
+                `).join("")}
+            </div>
+
+        </div>
+
+        ${ticketsHTML}
+    `;
+
+    modal.style.display = "flex";
+}
+
+
+function closeNumbersHistoryDetails() {
+
+    const modal =
+        $("numbers-history-modal");
+
+    modal.style.display = "none";
+}  
+
+document.addEventListener("click", event => {
+
+    const item =
+        event.target.closest(
+            ".numbers-history-item"
+        );
+
+    if (!item) return;
+
+    const roundNumber =
+        Number(item.dataset.round);
+
+    loadNumbersHistoryDetails(roundNumber);
+});
+
+
+$("close-history-modal")
+    .addEventListener(
+        "click",
+        closeNumbersHistoryDetails
+    );
+
+
+$("numbers-history-modal")
+    .addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target.id ===
+                "numbers-history-modal"
+            ) {
+                closeNumbersHistoryDetails();
+            }
+
+        }
+    );
+
+
+async function loadNumbersHistoryDetails(roundNumber) {
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/numbers/history?playerId=${encodeURIComponent(playerId)}`
+        );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+            throw new Error(
+                data.error ||
+                "Unable to load history"
+            );
+        }
+
+        const game =
+            data.history.find(
+                item =>
+                    Number(item.roundNumber) ===
+                    roundNumber
+            );
+
+        if (!game) {
+            alert("Game history not found.");
+            return;
+        }
+
+        openNumbersHistoryDetails(game);
+
+    } catch (error) {
+
+        console.error(
+            "History details error:",
+            error
+        );
+
+        alert(
+            "Unable to load game details."
+        );
+    }
+}
+  
 })();

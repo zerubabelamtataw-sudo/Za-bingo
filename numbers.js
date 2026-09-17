@@ -79,7 +79,20 @@
 
 const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 const playerId = telegramUser?.id ? String(telegramUser.id) : null;
+let bonusBalance = 0;
 
+function startBalanceListener() {
+    if (!playerId || typeof db === "undefined") return;
+
+    db.ref(`players/${playerId}/balance`).on("value", snapshot => {
+        balance = Number(snapshot.val() || 0);
+        updateBalance();
+    });
+
+    db.ref(`players/${playerId}/referralBonusBalance`).on("value", snapshot => {
+        bonusBalance = Number(snapshot.val() || 0);
+    });
+}
 async function loadNumbersState() {
     if (!playerId) {
         console.error("Numbers: Telegram player ID not found");
@@ -121,9 +134,7 @@ async function loadNumbersState() {
                 ? state.tickets
                 : [];
 
-        balance = Number(state.balance || 0);
-
-        updateBalance();
+        // Balance is now updated directly from Firebase in realtime.
 
         $("round-number").textContent =
             "#" + roundNumber;
@@ -839,7 +850,8 @@ function startNumbersSync() {
         clearInterval(stateTimer);
     }
 
-    loadNumbersState();
+        loadNumbersState();
+    startBalanceListener();
     syncNumbersUI();
 
     stateTimer = setInterval(async () => {

@@ -92,6 +92,16 @@ function startBalanceListener() {
     db.ref(`players/${playerId}/referralBonusBalance`).on("value", snapshot => {
         bonusBalance = Number(snapshot.val() || 0);
     });
+  db.ref(`players/${playerId}`).on("value", snapshot => {
+    const player = snapshot.val() || {};
+
+    $("profile-name").textContent = player.name || "Player";
+    $("profile-username").textContent =
+        player.username ? "@" + player.username : "@username";
+    $("profile-player-id").textContent = playerId || "—";
+    $("profile-account-username").textContent =
+        player.username ? "@" + player.username : "—";
+});
 }
 async function loadNumbersState() {
     if (!playerId) {

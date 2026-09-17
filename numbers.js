@@ -962,6 +962,23 @@ function startNumbersSync() {
   ================================= */
 
   function setupEvents() {
+        document.querySelectorAll(".bottom-nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const page = btn.dataset.page;
+
+        document.querySelectorAll(".page").forEach(section => {
+          section.classList.remove("active");
+        });
+
+        document.getElementById(page + "-page").classList.add("active");
+
+        document.querySelectorAll(".bottom-nav-btn").forEach(navBtn => {
+          navBtn.classList.remove("active");
+        });
+
+        btn.classList.add("active");
+      });
+    });
 
     $("btn-random-5")
       .addEventListener(

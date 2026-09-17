@@ -853,10 +853,14 @@ let stateTimer = null;
 
 function syncNumbersUI() {
     if (phase === "betting") {
+        $("draw-monitor-card").style.display = "none";
+
         $("numbers-80-grid").style.display = "";
         $("numbers-80-grid").parentElement.style.display = "";
         $("stake-chips-row").closest(".bet-controls-card").style.display = "";
     } else {
+        $("draw-monitor-card").style.display = "";
+
         $("numbers-80-grid").style.display = "none";
         $("numbers-80-grid").parentElement.style.display = "none";
         $("stake-chips-row").closest(".bet-controls-card").style.display = "none";

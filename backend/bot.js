@@ -1,2650 +1,1532 @@
-// ============================================================
-// ZA BINGO — TELEGRAM BOT
-// ============================================================
+/**
+ * ZA Bingo Telegram Bot
+ * Production Bot Implementation
+ */
+
+require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const path = require('path');
 const db = require('./firebase');
 
-const welcomePhoto = path.join(__dirname, '../images/welcome.jpg');
-const PROMOTION_IMAGE = path.join(__dirname, '../images/promotion.jpg');
-const DAILY_WINNER_IMAGE = path.join(__dirname, '../images/daily-winner.jpg');
+// ==========================================
+// 1. IMPORTS & CONFIGURATION
+// ==========================================
 
-// Replace with your bot token from @BotFather
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-miniapp-url.com';
-
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const ADMIN_ID = process.env.ADMIN_ID ? String(process.env.ADMIN_ID).trim() : null;
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://example.com';
 const BONUS_CHANNEL = '@EdelBingoo';
-const ADMIN_ID =
-  process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
-// ============================================================
-// PRIVATE SUPPORT BOT
-// ============================================================
-const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN;
 
-const supportBot = SUPPORT_BOT_TOKEN
-  ? new TelegramBot(SUPPORT_BOT_TOKEN, { polling: true })
-  : null;
+const TELEBIRR_ACCOUNT = process.env.TELEBIRR_ACCOUNT || '09XXXXXXXX (ZA Bingo)';
+const CBE_ACCOUNT = process.env.CBE_ACCOUNT || '1000XXXXXXXX (ZA Bingo)';
 
-  
-function getEthiopiaTimeParts() {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Africa/Addis_Ababa',
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).formatToParts(new Date());
-
-  const result = {};
-
-  for (const part of parts) {
-    if (part.type !== 'literal') {
-      result[part.type] = Number(part.value);
-    }
-  }
-
-  return result;
+if (!BOT_TOKEN) {
+  console.error('[FATAL] TELEGRAM_BOT_TOKEN is missing in environment variables.');
 }
 
-// ============================================================
-// ADMIN — SMS PARSERS
-// ============================================================
+// In-memory user conversation sessions
+// Key: telegramId (string), Value: { action, step, data, createdAt }
+const sessions = new Map();
 
-function parseDepositSMS(text) {
-  if (!text) return null;
+// ==========================================
+// 2. BOT INITIALIZATION
+// ==========================================
 
-  const amountMatch = text.match(
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:Br|ETB|ብር)/i
-  );
-
-  const transactionMatch = text.match(
-    /\b([A-Z0-9]{8,})\b/
-  );
-
-  if (!amountMatch || !transactionMatch) {
-    return null;
+const bot = new TelegramBot(BOT_TOKEN, {
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: { timeout: 10 }
   }
+});
 
-  return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: transactionMatch[1].toUpperCase()
-  };
+bot.on('polling_error', (error) => {
+  console.error('[Polling Error]', error.code || error.message);
+});
+
+// ==========================================
+// 3. UTILITY FUNCTIONS
+// ==========================================
+
+function getSession(userId) {
+  const id = String(userId);
+  return sessions.get(id) || null;
 }
 
-function parseCBEBirrDepositSMS(text) {
-  if (!text) return null;
-
-  const amountMatch = text.match(
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:Br|ETB|ብር)/i
-  );
-
-  const transactionMatch = text.match(
-    /\b([A-Z0-9]{8,})\b/
-  );
-
-  if (!amountMatch || !transactionMatch) {
-    return null;
-  }
-
-  return {
-    amount: Number(amountMatch[1].replace(/,/g, '')),
-    transactionId: transactionMatch[1].toUpperCase(),
-    bank: 'CBE Birr',
-    type: 'received'
-  };
+function setSession(userId, data) {
+  const id = String(userId);
+  sessions.set(id, { ...data, updatedAt: Date.now() });
 }
 
-async function findPendingTransaction(type, amount, transactionId) {
-  const snapshot = await db.ref('transactions').once('value');
-  const transactions = snapshot.val() || {};
+function clearSession(userId) {
+  const id = String(userId);
+  sessions.delete(id);
+}
 
-  // Check duplicate transaction ID first
-  for (const transaction of Object.values(transactions)) {
-    if (!transaction) continue;
+/**
+ * Normalizes Ethiopian phone numbers to canonical 12-digit format: 2519XXXXXXXX or 2517XXXXXXXX
+ */
+function normalizeEthiopianPhone(input) {
+  if (!input) return null;
+  let cleaned = String(input).replace(/[^\d+]/g, '');
 
-    if (
-      String(transaction.transactionId || '').toUpperCase() ===
-      String(transactionId || '').toUpperCase()
-    ) {
-      console.log('⚠️ Duplicate transaction ID:', transactionId);
-
-      if (transaction.telegramId) {
-        await bot.sendMessage(
-          transaction.telegramId,
-          `⚠️ *Duplicate ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}*\n\n` +
-          `This transaction has already been processed.\n` +
-          `No money was added to your balance.`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-
-      return null;
-    }
+  if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
   }
 
-  // Find pending transaction
-  for (const [key, transaction] of Object.entries(transactions)) {
-    if (!transaction) continue;
+  // 09XXXXXXXX or 07XXXXXXXX (10 digits)
+  if (/^0[79]\d{8}$/.test(cleaned)) {
+    return '251' + cleaned.substring(1);
+  }
 
-    if (
-      transaction.type === type &&
-      transaction.status === 'pending' &&
-      Number(transaction.amount) === Number(amount)
-    ) {
-      return {
-        key,
-        ...transaction
-      };
-    }
+  // 9XXXXXXXX or 7XXXXXXXX (9 digits)
+  if (/^[79]\d{8}$/.test(cleaned)) {
+    return '251' + cleaned;
+  }
+
+  // 2519XXXXXXXX or 2517XXXXXXXX (12 digits)
+  if (/^251[79]\d{8}$/.test(cleaned)) {
+    return cleaned;
   }
 
   return null;
 }
 
-async function storeOfficialDeposit(text, smsData) {
-  const officialRef = db.ref(
-    `officialDeposits/${smsData.transactionId}`
-  );
-
-  const existingSnapshot = await officialRef.once('value');
-  const existing = existingSnapshot.val();
-
-  if (existing) {
-    console.log(
-      `⚠️ Official deposit already stored: ${smsData.transactionId}`
-    );
-    return false;
-  }
-
-  const receivedAt = new Date();
-const expiresAt = new Date(
-  receivedAt.getTime() + 3 * 24 * 60 * 60 * 1000
-);
-
-await officialRef.set({
-  type: 'deposit',
-  amount: smsData.amount,
-  transactionId: smsData.transactionId,
-  sms: text,
-  status: 'available',
-  receivedAt: receivedAt.toISOString(),
-  expiresAt: expiresAt.toISOString()
-});
-
-  console.log(
-    `✅ Official deposit SMS saved: ${smsData.amount} Br → ${smsData.transactionId}`
-  );
-
-  return true;
+function formatPhoneDisplay(normalized) {
+  if (!normalized || normalized.length !== 12) return normalized;
+  return `0${normalized.substring(3)}`;
 }
 
-// ============================================================
-// EXPIRE OLD OFFICIAL DEPOSITS
-// ============================================================
+function formatCurrency(amount) {
+  const num = Number(amount) || 0;
+  return `${num.toFixed(2)} Br`;
+}
 
-setInterval(async () => {
-  try {
-    const snapshot = await db.ref('officialDeposits').once('value');
-    const deposits = snapshot.val() || {};
+function generateTxId(prefix = 'TX') {
+  const time = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+  return `${prefix}_${time}_${rand}`;
+}
 
-    const now = Date.now();
+function getGamesWonCount(playerData) {
+  if (!playerData) return 0;
+  if (typeof playerData.gamesWon === 'number') return playerData.gamesWon;
+  if (typeof playerData.games_won === 'number') return playerData.games_won;
+  return 0;
+}
 
-    for (const [transactionId, deposit] of Object.entries(deposits)) {
-      if (!deposit) continue;
+function getMainMenuKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: '🎮 Play ZA Bingo', web_app: { url: WEBAPP_URL } }],
+      [
+        { text: '💰 Deposit', callback_data: 'nav_deposit' },
+        { text: '💸 Withdraw', callback_data: 'nav_withdraw' }
+      ],
+      [
+        { text: '💳 Balance', callback_data: 'nav_balance' },
+        { text: '🔄 Transfer', callback_data: 'nav_transfer' }
+      ],
+      [
+        { text: '👤 Profile', callback_data: 'nav_profile' },
+        { text: '📖 How to Play', callback_data: 'nav_instructions' }
+      ],
+      [{ text: '🎁 Bonus Channel', url: `https://t.me/${BONUS_CHANNEL.replace('@', '')}` }]
+    ]
+  };
+}
 
-      if (
-        deposit.status === 'available' &&
-        deposit.expiresAt &&
-        now > new Date(deposit.expiresAt).getTime()
-      ) {
-        await db.ref(`officialDeposits/${transactionId}`).update({
-          status: 'expired',
-          expiredAt: new Date().toISOString()
-        });
+function getCancelKeyboard(extraCallback = 'cancel_action') {
+  return {
+    inline_keyboard: [[{ text: '❌ Cancel', callback_data: extraCallback }]]
+  };
+}
 
-        console.log(
-          `⏰ Official deposit expired: ${transactionId}`
-        );
-      }
+// ==========================================
+// 4. PLAYER FUNCTIONS
+// ==========================================
+
+async function getOrCreatePlayer(user) {
+  const telegramId = String(user.id);
+  const playerRef = db.ref(`players/${telegramId}`);
+  const snapshot = await playerRef.once('value');
+
+  if (snapshot.exists()) {
+    const existing = snapshot.val();
+    const updates = {};
+    if (user.username && user.username !== existing.username) {
+      updates.username = user.username;
+    }
+    if (user.first_name && user.first_name !== existing.firstName) {
+      updates.firstName = user.first_name;
+    }
+    if (user.last_name && user.last_name !== existing.lastName) {
+      updates.lastName = user.last_name;
+    }
+    if (Object.keys(updates).length > 0) {
+      await playerRef.update(updates);
+    }
+    return { ...existing, ...updates, telegramId };
+  }
+
+  const newPlayer = {
+    telegramId,
+    username: user.username || '',
+    firstName: user.first_name || '',
+    lastName: user.last_name || '',
+    balance: 0,
+    referralBonusBalance: 0,
+    gamesWon: 0,
+    phone: '',
+    createdAt: Date.now(),
+    lastActiveAt: Date.now()
+  };
+
+  await playerRef.set(newPlayer);
+  return newPlayer;
+}
+
+async function getPlayer(telegramId) {
+  const snapshot = await db.ref(`players/${String(telegramId)}`).once('value');
+  if (!snapshot.exists()) return null;
+  return { ...snapshot.val(), telegramId: String(telegramId) };
+}
+
+async function findActivePlayerByPhone(normalizedPhone) {
+  const snapshot = await db.ref('players').orderByChild('phone').equalTo(normalizedPhone).once('value');
+  if (!snapshot.exists()) return null;
+
+  const data = snapshot.val();
+  const keys = Object.keys(data);
+  if (keys.length === 0) return null;
+  const firstKey = keys[0];
+  return { ...data[firstKey], telegramId: firstKey };
+}
+
+/**
+ * Safely alters player balance using an atomic Firebase transaction
+ */
+async function atomicBalanceUpdate(telegramId, field, delta, options = {}) {
+  const validFields = ['balance', 'referralBonusBalance'];
+  if (!validFields.includes(field)) {
+    throw new Error(`Invalid balance field: ${field}`);
+  }
+
+  const targetRef = db.ref(`players/${String(telegramId)}/${field}`);
+  let previousValue = 0;
+  let finalValue = 0;
+
+  const result = await targetRef.transaction((current) => {
+    const currVal = typeof current === 'number' ? current : 0;
+    previousValue = currVal;
+    const newVal = currVal + delta;
+
+    if (options.preventNegative && newVal < 0) {
+      // Abort transaction if insufficient funds
+      return;
     }
 
-  } catch (error) {
-    console.error(
-      '❌ Deposit expiration error:',
-      error
-    );
-  }
-
-}, 60 * 60 * 1000);
-
-async function processWithdrawal(text, smsData) {
-  const transaction = await findPendingTransaction(
-    'withdrawal',
-    smsData.amount,
-    smsData.transactionId
-  );
-
-  if (!transaction) {
-    console.log(
-      '⚠️ No matching pending withdrawal:',
-      smsData.amount,
-      smsData.transactionId
-    );
-    return false;
-  }
-
-  if (transaction.status !== 'pending') {
-    console.log('⚠️ Withdrawal already processed:', transaction.key);
-    return false;
-  }
-
-  // CBE → match amount + first name
-  if (smsData.bank === 'CBE') {
-    const requestName =
-      String(transaction.firstName || '')
-        .trim()
-        .toLowerCase();
-
-    const smsName =
-      String(smsData.receiverFirstName || '')
-        .trim()
-        .toLowerCase();
-
-    if (requestName !== smsName) {
-      console.log(
-        `❌ CBE name mismatch: ${requestName} ≠ ${smsName}`
-      );
-      return false;
-    }
-  }
-
-  const transactionRef =
-    db.ref(`transactions/${transaction.key}`);
-
-  const playerRef =
-    db.ref(`players/${transaction.telegramId}`);
-
-  const playerSnapshot =
-    await playerRef.once('value');
-
-  const player =
-    playerSnapshot.val();
-
-  if (!player) {
-    console.log(
-      '❌ Player not found:',
-      transaction.telegramId
-    );
-    return false;
-  }
-
-  const amount =
-    Number(transaction.amount || 0);
-
-  const source =
-  transaction.withdrawSource ||
-  (
-    Number(transaction.mainAmount || 0) > 0
-      ? 'main'
-      : null
-  );
-
-  if (!source || amount <= 0) {
-    console.log('❌ Invalid withdrawal source:', transaction.key);
-    return false;
-  }
-
-  let remainingBalance = 0;
-
-  if (source === 'main') {
-
-    const result =
-      await playerRef.child('balance').transaction(
-        current => {
-          const balance =
-            Number(current || 0);
-
-          if (balance < amount) {
-            return;
-          }
-
-          return balance - amount;
-        }
-      );
-
-    if (!result.committed) {
-      console.log(
-        `❌ Insufficient main balance: ${transaction.telegramId}`
-      );
-      return false;
-    }
-
-    remainingBalance =
-      Number(result.snapshot.val() || 0);
-  }
-
-  else if (source === 'referral') {
-
-    const gamesWon =
-      Number(
-        player.games_won ??
-        player.gamesWon ??
-        0
-      );
-
-    if (gamesWon < 10) {
-      console.log(
-        `❌ Referral withdrawal blocked: ${gamesWon}/10 wins`
-      );
-      return false;
-    }
-
-    const result =
-      await playerRef
-        .child('referralBonusBalance')
-        .transaction(
-          current => {
-            const balance =
-              Number(current || 0);
-
-            if (balance < amount) {
-              return;
-            }
-
-            return balance - amount;
-          }
-        );
-
-    if (!result.committed) {
-      console.log(
-        `❌ Insufficient referral balance: ${transaction.telegramId}`
-      );
-      return false;
-    }
-
-    remainingBalance =
-      Number(result.snapshot.val() || 0);
-  }
-
-  await transactionRef.update({
-    status: 'approved',
-    transactionId: smsData.transactionId,
-    confirmedAt: new Date().toISOString(),
-    confirmationSms: text
+    finalValue = Math.round(newVal * 100) / 100;
+    return finalValue;
   });
 
-const balanceName = 'Main balance';
-
-  await bot.sendMessage(
-    transaction.telegramId,
-    `🧾 *ያዘዙት ወጪ ተረጋግጧል 💯*\n\n` +
-    `Amount: ${amount.toFixed(2)} Br\n` +
-    `Source: ${balanceName}\n` +
-    `Transaction ID: ${smsData.transactionId}\n\n` +
-    `💰 Remaining ${balanceName}: ${remainingBalance.toFixed(2)} Br`,
-    {
-      parse_mode: 'Markdown'
-    }
-  );
-
-  console.log(
-    `✅ Withdrawal approved: ${amount} Br → ${transaction.telegramId} (${source})`
-  );
-
-  return true;
-}
-
-    // --------------------------------------------------------
-    // CHECK SMS FORWARDER SENDER
-    // --------------------------------------------------------
-async function processGatewaySMS(forwardedText) {
-  try {
-
-  if (!forwardedText) return;
-    const senderMatch = forwardedText.match(/^From:\s*(\d+|CBEBirr|CBE)/i);
-
-    if (!senderMatch) {
-      console.log('❌ SMS sender not found');
-      return;
-    }
-
-    const sender = senderMatch[1];
-
-   // TRUST TELEBIRR + CBE SMS SENDERS
-if (
-  sender !== '127' &&
-  sender.toUpperCase() !== 'CBE' &&
-  sender.toUpperCase() !== 'CBEBIRR'
-) {
-  console.log(
-    `❌ Unauthorized SMS sender: ${sender}`
-  );
-  return;
-}
-
-console.log(`✅ Authorized SMS sender: ${sender}`);
-
-    // --------------------------------------------------------
-    // REMOVE FORWARDER HEADER
-    // --------------------------------------------------------
-
-    const smsText = forwardedText
-  .replace(/^From:\s*(?:\d+|CBEBirr|CBE)\s*/i, '')
-  .replace(/^Time:\s*[^\n\r]*/i, '')
-  .trim();
-
-    console.log('\n📨 Actual SMS:');
-    console.log(smsText);
-
-    // --------------------------------------------------------
-    // DEPOSIT SMS
-    // --------------------------------------------------------
-
-    // --------------------------------------------------------
-// DEPOSIT SMS — EXISTING FORMAT
-// --------------------------------------------------------
-const smsData = parseDepositSMS(smsText);
-
-if (smsData) {
-  await storeOfficialDeposit(smsText, smsData);
-  return;
-}
-
-// --------------------------------------------------------
-// CBE BIRR DEPOSIT SMS
-// --------------------------------------------------------
-const cbeBirrData = parseCBEBirrDepositSMS(smsText);
-
-if (cbeBirrData) {
-  await storeOfficialDeposit(smsText, cbeBirrData);
-  return;
-}
-
-    // --------------------------------------------------------
-    // WITHDRAWAL SMS
-    // --------------------------------------------------------
-
-    if (
-      smsText.includes('ልከዋል') &&
-      smsText.includes('የሂሳብ እንቅስቃሴ ቁጥርዎ')
-    ) {
-
-      const smsData = parseWithdrawalSMS(smsText);
-
-      if (!smsData) {
-        console.log('❌ Could not parse withdrawal SMS');
-        return;
-      }
-
-      await processWithdrawal(smsText, smsData);
-
-      return;
-    }
-    // --------------------------------------------------------
-// CBE BANK WITHDRAWAL SMS
-// --------------------------------------------------------
-
-if (
-  smsText.includes('A debit transaction of ETB') &&
-  smsText.includes('mbreciept.cbe.com.et')
-) {
-
-  const smsData = parseCBEWithdrawalSMS(smsText);
-
-  if (!smsData) {
-    console.log('❌ Could not parse CBE withdrawal SMS');
-    return;
+  if (!result.committed) {
+    return { success: false, reason: 'INSUFFICIENT_FUNDS_OR_ABORTED' };
   }
 
-  await processWithdrawal(smsText, smsData);
-
-  return;
-}
-
-    console.log('ℹ️ SMS format not recognized');
-
-    } catch (error) {
-    console.error(
-      '❌ SMS processing error:',
-      error
-    );
-  }
-}
-bot.on('message', async (msg) => {
-  try {
-    if (!msg.text) return;
-
-    await processGatewaySMS(msg.text);
-
-  } catch (error) {
-    console.error('❌ Telegram SMS processing error:', error);
-  }
-});
-
-bot.setMyCommands([
-  { command: 'play', description: 'Play Now' },
-  { command: 'deposit', description: 'Deposit' },
-  { command: 'withdraw', description: 'Withdraw' },
-  { command: 'balance', description: 'Balance' },
-  { command: 'instructions', description: 'Instructions' },
-  { command: 'transfer', description: 'Transfer to a Player' },
-  { command: 'profile', description: 'Profile' }
-]);
-
-bot.onText(/\/balance/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
-
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
-  }
-
-  bot.sendMessage(
-  chatId,
-  `💰 Main Balance: ${Number(player.balance || 0).toFixed(2)} Br\n` +
-  `🎁 Referral Balance: ${Number(player.referralBonusBalance || 0).toFixed(2)} Br`
-);
-});
-bot.onText(/\/transfer/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
-
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
-  }
-const deposited = await hasMadeDeposit(tgId);
-
-if (!deposited) {
-  return bot.sendMessage(
-    chatId,
-    '❌ You must make at least one deposit before you can transfer money.'
-  );
-}
-  bot.sendMessage(
-    chatId,
-    'የተቀባዩን ስልክ ቁጥር ያስገቡ፦'
-  );
-
-  transferSessions[chatId] = {
-    step: 'phone',
-    senderId: tgId
+  return {
+    success: true,
+    previousBalance: previousValue,
+    newBalance: finalValue
   };
-});
-bot.onText(/\/play/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
+}
 
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
+// ==========================================
+// 5. SMS PARSERS
+// ==========================================
 
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
+/**
+ * Parses Telebirr Received SMS
+ * Rejects "sent" transactions (ልከዋል)
+ * Requires received indicator (ተቀብለዋል or credited/received)
+ */
+function parseTelebirrSMS(text) {
+  if (!text || typeof text !== 'string') return null;
+  const trimmed = text.trim();
+
+  // If text is purely digits or too short, reject
+  if (/^\d+$/.test(trimmed) || trimmed.length < 15) {
+    return null;
   }
 
-  showMainMenu(chatId);
-});
+  const isAmharicSent = trimmed.includes('ልከዋል');
+  const isAmharicReceived = trimmed.includes('ተቀብለዋል');
 
-bot.onText(/\/deposit/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
-
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
+  // If Amharic sent wording is found and no received wording, strictly reject
+  if (isAmharicSent && !isAmharicReceived) {
+    return { error: 'SENT_SMS_NOT_RECEIVED' };
   }
 
-  handleDepositMenu(chatId, player);
-});
+  const lower = trimmed.toLowerCase();
+  const isEnglishReceived =
+    lower.includes('received') ||
+    lower.includes('credited') ||
+    lower.includes('you have received') ||
+    lower.includes('deposited');
 
-bot.onText(/\/withdraw/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
+  const isEnglishSent =
+    lower.includes('you transferred') ||
+    lower.includes('you have paid') ||
+    lower.includes('you have sent');
 
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
-
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
+  if (isEnglishSent && !isEnglishReceived) {
+    return { error: 'SENT_SMS_NOT_RECEIVED' };
   }
 
-  const deposited = await hasMadeDeposit(tgId);
-
-  if (!deposited) {
-    return bot.sendMessage(
-      chatId,
-      `❌ *ገንዘብ ማውጣት አይችሉም*\n\n` +
-      `ገንዘብ ማውጣት ከመቻልዎ በፊት ቢያንስ አንድ ጊዜ ዴፖዚት ማድረግ አለብዎት።`,
-      { parse_mode: 'Markdown' }
-    );
+  if (!isAmharicReceived && !isEnglishReceived) {
+    return null;
   }
 
-  handleWithdrawMenu(chatId, player);
-});
+  // Extract Amount: e.g. "100.00 ብር" or "ETB 150.00" or "100.00 ETB" or "ብር 50"
+  let amount = null;
+  const amountPatterns = [
+    /(\d+(?:\.\d{1,2})?)\s*(?:ETB|ብር|birr)/i,
+    /(?:ETB|ብር|birr)\s*(\d+(?:\.\d{1,2})?)/i,
+    /(?:amount|ገንዘብ)[\s:]*(\d+(?:\.\d{1,2})?)/i
+  ];
 
-bot.onText(/\/profile/, async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-
-  const snapshot = await db.ref(`players/${tgId}`).once('value');
-  const player = snapshot.val();
-
-  if (!player) {
-    return bot.sendMessage(chatId, 'Please /start first.');
+  for (const regex of amountPatterns) {
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      const val = parseFloat(match[1]);
+      if (val > 0) {
+        amount = val;
+        break;
+      }
+    }
   }
 
-  handleProfile(chatId, player);
-});
-let gameManager = null;
+  // Extract Transaction/Reference ID
+  let transactionId = null;
+  const txPatterns = [
+    /(?:የግብይት ቁጥር|transaction\s*(?:id|no|number)?|txn\s*(?:id|no)?|ref(?:\.|\s*no)?)\s*[:：\-]?\s*([A-Za-z0-9]{6,25})/i,
+    /([A-Z0-9]{8,18})\s*(?:is your transaction|የግብይት ቁጥር)/i,
+    /\b([A-Z0-9]{10,16})\b/
+  ];
 
-// ============================================================
-// BOT COMMANDS
-// ============================================================
+  for (const regex of txPatterns) {
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      // Must contain at least one letter and one number or long alphanumeric string
+      const candidate = match[1].trim().toUpperCase();
+      if (candidate.length >= 6) {
+        transactionId = candidate;
+        break;
+      }
+    }
+  }
 
-// /start - Register user and show main menu
-bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
-  const chatId = msg.chat.id;
+  if (!amount || !transactionId) {
+    return null;
+  }
 
-  // Save user for future broadcasts
-  broadcastUsers[String(chatId)] = true;
-
-  const tgId = String(msg.from.id);
-  const firstName = msg.from.first_name || 'Player';
-  const username = msg.from.username || '';
-
-  try {
-    const playerRef = db.ref(`players/${tgId}`);
-    const snapshot = await playerRef.once('value');
-    let player = snapshot.val();
-
-    if (!player) {
-  // Register new player
-
-
-
-  player = {
-    telegram_id: tgId,
-    first_name: firstName,
-    username: username,
-    phone: '',
-    balance: 15,
-games_played: 0,
-games_won: 0,
-    registration_date: new Date().toISOString(),
-
-
+  return {
+    provider: 'telebirr',
+    amount,
+    transactionId
   };
+}
 
-  await playerRef.set(player);
-            // 
+/**
+ * Parses CBE Birr Received SMS
+ */
+function parseCbeBirrSMS(text) {
+  if (!text || typeof text !== 'string') return null;
+  const trimmed = text.trim();
 
-      bot.sendPhoto(
-  chatId,
-  welcomePhoto,
-  {
-    caption:
-      `👑 *እንኳን ደህና መጡ, ${firstName}!*\n\n` +
-      `🎁 *15 ብር ቦነስ ተሰጥቶዎታል!*\n\n` +
-      `🎱 *እድል Bingo — ይጫወቱ፣ ያሸንፉ! 🏆*\n\n` +
-    
-      `📲 *ምዝገባዎን ለመጨረስ ስልክ ቁጥርዎን ያጋሩ።*\n\n` +
-      `****************👇👇👇****************`,
-    parse_mode: 'Markdown',
-    reply_markup: {
-      keyboard: [[
-        {
-          text: '📱 Share Contact',
-          request_contact: true
-        }
-      ]],
-      resize_keyboard: true,
-      one_time_keyboard: true
-    }
+  if (/^\d+$/.test(trimmed) || trimmed.length < 15) {
+    return null;
   }
-);
-    } else {
-      showMainMenu(chatId);
-    }
 
-  } catch (error) {
-    console.error('❌ /start error:', error);
-    bot.sendMessage(
-      chatId,
-      '❌ Something went wrong. Please try again.'
-    );
+  const lower = trimmed.toLowerCase();
+
+  const isReceived =
+    trimmed.includes('ተቀብለዋል') ||
+    lower.includes('credited with') ||
+    lower.includes('you have received') ||
+    lower.includes('deposited into your account') ||
+    lower.includes('transferred to your account') ||
+    lower.includes('cbebirr') ||
+    lower.includes('cbe birr');
+
+  const isSent =
+    (trimmed.includes('ልከዋል') && !trimmed.includes('ተቀብለዋል')) ||
+    (lower.includes('debited from your account') && !lower.includes('credited'));
+
+  if (isSent) {
+    return { error: 'SENT_SMS_NOT_RECEIVED' };
   }
-});
 
-// Handle contact sharing
-bot.on('contact', async (msg) => {
-  const chatId = msg.chat.id;
-  const tgId = String(msg.from.id);
-  const phone = msg.contact.phone_number;
-
-  try {
-    await db.ref(`players/${tgId}/phone`).set(phone);
-
-    bot.sendMessage(chatId,
-  `✅ *የስልክ ቁጥርዎ ተመዝግቧል!*\n\n` +
-  `🎱 *እንኳን ወደ እድል Bingo በደህና መጡ! 🏆*\n\n` +
-  `🎮 *አሁን መጫወት ይችላሉ!*\n\n` +
-  
-  {
-      reply_markup: {
-        remove_keyboard: true
-      }
-    });
-
-    showMainMenu(chatId);
-
-  } catch (error) {
-    console.error('❌ Contact save error:', error);
-
-    bot.sendMessage(
-      chatId,
-      '❌ Could not save your phone number. Please try again.'
-    );
+  if (!isReceived) {
+    return null;
   }
-});
 
-// ============================================================
-// MAIN MENU
-// ============================================================
-function showMainMenu(chatId) {
-  bot.sendMessage(chatId,
-    ` *እድል BINGO*\n\n` +
-    `Choose an option below:`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: ' Play Now', web_app: { url: WEBAPP_URL } }],
-          [{ text: ' Deposit', callback_data: 'menu_deposit' }],
-          [{ text: ' Withdraw', callback_data: 'menu_withdraw' }],
-          [{ text: ' Profile', callback_data: 'menu_profile' }],
-        ]
+  // Amount extraction
+  let amount = null;
+  const amountPatterns = [
+    /(?:ETB|ብር)\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)/i,
+    /(\d+(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:ETB|ብር)/i,
+    /(?:credited with|amount:)\s*(?:ETB)?\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)/i
+  ];
+
+  for (const regex of amountPatterns) {
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      const cleanVal = match[1].replace(/,/g, '');
+      const val = parseFloat(cleanVal);
+      if (val > 0) {
+        amount = val;
+        break;
       }
     }
-  );
-}
-
-// ============================================================
-// CALLBACK HANDLERS
-// ============================================================
-bot.on('callback_query', async (query) => {
-  const chatId = query.message.chat.id;
-  const tgId = String(query.from.id);
-  const data = query.data;
-
-  const playerRef = db.ref(`players/${tgId}`);
-const snapshot = await playerRef.once('value');
-const player = snapshot.val();
-  if (!player) {
-    bot.answerCallbackQuery(query.id, { text: 'Please /start first' });
-    return;
   }
 
-  // Transfer confirmation
-  if (data === 'transfer_cancel') {
-    delete transferSessions[chatId];
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Transfer cancelled'
-    });
-
-    await bot.sendMessage(
-      chatId,
-      'Transfer cancelled.'
-    );
-
-    return;
-  }
-
-  if (data === 'transfer_confirm') {
-    const session = transferSessions[chatId];
-
-    if (!session || session.step !== 'confirm') {
-      await bot.answerCallbackQuery(query.id, {
-        text: 'Transfer session expired'
-      });
-      return;
-    }
-
-    const amount = Number(session.amount);
-    const senderId = tgId;
-    const recipientId = session.recipientId;
-
-    // Get both players again before changing balances
-    const senderRef = db.ref(`players/${senderId}`);
-    const recipientRef = db.ref(`players/${recipientId}`);
-
-    const [senderSnap, recipientSnap] = await Promise.all([
-      senderRef.once('value'),
-      recipientRef.once('value')
-    ]);
-
-    const sender = senderSnap.val();
-    const recipient = recipientSnap.val();
-
-    if (!sender || !recipient) {
-      delete transferSessions[chatId];
-
-      await bot.answerCallbackQuery(query.id, {
-        text: 'Player not found'
-      });
-
-      await bot.sendMessage(chatId, '❌ Transfer failed.');
-      return;
-    }
-
-    const senderBalance = Number(sender.balance || 0);
-
-    if (amount <= 0 || amount > senderBalance) {
-      delete transferSessions[chatId];
-
-      await bot.answerCallbackQuery(query.id, {
-        text: 'Insufficient balance'
-      });
-
-      await bot.sendMessage(
-        chatId,
-        `❌ Insufficient balance.\n\nYour balance: ${senderBalance} Br`
-      );
-
-      return;
-    }
-
-    // Deduct from sender
-    await senderRef.child('balance').set(senderBalance - amount);
-
-    // Add to recipient
-    const recipientBalance = Number(recipient.balance || 0);
-
-    await recipientRef
-      .child('balance')
-      .set(recipientBalance + amount);
-
-    // Save transaction
-    const transactionRef = db.ref('transactions').push();
-
-    await transactionRef.set({
-      type: 'transfer',
-      senderId: senderId,
-      recipientId: recipientId,
-      amount: amount,
-      status: 'completed',
-      createdAt: new Date().toISOString()
-    });
-
-    delete transferSessions[chatId];
-
-    await bot.answerCallbackQuery(query.id, {
-      text: 'Transfer successful'
-    });
-
-    // Sender confirmation
-    await bot.sendMessage(
-      chatId,
-      `✅ Transfer successful!\n\n` +
-      `To: ${recipient.first_name || 'Player'}\n` +
-      `Phone: ${recipient.phone || 'N/A'}\n` +
-      `Amount: ${amount} Br\n\n` +
-      `Remaining balance: ${senderBalance - amount} Br`
-    );
-
-    // Recipient notification
-    await bot.sendMessage(
-      recipientId,
-      `You received ${amount} Br from ${sender.first_name || 'Player'}.\n\n` +
-      `Your new balance: ${recipientBalance + amount} Br`
-    );
-
-    return;
-  }
-
-  // Menu handlers
-if (data === 'menu_deposit') {
-  await bot.answerCallbackQuery(query.id);
-  return handleDepositMenu(chatId, player);
-}
-
-if (data === 'menu_withdraw') {
-
-  const deposited = await hasMadeDeposit(tgId);
-
-  if (!deposited) {
-
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ You must make a deposit first',
-      show_alert: true
-    });
-
-    await bot.sendMessage(
-      chatId,
-      `❌ *ገንዘብ ማውጣት አይችሉም*\n\n` +
-      `ገንዘብ ማውጣት ከመቻልዎ በፊት ቢያንስ አንድ ጊዜ ዴፖዚት ማድረግ አለብዎት።`,
-      { parse_mode: 'Markdown' }
-    );
-
-    return;
-  }
-
-  await bot.answerCallbackQuery(query.id);
-
-  return handleWithdrawMenu(chatId, player);
-}
-
-if (data === 'menu_profile') {
-  await bot.answerCallbackQuery(query.id);
-  return handleProfile(chatId, player);
-}
-  // Deposit method selection
-else if (data.startsWith('deposit_method_')) {
-  const method = data.replace('deposit_method_', '');
-  const session = depositSessions[chatId];
-
-  if (!session || session.step !== 'method') {
-    bot.sendMessage(chatId, '❌ Deposit session expired. Please start again.');
-    return;
-  }
-
-  session.method = method;
-  session.step = 'sms';
-
-  if (method === 'telebirr') {
-  bot.sendMessage(
-    chatId,
-    `💳 የቴሌብር አካውንት: \`0985661720\`\n\n` +
-    `1️⃣ ከላይ ባለው የቴሌብር አካውንት ብር ያስገቡ\n\n` +
-    `2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
-    `3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከቴሌብር ይደርሳችኋል\n\n` +
-    `4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
-    `⚠️ ማሳሰቢያ: የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
-    { parse_mode: 'Markdown' }
-  );
-} else if (method === 'cbe') {
-  bot.sendMessage(
-    chatId,
-`💳 CBE Birr አካውንት: \`0985661720\`\n\n` +
-`1️⃣ ከላይ ባለው CBE Birr አካውንት ብር ያስገቡ\n\n` +
-`2️⃣ የምትልኩት የገንዘብ መጠን እና እዚህ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ\n\n` +
-`3️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልእክት (SMS) ከCBE Birr ይደርሳችኋል\n\n` +
-`4️⃣ የደረሳችሁን SMS ሙሉውን Copy በማድረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢያ ላይ Paste በማድረግ ይላኩት\n\n` +
-`⚠️ ማሳሰቢያ: በCBE Birr አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ\n` +
-`የከፈላችሁበትን SMS ሙሉውን እዚህ ላይ ያስገቡት 👇👇👇`,
-    { parse_mode: 'Markdown' }
-  );
-}
-}
-// Withdraw method selection
-else if (data === 'withdraw_source_main') {
-
-  await bot.sendMessage(
-    chatId,
-    '⚠️ የገንዘብ ማውጣት አገልግሎት ለጊዜው አይሰራም። እባክዎ ቆይተው እንደገና ይሞክሩ።'
-  );
-
-  return;
-}
-
-else if (
-  data === 'withdraw_method_telebirr' ||
-  data === 'withdraw_method_cbe'
-) {
-  const session = withdrawSessions[chatId];
-
-  if (!session || !session.source) {
-    await bot.sendMessage(
-      chatId,
-      '❌ Withdrawal session expired. Please start again with /withdraw.'
-    );
-    delete withdrawSessions[chatId];
-    return;
-  }
-
-  session.method =
-    data === 'withdraw_method_cbe'
-      ? 'cbe'
-      : 'telebirr';
-
-  session.step = 'amount';
-
-  const sourceName =
-    session.source === 'main'
-      ? 'Main Balance'
-      : 'Referral Bonus';
-
-  await bot.sendMessage(
-    chatId,
-    `*${sourceName} Withdrawal*\n\n` +
-    `የሚያወጡትን መጠን ያስገቡ 👇`,
-    {
-      parse_mode: 'Markdown'
-    }
-  );
-}
-  
-  // Admin: Approve withdrawal
-  else if (data.startsWith('approve_withdraw_')) {
-    const txnId = data.replace('approve_withdraw_', '');
-    approveWithdrawal(query, txnId);
-  }
-  // Admin: Reject withdrawal
-  else if (data.startsWith('reject_withdraw_')) {
-    const txnId = data.replace('reject_withdraw_', '');
-    rejectWithdrawal(query, txnId);
-  }
-
-  bot.answerCallbackQuery(query.id);
-});
-
-// ============================================================
-// SESSION STORAGE (In production, use Redis or DB)
-// ============================================================
-const depositSessions = {};
-const withdrawSessions = {};
-const transferSessions = {};
-// ============================================================
-// BROADCAST USERS
-// ============================================================
-const broadcastUsers = {};
-// ============================================================
-// TEXT MESSAGE HANDLER (for amount input)
-// ============================================================
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-
-  // Save user for future broadcasts
-  broadcastUsers[String(chatId)] = true;
-
-  const tgId = String(msg.from.id);
-  const text = msg.text;
-
-  // Skip commands and contacts
-  if (!text || text.startsWith('/') || msg.contact) return;
-
-  const playerRef = db.ref(`players/${tgId}`);
-const snapshot = await playerRef.once('value');
-const player = snapshot.val();
-
-  // Handle deposit amount
-if (depositSessions[chatId] && depositSessions[chatId].step === 'amount') {
-  const amount = parseFloat(text);
-
-  if (isNaN(amount) || amount < 50) {
-  bot.sendMessage(chatId, '❌ Minimum deposit is 50 Br. Enter amount:');
-  return;
-}
-
-  // Save amount and move to payment method
-  depositSessions[chatId] = {
-    step: 'method',
-    amount: amount
-  };
-
-  bot.sendMessage(
-    chatId,
-    `ለማስገባት የፈለጉት: *${amount} Br*\n\nየመክፈያ አማራጭ ይምረጡ 👇:`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: ' Telebirr', callback_data: 'deposit_method_telebirr' }],
-          [{ text: ' CBE Birr', callback_data: 'deposit_method_cbe' }],
-          [{ text: '🔙 Back', callback_data: 'back_to_menu' }]
-        ]
-      }
-    }
-  );
-
-  return;
-}
-
-  // Handle deposit SMS
-if (
-  depositSessions[chatId] &&
-  depositSessions[chatId].step === 'sms'
-) {
-  const session = depositSessions[chatId];
-  const amount = Number(session.amount);
-  const method = session.method;
-  const sms = text.trim();
-
-
-let smsData = null;
-
-// ============================================================
-// PLAYER PAYMENT SMS PARSER
-// Extract amount + transaction ID without depending on language
-// ============================================================
-
-// Convert common numeral systems to normal 0-9 digits
-const normalizeDigits = (value) =>
-  String(value || '')
-    .replace(/[٠-٩]/g, d =>
-      String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-    )
-    .replace(/[۰-۹]/g, d =>
-      String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
-    );
-
-const normalizedSms = normalizeDigits(sms);
-
-// ------------------------------------------------------------
-// 1. Find the amount
-// ------------------------------------------------------------
-
-const numberMatches =
-  normalizedSms.match(
-    /\d+(?:[\s,]\d{3})*(?:\.\d{1,2})?/g
-  ) || [];
-
-let parsedAmount = null;
-
-for (const value of numberMatches) {
-  const numericValue = Number(
-    value.replace(/[\s,]/g, '')
-  );
-
-  if (
-    Number.isFinite(numericValue) &&
-    numericValue === amount
-  ) {
-    parsedAmount = amount;
-    break;
-  }
-}
-
-// ------------------------------------------------------------
-// 2. Find the official transaction ID inside the SMS
-// ------------------------------------------------------------
-
-if (parsedAmount !== null) {
-
-  const officialSnapshot =
-    await db.ref('officialDeposits').once('value');
-
-  const officialDeposits =
-    officialSnapshot.val() || {};
-
-  const compactSms =
-    normalizedSms
-      .replace(/[\s-]/g, '')
-      .toUpperCase();
-
-  for (const [id, official] of Object.entries(officialDeposits)) {
-
-    if (!official) continue;
-
-    if (official.status !== 'available') continue;
-
-    if (Number(official.amount) !== parsedAmount) continue;
-
-    const compactId =
-      String(id)
-        .replace(/[\s-]/g, '')
-        .toUpperCase();
-
-    if (compactSms.includes(compactId)) {
-
-      smsData = {
-        amount: parsedAmount,
-        transactionId: String(id).toUpperCase()
-      };
-
+  // CBE Transaction/Reference ID extraction
+  let transactionId = null;
+  const txPatterns = [
+    /(?:txn\s*(?:id|no)?|transaction\s*(?:id|no|number)?|ref\s*(?:id|no|number)?|የግብይት ቁጥር)\s*[:：\-]?\s*([A-Za-z0-9]{6,25})/i,
+    /(?:FT|TT|CBE)[0-9A-Z]{8,20}/i,
+    /\b([0-9A-Z]{9,20})\b/
+  ];
+
+  for (const regex of txPatterns) {
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      transactionId = match[1].trim().toUpperCase();
+      break;
+    } else if (match && match[0]) {
+      transactionId = match[0].trim().toUpperCase();
       break;
     }
   }
+
+  if (!amount || !transactionId) {
+    return null;
+  }
+
+  return {
+    provider: 'cbe_birr',
+    amount,
+    transactionId
+  };
 }
 
-// Reject if parsing failed
-if (!smsData) {
-  bot.sendMessage(
-    chatId,
-    'ያስገቡት የትራንዛክሽን ቁጥር የተሳሳተ ነው። እባክዎ ሲከፍሉ የደረስዎትን የጹሁፍ መልዕክት(sms) ሙሉውን ኮፒ አርገው እዚህ ላይ ፔስት ያርጉት።'
-  );
-  return;
+/**
+ * Universal SMS processor for deposit
+ */
+function parseDepositSMS(text, expectedProvider) {
+  if (expectedProvider === 'telebirr') {
+    const res = parseTelebirrSMS(text);
+    if (res) return res;
+    // Fallback to CBE parser in case user pasted CBE into Telebirr by mistake
+    return parseCbeBirrSMS(text);
+  }
+
+  if (expectedProvider === 'cbe_birr') {
+    const res = parseCbeBirrSMS(text);
+    if (res) return res;
+    return parseTelebirrSMS(text);
+  }
+
+  // Any provider
+  return parseTelebirrSMS(text) || parseCbeBirrSMS(text);
 }
 
-const smsAmount = Number(smsData.amount);
+// ==========================================
+// 6. DEPOSIT FUNCTIONS
+// ==========================================
 
-const transactionId =
-  String(smsData.transactionId).toUpperCase();
-  // Check that SMS amount matches the amount entered
-  if (smsAmount !== amount) {
-    bot.sendMessage(
+async function processDepositSMS(chatId, userId, smsText) {
+  const session = getSession(userId);
+  const provider = session && session.data ? session.data.provider : 'telebirr';
+
+  const parsed = parseDepositSMS(smsText, provider);
+
+  if (!parsed) {
+    await bot.sendMessage(
       chatId,
-      `❌ The SMS amount (${smsAmount} Br) does not match your deposit amount (${amount} Br).`
+      '⚠️ *Invalid SMS format*\n\n' +
+        'We could not extract the deposit details from your message.\n' +
+        'Please forward or paste the **complete, unmodified confirmation SMS** you received.\n\n' +
+        'Make sure it contains the received amount and transaction reference number.',
+      { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_deposit') }
     );
     return;
   }
 
-// Check official SMS saved by the main bot
-  const officialRef = db.ref(
-    `officialDeposits/${transactionId}`
-  );
-
-  const officialSnapshot =
-    await officialRef.once('value');
-
-  const official = officialSnapshot.val();
-
-  if (!official || official.status !== 'available') {
-    bot.sendMessage(
+  if (parsed.error === 'SENT_SMS_NOT_RECEIVED') {
+    await bot.sendMessage(
       chatId,
-      '⏳ ይህን ክፍያ እስካሁን ማግኘት አልተቻለም። እባክዎ ትክክለኛውን የክፍያ SMS መልዕክት መድረሱን ያረጋግጡና እንደገና ይላኩ።'
+      '❌ *Invalid SMS Type*\n\n' +
+        'The SMS you sent indicates money was **sent (ልከዋል)** rather than **received (ተቀብለዋል)** by the recipient account.\n' +
+        'Please ensure you made the transfer and paste the actual receipt message.',
+      { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_deposit') }
     );
     return;
   }
 
-  // Verify amount
-  if (Number(official.amount) !== smsAmount) {
-    bot.sendMessage(
+  const { amount, transactionId, provider: actualProvider } = parsed;
+  const externalTxId = String(transactionId).trim().toUpperCase();
+
+  // Atomically claim the external transaction ID to prevent duplicate deposits
+  const claimRef = db.ref(`claimed_deposit_txids/${externalTxId}`);
+  let alreadyClaimed = false;
+
+  const claimResult = await claimRef.transaction((current) => {
+    if (current) {
+      alreadyClaimed = true;
+      return; // Abort: already used
+    }
+    return {
+      claimedBy: String(userId),
+      claimedAt: Date.now(),
+      amount
+    };
+  });
+
+  if (!claimResult.committed || alreadyClaimed) {
+    clearSession(userId);
+    await bot.sendMessage(
       chatId,
-      '❌ Payment verification failed.'
+      `❌ *Duplicate Transaction*\n\n` +
+        `Transaction ID \`${externalTxId}\` has already been credited or is currently processed.\n` +
+        `If you believe this is an error, please contact our support team.`,
+      { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
     );
     return;
   }
 
-  // Check 3-day expiration
-if (official.expiresAt) {
-  if (Date.now() > new Date(official.expiresAt).getTime()) {
-    bot.sendMessage(
+  // Credit player balance atomically
+  const creditResult = await atomicBalanceUpdate(userId, 'balance', amount);
+
+  if (!creditResult.success) {
+    // Release claimed ID if crediting failed
+    await claimRef.remove().catch((e) => console.error('[Claim rollback failed]', e));
+    clearSession(userId);
+    await bot.sendMessage(
       chatId,
-      '❌ This payment SMS has expired.'
+      '❌ An unexpected error occurred while crediting your wallet. Please try again or contact support.',
+      { reply_markup: getMainMenuKeyboard() }
     );
     return;
   }
-}
 
-// Compare amount + transaction ID
-if (
-  Number(official.amount) !== smsAmount ||
-  String(official.transactionId).toUpperCase() !==
-    transactionId.toUpperCase()
-) {
-  bot.sendMessage(
-    chatId,
-    '❌ The SMS does not match the official payment record.'
-  );
-  return;
-}
-  const isFirstDeposit = !(await hasMadeDeposit(tgId));
-
-const bonusRate = isFirstDeposit ? 0.50 : 0.25;
-const bonusAmount = amount * bonusRate;
-
-  // Create approved transaction
-  const transactionRef =
-    db.ref('transactions').push();
-
-  await transactionRef.set({
-    playerId: tgId,
-    telegramId: tgId,
+  // Record completed deposit transaction
+  const internalTxId = generateTxId('DEP');
+  const transactionRecord = {
+    id: internalTxId,
+    telegramId: String(userId),
     type: 'deposit',
-    amount: amount,
+    provider: actualProvider,
+    externalTxId,
+    amount,
     status: 'approved',
-    paymentMethod: method,
-    sms: sms,
-    transactionId: transactionId,
-    officialDepositId: transactionId,
-    createdAt: new Date().toISOString(),
-    confirmedAt: new Date().toISOString()
+    source: 'external_sms',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  await db.ref(`transactions/${internalTxId}`).set(transactionRecord);
+
+  // Clear session
+  clearSession(userId);
+
+  await bot.sendMessage(
+    chatId,
+    `✅ *Deposit Successful!*\n\n` +
+      `💳 *Credited:* ${formatCurrency(amount)}\n` +
+      `🆔 *Ref:* \`${externalTxId}\`\n` +
+      `💰 *New Balance:* ${formatCurrency(creditResult.newBalance)}\n\n` +
+      `Your wallet has been topped up. Good luck playing ZA Bingo! 🎱`,
+    { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+  );
+}
+
+// ==========================================
+// 7. WITHDRAWAL FUNCTIONS
+// ==========================================
+
+async function createWithdrawalRequest(chatId, userId) {
+  const session = getSession(userId);
+  if (!session || !session.data) {
+    clearSession(userId);
+    return;
+  }
+
+  const { source, amount, accountInfo, method } = session.data;
+  const numAmount = Number(amount);
+
+  if (!numAmount || numAmount <= 0) {
+    await bot.sendMessage(chatId, '❌ Invalid amount. Withdrawal cancelled.', {
+      reply_markup: getMainMenuKeyboard()
+    });
+    clearSession(userId);
+    return;
+  }
+
+  const player = await getPlayer(userId);
+  if (!player) {
+    await bot.sendMessage(chatId, '❌ Player profile not found.');
+    clearSession(userId);
+    return;
+  }
+
+  // Check referral conditions
+  if (source === 'referralBonusBalance') {
+    const gamesWon = getGamesWonCount(player);
+    if (gamesWon < 10) {
+      await bot.sendMessage(
+        chatId,
+        `❌ *Withdrawal Requirement Not Met*\n\n` +
+          `To withdraw from your Referral Bonus Balance, you must have won at least *10 games*.\n` +
+          `Current games won: *${gamesWon}/10*.\n\n` +
+          `Play more games to unlock your referral bonus!`,
+        { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+      );
+      clearSession(userId);
+      return;
+    }
+  }
+
+  // Pre-check balance
+  const currentBalance = Number(player[source]) || 0;
+  if (currentBalance < numAmount) {
+    await bot.sendMessage(
+      chatId,
+      `❌ *Insufficient Balance*\n\n` +
+        `Requested: ${formatCurrency(numAmount)}\n` +
+        `Available: ${formatCurrency(currentBalance)}`,
+      { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+    );
+    clearSession(userId);
+    return;
+  }
+
+  // Create pending transaction in Firebase
+  const txId = generateTxId('WTH');
+  const txRecord = {
+    id: txId,
+    telegramId: String(userId),
+    username: player.username || '',
+    firstName: player.firstName || '',
+    type: 'withdrawal',
+    source, // 'balance' or 'referralBonusBalance'
+    amount: numAmount,
+    status: 'pending',
+    paymentMethod: method || 'telebirr',
+    destinationAccount: accountInfo,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  await db.ref(`transactions/${txId}`).set(txRecord);
+  clearSession(userId);
+
+  await bot.sendMessage(
+    chatId,
+    `⏳ *Withdrawal Request Submitted!*\n\n` +
+      `🆔 *Request ID:* \`${txId}\`\n` +
+      `💰 *Amount:* ${formatCurrency(numAmount)}\n` +
+      `📂 *Source:* ${source === 'balance' ? 'Main Balance' : 'Referral Bonus'}\n` +
+      `🏦 *Account:* \`${accountInfo}\`\n` +
+      `⚡ *Status:* Pending admin approval\n\n` +
+      `You will receive a notification as soon as the admin processes your request.`,
+    { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+  );
+
+  // Notify Admin
+  if (ADMIN_ID) {
+    const adminMsg =
+      `🔔 *NEW WITHDRAWAL REQUEST*\n\n` +
+      `🆔 *ID:* \`${txId}\`\n` +
+      `👤 *User:* ${player.firstName || 'Player'} (@${player.username || 'N/A'})\n` +
+      `🆔 *TG ID:* \`${userId}\`\n` +
+      `💰 *Amount:* ${formatCurrency(numAmount)}\n` +
+      `📂 *Source:* \`${source}\`\n` +
+      `🏦 *Method:* ${method}\n` +
+      `📱 *Destination:* \`${accountInfo}\``;
+
+    const adminKeyboard = {
+      inline_keyboard: [
+        [
+          { text: '✅ Approve', callback_data: `admin_approve_${txId}` },
+          { text: '❌ Reject', callback_data: `admin_reject_${txId}` }
+        ]
+      ]
+    };
+
+    bot.sendMessage(ADMIN_ID, adminMsg, {
+      parse_mode: 'Markdown',
+      reply_markup: adminKeyboard
+    }).catch((err) => console.error('[Admin Notify Error]', err.message));
+  }
+}
+
+// ==========================================
+// 8. ADMIN ACTIONS (WITHDRAWAL APPROVAL/REJECTION)
+// ==========================================
+
+async function handleAdminWithdrawalAction(adminChatId, adminUserId, txId, isApproved) {
+  // Strict admin check
+  if (String(adminUserId) !== String(ADMIN_ID)) {
+    console.warn(`[UNAUTHORIZED ADMIN ATTEMPT] User: ${adminUserId}`);
+    return;
+  }
+
+  const txRef = db.ref(`transactions/${txId}`);
+
+  // Atomically lock and transition status from 'pending' to 'approved' or 'rejected'
+  let txData = null;
+  let alreadyProcessed = false;
+
+  const txStatusResult = await txRef.transaction((current) => {
+    if (!current) return;
+    if (current.status !== 'pending') {
+      alreadyProcessed = true;
+      return; // Do not touch if already approved or rejected
+    }
+
+    txData = { ...current };
+    return {
+      ...current,
+      status: isApproved ? 'approved' : 'rejected',
+      processedAt: Date.now(),
+      processedBy: String(adminUserId)
+    };
   });
 
-  // Add money to player's balance
-  const balanceRef = db.ref(
-    `players/${tgId}/balance`
-  );
+  if (alreadyProcessed || !txStatusResult.committed || !txData) {
+    await bot.sendMessage(
+      adminChatId,
+      `⚠️ Transaction \`${txId}\` has already been processed or is not in pending state.`,
+      { parse_mode: 'Markdown' }
+    );
+    return;
+  }
 
-  const balanceResult =
-    await balanceRef.transaction(
-      balance => Number(balance || 0) + amount
+  const { telegramId, amount, source, destinationAccount } = txData;
+
+  if (isApproved) {
+    // Atomically deduct balance
+    const deduction = await atomicBalanceUpdate(telegramId, source, -amount, {
+      preventNegative: true
+    });
+
+    if (!deduction.success) {
+      // Rollback transaction status back to rejected or keep rejected due to insufficient balance
+      await txRef.update({
+        status: 'rejected',
+        rejectionReason: 'Insufficient balance at time of processing',
+        updatedAt: Date.now()
+      });
+
+      await bot.sendMessage(
+        adminChatId,
+        `❌ *Approval Failed*: User \`${telegramId}\` has insufficient balance. Transaction rejected automatically.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      await bot.sendMessage(
+        telegramId,
+        `❌ *Withdrawal Rejected*\n\n` +
+          `Your withdrawal request \`${txId}\` for ${formatCurrency(amount)} was rejected due to insufficient funds.`,
+        { parse_mode: 'Markdown' }
+      ).catch(() => {});
+
+      return;
+    }
+
+    await bot.sendMessage(
+      adminChatId,
+      `✅ *Withdrawal Approved*\n\n` +
+        `🆔 *TX ID:* \`${txId}\`\n` +
+        `👤 *Player:* \`${telegramId}\`\n` +
+        `💰 *Amount:* ${formatCurrency(amount)}\n` +
+        `📱 *To Account:* \`${destinationAccount}\`\n` +
+        `💳 *New Balance:* ${formatCurrency(deduction.newBalance)}`,
+      { parse_mode: 'Markdown' }
     );
 
-  const newBalance =
-    Number(balanceResult.snapshot.val() || 0);
-  const bonusRef =
-  db.ref(`players/${tgId}/referralBonusBalance`);
+    // Notify player
+    await bot.sendMessage(
+      telegramId,
+      `🎉 *Withdrawal Approved & Sent!*\n\n` +
+        `Your withdrawal request of *${formatCurrency(amount)}* has been approved and paid to \`${destinationAccount}\`.\n` +
+        `Thank you for playing ZA Bingo! 🎱`,
+      { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+    ).catch(() => {});
+  } else {
+    // Rejected
+    await bot.sendMessage(
+      adminChatId,
+      `🚫 *Withdrawal Rejected*\n\nTX ID: \`${txId}\`\nAmount: ${formatCurrency(amount)}`,
+      { parse_mode: 'Markdown' }
+    );
 
-const bonusResult =
-  await bonusRef.transaction(
-    bonus => Number(bonus || 0) + bonusAmount
-  );
+    // Notify player
+    await bot.sendMessage(
+      telegramId,
+      `❌ *Withdrawal Rejected*\n\n` +
+        `Your withdrawal request \`${txId}\` for *${formatCurrency(amount)}* has been rejected by admin.\n` +
+        `No funds were deducted. If you have questions, please reach out to support.`,
+      { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+    ).catch(() => {});
+  }
+}
 
-const newBonusBalance =
-  Number(bonusResult.snapshot.val() || 0);
-      
+// ==========================================
+// 9. TRANSFER FUNCTIONS
+// ==========================================
 
-  // Mark official SMS as used
-  await officialRef.update({
-    status: 'used',
-    usedBy: String(tgId),
-    usedTransaction: transactionRef.key,
-    usedAt: new Date().toISOString()
+async function executeTransfer(chatId, senderId) {
+  const session = getSession(senderId);
+  if (!session || !session.data) {
+    clearSession(senderId);
+    return;
+  }
+
+  const { recipientId, recipientPhone, amount } = session.data;
+  const numAmount = Number(amount);
+
+  if (numAmount < 10) {
+    await bot.sendMessage(chatId, '❌ Minimum transfer amount is 10 Br.', {
+      reply_markup: getMainMenuKeyboard()
+    });
+    clearSession(senderId);
+    return;
+  }
+
+  if (String(senderId) === String(recipientId)) {
+    await bot.sendMessage(chatId, '❌ You cannot transfer funds to your own account.', {
+      reply_markup: getMainMenuKeyboard()
+    });
+    clearSession(senderId);
+    return;
+  }
+
+  // Prevent duplicate callback execution
+  if (session.transferring) {
+    return;
+  }
+  session.transferring = true;
+
+  // Step 1: Atomically deduct from sender
+  const deductResult = await atomicBalanceUpdate(senderId, 'balance', -numAmount, {
+    preventNegative: true
   });
 
-  await bot.sendMessage(
-  chatId,
-  `🧾 *ሂሳብዎ ገብቷል*\n\n` +
-  `Receiver phone:  ${player.phone || 'N/A'}\n` +
-  `Amount:          ${amount.toFixed(2)} ETB\n` +
-  `Reference:       ${transactionId}\n\n` +
-  `🎁 Deposit Bonus: +${bonusAmount.toFixed(2)} Br\n` +
-`💰 New balance:   ${newBalance.toFixed(2)} ETB\n` +
-`🎁 Bonus balance: ${newBonusBalance.toFixed(2)} Br`,
-  { parse_mode: 'Markdown' }
-);
-
-  delete depositSessions[chatId];
-  return;
-}
-
-// ============================================================
-// HANDLE WITHDRAWAL
-// ============================================================
-
-if (withdrawSessions[chatId]) {
-
-  const session = withdrawSessions[chatId];
-
-  // ----------------------------------------------------------
-  // STEP 1 — AMOUNT
-  // ----------------------------------------------------------
-
-  if (session.step === 'amount') {
-
-  const amount = parseFloat(text);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (!deductResult.success) {
+    clearSession(senderId);
     await bot.sendMessage(
       chatId,
-      '❌ የተሳሳተ መጠን ነው። እባክዎ የሚያወጡትን መጠን እንደገና ያስገቡ።'
+      '❌ *Transfer Failed: Insufficient Balance*\n\nPlease deposit or enter a smaller amount.',
+      { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
     );
     return;
   }
 
-  let availableBalance = 0;
+  // Step 2: Atomically credit recipient
+  const creditResult = await atomicBalanceUpdate(recipientId, 'balance', numAmount);
 
-  // ==========================================
-  // MAIN BALANCE
-  // NO 10-WIN REQUIREMENT
-  // ==========================================
-  if (session.source === 'main') {
-
-    availableBalance =
-      Number(player.balance || 0);
-
-  }
-
-  // 
-
-  else {
-    await bot.sendMessage(
-      chatId,
-      '❌ Withdrawal session expired. Please start again.'
-    );
-
-    delete withdrawSessions[chatId];
+  if (!creditResult.success) {
+    // Rollback sender deduction
+    await atomicBalanceUpdate(senderId, 'balance', numAmount);
+    clearSession(senderId);
+    await bot.sendMessage(chatId, '❌ Transfer failed during crediting. Balance has been restored.', {
+      reply_markup: getMainMenuKeyboard()
+    });
     return;
   }
 
-  if (amount > availableBalance) {
+  // Step 3: Record transaction records
+  const transferTxId = generateTxId('TRF');
+  const now = Date.now();
 
-    await bot.sendMessage(
-      chatId,
-      `❌ Insufficient balance.\n\n` +
-      `Available: ${availableBalance.toFixed(2)} Br`
-    );
+  const txData = {
+    id: transferTxId,
+    type: 'transfer',
+    amount: numAmount,
+    senderId: String(senderId),
+    recipientId: String(recipientId),
+    recipientPhone: recipientPhone || '',
+    status: 'approved',
+    createdAt: now,
+    updatedAt: now
+  };
 
-    return;
-  }
+  await db.ref(`transactions/${transferTxId}`).set(txData);
 
-  session.amount = amount;
-  session.step = 'phone';
+  clearSession(senderId);
 
+  // Notify sender
   await bot.sendMessage(
     chatId,
-    session.method === 'cbe'
-      ? `🍂 ገንዘቡን የሚቀበሉበትን CBE አካውንት ቁጥር ያስገቡ 👇`
-      : `📱 ገንዘቡን የሚቀበሉበትን የስልክ ቁጥር ያስገቡ 👇`
+    `✅ *Transfer Completed!*\n\n` +
+      `💸 *Amount Sent:* ${formatCurrency(numAmount)}\n` +
+      `📱 *Recipient:* \`${formatPhoneDisplay(recipientPhone)}\`\n` +
+      `💰 *Your Remaining Balance:* ${formatCurrency(deductResult.newBalance)}\n` +
+      `🆔 *Ref:* \`${transferTxId}\``,
+    { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
   );
 
-  return;
-}
-
-
-  // ----------------------------------------------------------
-  // STEP 2 — PHONE / CBE ACCOUNT
-  // ----------------------------------------------------------
-
-  if (session.step === 'phone') {
-
-    const input = text.trim();
-
-    // CBE → ACCOUNT NUMBER
-    if (session.method === 'cbe') {
-
-      if (!/^\d+$/.test(input)) {
-        await bot.sendMessage(
-          chatId,
-          `❌ የተሳሳተ የCBE አካውንት ቁጥር ነው።`
-        );
-        return;
-      }
-
-      session.phone = input;
-      session.step = 'firstName';
-
-      await bot.sendMessage(
-        chatId,
-        `👤 የመጀመሪያ ስምዎን ያስገቡ 👇`
-      );
-
-      return;
-    }
-
-    // TELEBIRR → PHONE NUMBER
-    const normalizedPhone = input.replace(/\D/g, '');
-
-    if (
-      !(
-        normalizedPhone.startsWith('09') &&
-        normalizedPhone.length === 10
-      ) &&
-      !(
-        normalizedPhone.startsWith('2519') &&
-        normalizedPhone.length === 12
-      )
-    ) {
-      await bot.sendMessage(
-        chatId,
-        `❌ የተሳሳተ የስልክ ቁጥር ነው።\n\n` +
-        `ለምሳሌ፦ 09XXXXXXXX`
-      );
-      return;
-    }
-
-    session.phone = input;
-
-    // Telebirr continues to create the request below.
-  }
-
-
-  // ----------------------------------------------------------
-  // STEP 3 — CBE FIRST NAME
-  // ----------------------------------------------------------
-
-  if (session.step === 'firstName') {
-
-    const firstName = text.trim();
-
-    if (!firstName) {
-      await bot.sendMessage(
-        chatId,
-        `❌ እባክዎ የመጀመሪያ ስምዎን ያስገቡ።`
-      );
-      return;
-    }
-
-    session.firstName = firstName;
-  }
-
-
-  // ----------------------------------------------------------
-  // ONLY CREATE REQUEST AFTER ALL REQUIRED INFORMATION
-  // ----------------------------------------------------------
-
-  if (
-    session.method === 'cbe' &&
-    (!session.phone || !session.firstName)
-  ) {
-    return;
-  }
-
-  if (
-    session.method === 'telebirr' &&
-    !session.phone
-  ) {
-    return;
-  }
-
-  const phone = session.phone;
-  const requestedAmount = Number(session.amount);
-
-  const freshSnapshot =
-  await db.ref(`players/${tgId}`).once('value');
-
-const freshPlayer =
-  freshSnapshot.val();
-
-if (!freshPlayer) {
+  // Notify recipient
   await bot.sendMessage(
-    chatId,
-    '❌ Player account not found.'
-  );
-
-  delete withdrawSessions[chatId];
-  return;
+    recipientId,
+    `🎁 *You Received a Transfer!*\n\n` +
+      `💰 *Amount:* ${formatCurrency(numAmount)}\n` +
+      `💳 *New Balance:* ${formatCurrency(creditResult.newBalance)}\n` +
+      `🆔 *Ref:* \`${transferTxId}\``,
+    { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+  ).catch(() => {});
 }
 
+// ==========================================
+// 10. TELEGRAM COMMAND HANDLERS
+// ==========================================
 
-let availableBalance = 0;
+// /start
+bot.onText(/\/start/, async (msg) => {
+  try {
+    const player = await getOrCreatePlayer(msg.from);
+    clearSession(msg.from.id);
 
-if (session.source === 'main') {
+    const welcome =
+      `🎉 *Welcome to ZA Bingo, ${msg.from.first_name || 'Player'}!*\n\n` +
+      `Ethiopia's premier real-time Telegram Bingo platform! 🇪🇹🎱\n\n` +
+      `💰 *Main Balance:* ${formatCurrency(player.balance)}\n` +
+      `🎁 *Referral Bonus:* ${formatCurrency(player.referralBonusBalance)}\n` +
+      `🏆 *Games Won:* ${getGamesWonCount(player)}\n\n` +
+      `Join thousands of winners! Tap *Play ZA Bingo* below to jump into the action.`;
 
-  availableBalance =
-    Number(freshPlayer.balance || 0);
-
-}
-
-else if (session.source === 'referral') {
-
-  const gamesWon =
-    Number(
-      freshPlayer.games_won ??
-      freshPlayer.gamesWon ??
-      0
-    );
-
-  if (gamesWon < 10) {
-    await bot.sendMessage(
-      chatId,
-      `❌ You need at least 10 wins to withdraw referral money.\n\n` +
-      `🏆 Your wins: ${gamesWon}/10`
-    );
-
-    delete withdrawSessions[chatId];
-    return;
+    await bot.sendMessage(msg.chat.id, welcome, {
+      parse_mode: 'Markdown',
+      reply_markup: getMainMenuKeyboard()
+    });
+  } catch (error) {
+    console.error('[Error /start]', error);
   }
-
-  availableBalance =
-    Number(
-      freshPlayer.referralBonusBalance || 0
-    );
-
-}
-
-else {
-
-  await bot.sendMessage(
-    chatId,
-    '❌ Invalid withdrawal source.'
-  );
-
-  delete withdrawSessions[chatId];
-  return;
-}
-
-if (requestedAmount > availableBalance) {
-
-  await bot.sendMessage(
-    chatId,
-    `❌ Insufficient balance.\n\n` +
-    `Available: ${availableBalance.toFixed(2)} Br`
-  );
-
-  delete withdrawSessions[chatId];
-  return;
-}
-
-  // ----------------------------------------------------------
-  // CREATE PENDING WITHDRAWAL
-  // ----------------------------------------------------------
-
-  const balanceField = 'balance';
-
-const newBalance =
-  availableBalance - requestedAmount;
-
-await playerRef
-  .child(balanceField)
-  .set(newBalance);
-
-  const transactionRef =
-    db.ref('transactions').push();
-
-  await transactionRef.set({
-  playerId: tgId,
-  telegramId: tgId,
-
-  type: 'withdrawal',
-
-  amount: requestedAmount,
-
-  withdrawSource: session.source,
-
-  mainAmount:
-    session.source === 'main'
-      ? requestedAmount
-      : 0,
-
-  
-
-  status: 'pending',
-balanceDeducted: true,
-
-  paymentMethod: session.method,
-
-  withdrawalPhone: phone,
-
-  firstName:
-    session.method === 'cbe'
-      ? session.firstName
-      : '',
-
-  createdAt: new Date().toISOString()
 });
 
-
-  // ----------------------------------------------------------
-  // ADMIN NOTIFICATION
-  // ----------------------------------------------------------
-
-  await bot.sendMessage(
-    ADMIN_ID,
-    `💰 *New Withdrawal Request*\n\n` +
-    `Player: ${player.first_name || 'Player'}\n` +
-    `Username: @${player.username || 'N/A'}\n` +
-    `Amount: ${Number(session.amount).toFixed(2)} Br\n` +
-    `Method: ${
-      session.method === 'telebirr'
-        ? 'Telebirr'
-        : 'CBE Birr'
-    }\n` +
-    `Phone/Account: ${phone}\n` +
-    `${
-      session.method === 'cbe'
-        ? `First Name: ${session.firstName}\n`
-        : ''
-    }` +
-    `Date: ${new Date().toLocaleString()}`,
-    {
-      parse_mode: 'Markdown'
-    }
-  );
-
-
-  // ----------------------------------------------------------
-  // PLAYER CONFIRMATION
-  // ----------------------------------------------------------
-
-  await bot.sendMessage(
-    chatId,
-    `🧾 *የገንዘብ ማውጣት ጥያቄዎ ተልኳል* ✅\n\n` +
-    `💰 መጠን: ${Number(session.amount).toFixed(2)} Br\n` +
-    `💳 መንገድ: ${
-      session.method === 'telebirr'
-        ? 'Telebirr'
-        : 'CBE Birr'
-    }\n` +
-    `📱 ${
-      session.method === 'cbe'
-        ? 'አካውንት'
-        : 'ስልክ'
-    }: ${phone}\n\n` +
-    `⏳ ሁኔታ: Pending\n` +
-    `💰 Main balance: ${Number(freshPlayer.balance || 0).toFixed(2)} Br\n` +
-
-    {
-      parse_mode: 'Markdown'
-    }
-  );
-
-
-  // ----------------------------------------------------------
-  // CLEAR SESSION
-  // ----------------------------------------------------------
-
-  delete withdrawSessions[chatId];
-
-  return;
-}
-  // ============================================================
-// HANDLE PLAYER TRANSFER
-// ============================================================
-
-if (transferSessions[chatId]) {
-  const session = transferSessions[chatId];
-
-  // Step 1: Phone number
-  if (session.step === 'phone') {
-    const phone = text.trim();
-
-    const playersSnapshot = await db.ref('players').once('value');
-    const players = playersSnapshot.val() || {};
-
-    let recipientId = null;
-    let recipient = null;
-
-    for (const [id, p] of Object.entries(players)) {
-      if (!p) continue;
-
-      const normalizePhone = (number) => {
-  let phone = String(number || '').replace(/\D/g, '');
-
-  if (phone.startsWith('251')) {
-    phone = phone.slice(3);
-  }
-
-  if (phone.startsWith('0')) {
-    phone = phone.slice(1);
-  }
-
-  return phone;
-};
-
-const savedPhone = normalizePhone(p.phone);
-const enteredPhone = normalizePhone(phone);
-
-if (savedPhone === enteredPhone) {
-  recipientId = id;
-  recipient = p;
-  break;
-}
-    }
-
-    if (!recipient) {
-      bot.sendMessage(
-        chatId,
-        '❌ No player was found with this phone number.'
-      );
-      return;
-    }
-
-    if (recipientId === tgId) {
-      bot.sendMessage(
-        chatId,
-        '❌ You cannot transfer money to yourself.'
-      );
-      return;
-    }
-
-    session.recipientId = recipientId;
-    session.recipient = recipient;
-    session.step = 'amount';
-
-    bot.sendMessage(
-      chatId,
-      `Recipient: ${recipient.first_name || 'Player'}\n\n` +
-      `Enter the amount to transfer:`
-    );
-
-    return;
-  }
-
-  // Step 2: Amount
-  if (session.step === 'amount') {
-    const amount = Number(text);
-
-    if (!Number.isFinite(amount) || amount < 10) {
-      bot.sendMessage(
-        chatId,
-        '❌ Invalid amount. Enter the amount again:'
-      );
-      return;
-    }
-
-    const balance = Number(player.balance || 0);
-
-    if (amount > balance) {
-      bot.sendMessage(
-        chatId,
-        `❌ Insufficient balance.\n\nYour balance: ${balance} Br`
-      );
-      return;
-    }
-
-    session.amount = amount;
-    session.step = 'confirm';
-
-    bot.sendMessage(
-      chatId,
-      `Transfer Confirmation\n\n` +
-      `To: ${session.recipient.first_name || 'Player'}\n` +
-      `Phone: ${session.recipient.phone}\n` +
-      `Amount: ${amount} Br\n\n` +
-      `Confirm this transfer?`,
+// /play
+bot.onText(/\/play/, async (msg) => {
+  try {
+    await getOrCreatePlayer(msg.from);
+    await bot.sendMessage(
+      msg.chat.id,
+      `🎱 *Ready to Play ZA Bingo?*\n\nClick the button below to launch the game inside Telegram!`,
       {
+        parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [
-              {
-                text: 'Confirm',
-                callback_data: 'transfer_confirm'
-              },
-              {
-                text: 'Cancel',
-                callback_data: 'transfer_cancel'
-              }
-            ]
+            [{ text: '🎮 Launch ZA Bingo Web App', web_app: { url: WEBAPP_URL } }]
           ]
         }
       }
     );
-
-    return;
+  } catch (error) {
+    console.error('[Error /play]', error);
   }
-}
 });
 
-function isAdmin(telegramId) {
-  return String(telegramId) === String(ADMIN_ID);
-}
-
-// ============================================================
-// ADMIN — APPROVE WITHDRAWAL
-// ============================================================
-
-async function approveWithdrawal(query, txnId) {
-  const chatId = query.message.chat.id;
-  const adminId = String(query.from.id);
-
-  if (!isAdmin(adminId)) {
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Admin only',
-      show_alert: true
-    });
-    return;
-  }
-
+// /balance
+bot.onText(/\/balance/, async (msg) => {
   try {
-
-    const transactionRef =
-      db.ref(`transactions/${txnId}`);
-
-    const snapshot =
-      await transactionRef.once('value');
-
-    const transaction =
-      snapshot.val();
-
-    if (!transaction) {
-      await bot.answerCallbackQuery(query.id, {
-        text: '❌ Transaction not found',
-        show_alert: true
-      });
-      return;
-    }
-
-    if (transaction.status !== 'pending') {
-      await bot.answerCallbackQuery(query.id, {
-        text: '⚠️ Already processed',
-        show_alert: true
-      });
-      return;
-    }
-
-    const playerId =
-      String(transaction.telegramId);
-
-    const amount =
-      Number(transaction.amount || 0);
-
-const source =
-  transaction.withdrawSource ||
-  (
-    Number(transaction.mainAmount || 0) > 0
-      ? 'main'
-      : null
-  );
-
-    if (!source || amount <= 0) {
-      await bot.answerCallbackQuery(query.id, {
-        text: '❌ Invalid withdrawal source',
-        show_alert: true
-      });
-      return;
-    }
-
-    const playerRef =
-      db.ref(`players/${playerId}`);
-
-    let remainingBalance = 0;
-
-    // ==========================================
-    // MAIN BALANCE WITHDRAWAL
-    // ==========================================
-    if (source === 'main') {
-
-const balanceSnapshot =
-  await playerRef.child('balance').once('value');
-
-remainingBalance =
-  Number(balanceSnapshot.val() || 0);
-}
-    // 
-    // ==========================================
-    // MARK TRANSACTION APPROVED
-    // ==========================================
-    await transactionRef.update({
-      status: 'approved',
-      approvedAt: new Date().toISOString(),
-      approvedBy: adminId
-    });
-
- const balanceName = 'Main balance';
-
+    const player = await getOrCreatePlayer(msg.from);
     await bot.sendMessage(
-      playerId,
-      `✅ *Withdrawal approved!*\n\n` +
-      `Amount: ${amount.toFixed(2)} Br\n` +
-      `Source: ${balanceName}\n` +
-      `Phone: ${transaction.withdrawalPhone || 'N/A'}\n\n` +
-      `💰 Remaining ${balanceName}: ${remainingBalance.toFixed(2)} Br`,
+      msg.chat.id,
+      `💳 *Your Wallet Balance*\n\n` +
+        `💵 *Main Balance:* ${formatCurrency(player.balance)}\n` +
+        `🎁 *Referral Bonus:* ${formatCurrency(player.referralBonusBalance)}\n` +
+        `🏆 *Games Won:* ${getGamesWonCount(player)}\n\n` +
+        `Use buttons below to deposit or cash out!`,
       {
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '💰 Deposit', callback_data: 'nav_deposit' },
+              { text: '💸 Withdraw', callback_data: 'nav_withdraw' }
+            ],
+            [{ text: '🔙 Back to Menu', callback_data: 'nav_menu' }]
+          ]
+        }
       }
     );
-
-    await bot.answerCallbackQuery(query.id, {
-      text: '✅ Withdrawal approved'
-    });
-
-    await bot.editMessageReplyMarkup(
-      { inline_keyboard: [] },
-      {
-        chat_id: chatId,
-        message_id: query.message.message_id
-      }
-    );
-
-    await bot.sendMessage(
-      chatId,
-      `✅ Withdrawal approved.\n\n` +
-      `Player: ${playerId}\n` +
-      `Amount: ${amount.toFixed(2)} Br\n` +
-      `Source: ${balanceName}`
-    );
-
   } catch (error) {
-
-    console.error(
-      '❌ Approve withdrawal error:',
-      error
-    );
-
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Approval failed',
-      show_alert: true
-    });
+    console.error('[Error /balance]', error);
   }
-}
-
-// ============================================================
-// ADMIN — REJECT WITHDRAWAL
-// ============================================================
-
-async function rejectWithdrawal(query, txnId) {
-  const chatId = query.message.chat.id;
-  const adminId = String(query.from.id);
-
-  if (!isAdmin(adminId)) {
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Admin only',
-      show_alert: true
-    });
-    return;
-  }
-
-  try {
-    const transactionRef = db.ref(`transactions/${txnId}`);
-    const snapshot = await transactionRef.once('value');
-    const transaction = snapshot.val();
-
-    if (!transaction) {
-      await bot.answerCallbackQuery(query.id, {
-        text: '❌ Transaction not found',
-        show_alert: true
-      });
-      return;
-    }
-
-    if (transaction.status !== 'pending') {
-      await bot.answerCallbackQuery(query.id, {
-        text: '⚠️ Already processed',
-        show_alert: true
-      });
-      return;
-    }
-    const playerRef = db.ref(`players/${transaction.playerId}`);
-
-const balanceField = 'balance';
-
-await playerRef.child(balanceField).transaction(current => {
-  return Number(current || 0) + Number(transaction.amount || 0);
 });
 
-    await transactionRef.update({
-      status: 'rejected',
-      rejectedAt: new Date().toISOString(),
-      rejectedBy: adminId
-    });
+// /profile
+bot.onText(/\/profile/, async (msg) => {
+  try {
+    const player = await getOrCreatePlayer(msg.from);
+    const phoneDisplay = player.phone ? formatPhoneDisplay(player.phone) : 'Not registered';
 
     await bot.sendMessage(
-      transaction.telegramId,
-      `❌ *Withdrawal rejected.*\n\n` +
-      `Amount: ${transaction.amount} Br\n` +
-      `Phone: ${transaction.withdrawalPhone || 'N/A'}`,
-      { parse_mode: 'Markdown' }
-    );
-
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Withdrawal rejected'
-    });
-
-    await bot.editMessageReplyMarkup(
-      { inline_keyboard: [] },
+      msg.chat.id,
+      `👤 *Player Profile*\n\n` +
+        `🆔 *Telegram ID:* \`${player.telegramId}\`\n` +
+        `👤 *Name:* ${player.firstName} ${player.lastName || ''}\n` +
+        `📱 *Registered Phone:* \`${phoneDisplay}\`\n` +
+        `💰 *Main Balance:* ${formatCurrency(player.balance)}\n` +
+        `🎁 *Referral Bonus:* ${formatCurrency(player.referralBonusBalance)}\n` +
+        `🏆 *Games Won:* ${getGamesWonCount(player)}\n` +
+        `📢 *Bonus Channel:* ${BONUS_CHANNEL}`,
       {
-        chat_id: chatId,
-        message_id: query.message.message_id
+        parse_mode: 'Markdown',
+        reply_markup: getMainMenuKeyboard()
       }
     );
+  } catch (error) {
+    console.error('[Error /profile]', error);
+  }
+});
+
+// /instructions
+bot.onText(/\/instructions/, async (msg) => {
+  try {
+    await bot.sendMessage(
+      msg.chat.id,
+      `📖 *How to Play ZA Bingo*\n\n` +
+        `1. *Deposit Funds:* Use /deposit to load money via Telebirr or CBE Birr.\n` +
+        `2. *Enter a Room:* Click /play to open the Web App and select your stake card.\n` +
+        `3. *Daub the Numbers:* Numbers are drawn in real-time. Cover your rows and columns!\n` +
+        `4. *Claim Bingo:* Shout Bingo before time runs out to take the pot!\n` +
+        `5. *Withdraw Winnings:* Cash out anytime directly back to your Telebirr or CBE account.\n\n` +
+        `🎁 *Referral Bonus:* Invite friends to earn bonus cash. Win 10 games to unlock referral withdrawals!`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: getMainMenuKeyboard()
+      }
+    );
+  } catch (error) {
+    console.error('[Error /instructions]', error);
+  }
+});
+
+// /deposit
+bot.onText(/\/deposit/, async (msg) => {
+  try {
+    await getOrCreatePlayer(msg.from);
+    clearSession(msg.from.id);
 
     await bot.sendMessage(
-      chatId,
-      `❌ Withdrawal rejected.\n\n` +
-      `Amount: ${transaction.amount} Br`
+      msg.chat.id,
+      `💰 *Deposit Funds*\n\nSelect your preferred payment method:`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📱 Telebirr', callback_data: 'deposit_telebirr' }],
+            [{ text: '🏦 CBE Birr', callback_data: 'deposit_cbe' }],
+            [{ text: '❌ Cancel', callback_data: 'cancel_action' }]
+          ]
+        }
+      }
     );
-
   } catch (error) {
-    console.error('❌ Reject withdrawal error:', error);
+    console.error('[Error /deposit]', error);
+  }
+});
 
-    await bot.answerCallbackQuery(query.id, {
-      text: '❌ Rejection failed',
-      show_alert: true
+// /withdraw
+bot.onText(/\/withdraw/, async (msg) => {
+  try {
+    const player = await getOrCreatePlayer(msg.from);
+    clearSession(msg.from.id);
+
+    await bot.sendMessage(
+      msg.chat.id,
+      `💸 *Withdrawal*\n\n` +
+        `Select the balance source you would like to withdraw from:\n\n` +
+        `💵 *Main Balance:* ${formatCurrency(player.balance)}\n` +
+        `🎁 *Referral Bonus:* ${formatCurrency(player.referralBonusBalance)} *(Requires 10 wins)*`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '💵 Main Balance', callback_data: 'withdraw_src_balance' }],
+            [{ text: '🎁 Referral Bonus', callback_data: 'withdraw_src_referral' }],
+            [{ text: '❌ Cancel', callback_data: 'cancel_action' }]
+          ]
+        }
+      }
+    );
+  } catch (error) {
+    console.error('[Error /withdraw]', error);
+  }
+});
+
+// /transfer
+bot.onText(/\/transfer/, async (msg) => {
+  try {
+    await getOrCreatePlayer(msg.from);
+    setSession(msg.from.id, {
+      action: 'transfer',
+      step: 'AWAITING_RECIPIENT_PHONE',
+      data: {}
     });
-  }
-}
 
-    
-
-// ============================================================
-// HANDLERS
-// ============================================================
-function handleDepositMenu(chatId, player) {
-  bot.sendMessage(
-    chatId,
-    ` *ገንዘብ ለማስገባት*\n\n` +
-    `ቀሪ ሂሳብ: ${player.balance} Br\n\n` +
-    `ማስገባት የሚፈልጉትን መጠን ያስገቡ 👇 ( ዝቅተኛ 50 ብር):`,
-    { parse_mode: 'Markdown' }
-  );
-
-  depositSessions[chatId] = {
-    step: 'amount'
-  };
-}
-// ============================================================
-// CHECK WITHDRAWAL DEPOSIT REQUIREMENT
-// Player must have at least ONE approved deposit
-// ============================================================
-
-async function hasMadeDeposit(telegramId) {
-  const snapshot = await db
-    .ref('transactions')
-    .orderByChild('telegramId')
-    .equalTo(String(telegramId))
-    .once('value');
-
-  const transactions = snapshot.val() || {};
-
-  return Object.values(transactions).some(transaction =>
-    transaction &&
-    transaction.type === 'deposit' &&
-    transaction.status === 'approved'
-  );
-}
-
-function handleWithdrawMenu(chatId, player) {
-  const mainBalance = Number(player.balance || 0);
-
-  bot.sendMessage(
-    chatId,
-    `*ገንዘብ ለማውጣት*\n\n` +
-    `💰 Main balance: ${mainBalance.toFixed(2)} Br\n\n` +
-    `የሚያወጡትን ሂሳብ ይምረጡ 👇`,
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '💰 Main Balance', callback_data: 'withdraw_source_main' }],
-          [{ text: '🔙 Back', callback_data: 'back_to_menu' }]
-        ]
+    await bot.sendMessage(
+      msg.chat.id,
+      `🔄 *Transfer Money*\n\n` +
+        `Transfer balance instantly to another ZA Bingo player.\n\n` +
+        `Please enter the **Ethiopian phone number** of the recipient:\n` +
+        `*(e.g., 0912345678 or 251912345678)*`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: getCancelKeyboard('cancel_transfer')
       }
-    }
-  );
-}
-function handleProfile(chatId, player) {
-  const mainBalance =
-    Number(player.balance || 0);
-
-  bot.sendMessage(
-    chatId,
-    `*Profile*\n\n` +
-    `Name: ${player.first_name || 'N/A'}\n` +
-    `Username: @${player.username || 'N/A'}\n` +
-    `Phone: ${player.phone || 'Not set'}\n\n` +
-    `💰 *Main Balance:* ${mainBalance.toFixed(2)} Br\n\n` +
-    `Games Played: ${player.games_played ?? player.gamesPlayed ?? 0}\n` +
-    `Games Won: ${player.gamesWon ?? player.games_won ?? 0}\n` +
-    `Joined: ${player.registration_date || 'N/A'}`,
-    {
-      parse_mode: 'Markdown'
-    }
-  );
-}
-
-// ============================================================
-// ADMIN FUNCTIONS
-// ============================================================
-
-
-// ============================================================
-// GAME MANAGER INTEGRATION
-// ============================================================
-function setGameManager(gm) {
-  gameManager = gm;
-}
-
-// ============================================================
-// DAILY + WEEKLY BONUS SYSTEM
-//
-// DAILY  → Every day at 10:30 PM Ethiopia
-// WEEKLY → Every Sunday at 10:30 PM Ethiopia
-//
-// RULES:
-// Real player  → 1 actual win = 1 leaderboard win
-// Sim player   → 3 actual wins = 1 leaderboard win
-//
-// Daily  → Top 3
-// Weekly → Top 5
-//
-// IMPORTANT:
-// winners/ is NEVER deleted.
-// Announcement happens BEFORE reset.
-// Daily and Weekly are separate.
-// ============================================================
-
-let lastDailyBonusDate = null;
-
-// ============================================================
-// ETHIOPIA DATE HELPER
-// ============================================================
-
-function getEthiopiaDate(date) {
-
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Africa/Addis_Ababa',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(new Date(date));
-
-  const p = {};
-
-  for (const part of parts) {
-    if (part.type !== 'literal') {
-      p[part.type] = Number(part.value);
-    }
-  }
-
-  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
-}
-
-
-// ============================================================
-// CONVERT ACTUAL WINS → LEADERBOARD WINS
-// ============================================================
-
-function calculateLeaderboardWins(playerId, actualWins) {
-  return actualWins;
-}
-
-
-// ============================================================
-// DAILY + WEEKLY CHECK
-// ============================================================
-
-setInterval(async () => {
-
-  try {
-
-    const now = getEthiopiaTimeParts();
-
-    // ========================================================
-    // ONLY RUN AT 10:30 PM ETHIOPIA TIME
-    // ========================================================
-
-    if (now.hour !== 22 || now.minute !== 30) {
-      return;
-    }
-
-    const today =
-      `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
-
-
-    // ========================================================
-    // GET ALL WINNER HISTORY
-    //
-    // NEVER DELETE winners/
-    // ========================================================
-
-    const snapshot = await db.ref('winners').once('value');
-
-    const data = snapshot.val() || {};
-
-    const allWinners = Object.values(data);
-
-
-    // 
-      
-    if (lastDailyBonusDate !== today) {
-
-  console.log('🏆 CALCULATING DAILY LEADERBOARD...');
-
-  // The daily leaderboard period that just finished
-  // is the period BEFORE the current 10:30 PM cutoff.
-  const previousDate = new Date(
-    Date.UTC(now.year, now.month - 1, now.day - 1)
-  );
-
-  const dailyKey =
-    `${previousDate.getUTCFullYear()}-${String(
-      previousDate.getUTCMonth() + 1
-    ).padStart(2, '0')}-${String(
-      previousDate.getUTCDate()
-    ).padStart(2, '0')}`;
-
-  // Read the SAME leaderboard used by the website
-  const dailySnapshot = await db.ref(
-    `dailyLeaderboard/${dailyKey}`
-  ).once('value');
-
-  const dailyData = dailySnapshot.val() || {};
-
-  const dailyTop3 =
-    Object.entries(dailyData)
-      .map(([playerId, player]) => ({
-        playerId: String(playerId),
-        playerName: player.name || 'Player',
-        wins: Number(player.wins || 0)
-      }))
-      .filter(player => player.wins > 0)
-      .sort((a, b) => b.wins - a.wins)
-      .slice(0, 3);
-
-  const dailyNames = [
-    dailyTop3[0]
-      ? `${dailyTop3[0].playerName} (${dailyTop3[0].wins})`
-      : 'No winner',
-
-    dailyTop3[1]
-      ? `${dailyTop3[1].playerName} (${dailyTop3[1].wins})`
-      : 'No winner',
-
-    dailyTop3[2]
-      ? `${dailyTop3[2].playerName} (${dailyTop3[2].wins})`
-      : 'No winner'
-  ];
-
-  const dailyMessage =
-`🏆 የዕለታዊ ቦነስ ተሸላሚዎች 🏆
-
-🥇 1ኛ ደረጃ — ${dailyNames[0]} 💰 500 ብር
-🥈 2ኛ ደረጃ — ${dailyNames[1]} 💰 250 ብር
-🥉 3ኛ ደረጃ — ${dailyNames[2]} 💰 100 ብር
-
-🎉 አሸናፊዎች እንኳን ደስ አላችሁ!
-🎱 ይጫወቱ ያሸንፉ ይሸለሙ!
-🎁 የ15 ብር ቦነስ ያግኙ!
-
-https://t.me/ZABingo_bot
-
-❤️ Edel Bingo — መልካም ጨዋታ!`;
-
-  await bot.sendPhoto(
-    BONUS_CHANNEL,
-    DAILY_WINNER_IMAGE,
-    {
-      caption: dailyMessage
-    }
-  );
-
-  console.log('✅ DAILY BONUS POSTED');
-
-  // DO NOT delete dailyLeaderboard/${dailyKey}.
-  // The website needs the historical daily period.
-  // The next period automatically uses a new dailyKey.
-
-  lastDailyBonusDate = today;
-
-  console.log(
-    `✅ DAILY LEADERBOARD COMPLETED FOR ${dailyKey}`
-  );
-}
-
-
-    // 
-
-
-  } catch (error) {
-
-    console.error(
-      '❌ DAILY/WEEKLY BONUS ERROR:',
-      error
     );
-
-  }
-
-}, 30 * 1000);
-// ============================================================
-// DAILY PROMOTIONAL ANNOUNCEMENT
-// 2:00 PM + 8:00 PM ETHIOPIA TIME
-// ============================================================
-
-const PROMO_CHANNELS = [
-  '@EdelBingoo',
-  '@ethiotictok',
-  '@Edelcrypto',
-  '@Edelsportnews',
-  '@ethiohotenew',
-  '@yareddish'
-];
-
-const promoMessage = `
-🏆 EDEL BINGO — DAILY BONUS 🏆
-🎱 ይጫወቱ • ያሸንፉ • ይሸለሙ! 🎱
-━━━━━━━━━━━━━━━━━━
-🌟 የዕለታዊ ቦነስ ተሸላሚዎች 🌟
-🥇 1ኛ ደረጃ — Player 1 💰 500 ብር
-🥈 2ኛ ደረጃ — Player 2 💰 250 ብር
-🥉 3ኛ ደረጃ — Player 3 💰 100 ብር
-🎉 🎉
-🔥 ብዙ ይጫወቱ
-🏆 ብዙ ያሸንፉ
-💰 ብዙ ይሸለሙ!
-━━━━━━━━━━━━━━━━━━
-🎁 15 ብር የመጫወቻ ቦነስ ያግኙ!
-━━━━━━━━━━━━━━━━━━
-👉 አሁኑኑ ይጫወቱ:
-https://t.me/ZABingo_bot
-
-📢 ለተጨማሪ መረጃ የእኛን Telegram Channel ይቀላቀሉ! 👇
-
-👉 https://t.me/EdelBingoo
-
-❤️ Edel Bingo — መልካም ጨዋታ!
-`;
-let lastPromoDate = '';
-let lastPromoHour = null;
-
-setInterval(async () => {
-
-  try {
-
-    const now = getEthiopiaTimeParts();
-
-    // Only 2:00 PM or 8:00 PM
-    if (
-      now.minute !== 0 ||
-      (now.hour !== 14 && now.hour !== 20)
-    ) {
-      return;
-    }
-
-    const today =
-      `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(2, '0')}`;
-
-    // Prevent duplicate posts during the same hour
-    if (
-      lastPromoDate === today &&
-      lastPromoHour === now.hour
-    ) {
-      return;
-    }
-
-    console.log(
-      `📢 Sending promotional announcement at ${now.hour}:00`
-    );
-
-    // --------------------------------------------------------
-    // POST TO CHANNEL
-    // --------------------------------------------------------
-
-    for (const channel of PROMO_CHANNELS) {
-  try {
-    await bot.sendPhoto(
-  channel,
-  PROMOTION_IMAGE,
-  {
-    caption: promoMessage
-  }
-);
   } catch (error) {
-    console.error(`❌ Could not post to ${channel}:`, error.message);
+    console.error('[Error /transfer]', error);
   }
-}
+});
 
-    console.log('✅ Promo posted to channel');
+// ==========================================
+// 11. INLINE CALLBACK QUERY ROUTER
+// ==========================================
 
-    // --------------------------------------------------------
-    // SEND TO BOT USERS
-    // --------------------------------------------------------
+bot.on('callback_query', async (query) => {
+  const chatId = query.message.chat.id;
+  const userId = query.from.id;
+  const data = query.data;
 
-    for (const chatId of Object.keys(broadcastUsers)) {
+  try {
+    await bot.answerCallbackQuery(query.id);
 
-      try {
+    // --- NAVIGATION CALLBACKS ---
+    if (data === 'nav_menu') {
+      clearSession(userId);
+      const player = await getOrCreatePlayer(query.from);
+      await bot.sendMessage(
+        chatId,
+        `🏠 *Main Menu*\n\nBalance: ${formatCurrency(player.balance)}`,
+        { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+      );
+      return;
+    }
 
-        await bot.sendPhoto(
-  chatId,
-  PROMOTION_IMAGE,
-  {
-    caption: promoMessage
-  }
-);
+    if (data === 'nav_deposit') {
+      await bot.sendMessage(
+        chatId,
+        `💰 *Choose Deposit Method:*`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '📱 Telebirr', callback_data: 'deposit_telebirr' }],
+              [{ text: '🏦 CBE Birr', callback_data: 'deposit_cbe' }],
+              [{ text: '❌ Cancel', callback_data: 'cancel_action' }]
+            ]
+          }
+        }
+      );
+      return;
+    }
 
-      } catch (error) {
+    if (data === 'nav_withdraw') {
+      const player = await getOrCreatePlayer(query.from);
+      await bot.sendMessage(
+        chatId,
+        `💸 *Choose Withdrawal Source:*\n\n` +
+          `💵 Main Balance: ${formatCurrency(player.balance)}\n` +
+          `🎁 Referral Bonus: ${formatCurrency(player.referralBonusBalance)} *(Requires 10 wins)*`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '💵 Main Balance', callback_data: 'withdraw_src_balance' }],
+              [{ text: '🎁 Referral Bonus', callback_data: 'withdraw_src_referral' }],
+              [{ text: '❌ Cancel', callback_data: 'cancel_action' }]
+            ]
+          }
+        }
+      );
+      return;
+    }
 
-        console.error(
-          `❌ Could not send promo to ${chatId}:`,
-          error.message
-        );
+    if (data === 'nav_balance') {
+      const player = await getOrCreatePlayer(query.from);
+      await bot.sendMessage(
+        chatId,
+        `💳 *Your Wallet Balance*\n\n` +
+          `💵 *Main Balance:* ${formatCurrency(player.balance)}\n` +
+          `🎁 *Referral Bonus:* ${formatCurrency(player.referralBonusBalance)}\n` +
+          `🏆 *Games Won:* ${getGamesWonCount(player)}`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '💰 Deposit', callback_data: 'nav_deposit' },
+                { text: '💸 Withdraw', callback_data: 'nav_withdraw' }
+              ],
+              [{ text: '🔙 Back to Menu', callback_data: 'nav_menu' }]
+            ]
+          }
+        }
+      );
+      return;
+    }
 
+    if (data === 'nav_transfer') {
+      setSession(userId, {
+        action: 'transfer',
+        step: 'AWAITING_RECIPIENT_PHONE',
+        data: {}
+      });
+      await bot.sendMessage(
+        chatId,
+        `🔄 *Transfer Money*\n\nPlease enter the recipient's **Ethiopian phone number**:\n*(e.g., 0912345678)*`,
+        { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_transfer') }
+      );
+      return;
+    }
+
+    if (data === 'nav_profile') {
+      const player = await getOrCreatePlayer(query.from);
+      await bot.sendMessage(
+        chatId,
+        `👤 *Player Profile*\n\n` +
+          `🆔 Telegram ID: \`${player.telegramId}\`\n` +
+          `💰 Main Balance: ${formatCurrency(player.balance)}\n` +
+          `🎁 Referral Bonus: ${formatCurrency(player.referralBonusBalance)}\n` +
+          `🏆 Games Won: ${getGamesWonCount(player)}`,
+        { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+      );
+      return;
+    }
+
+    if (data === 'nav_instructions') {
+      await bot.sendMessage(
+        chatId,
+        `📖 *ZA Bingo Instructions*\n\n` +
+          `1. Top up with /deposit.\n` +
+          `2. Open the Web App using the *Play ZA Bingo* button.\n` +
+          `3. Score winning patterns and win Birr!\n` +
+          `4. Withdraw winnings directly to your Telebirr or CBE account.`,
+        { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+      );
+      return;
+    }
+
+    // --- CANCELLATION ---
+    if (data.startsWith('cancel_')) {
+      clearSession(userId);
+      await bot.sendMessage(chatId, '❌ Action cancelled.', {
+        reply_markup: getMainMenuKeyboard()
+      });
+      return;
+    }
+
+    // --- DEPOSIT SELECTION ---
+    if (data === 'deposit_telebirr') {
+      setSession(userId, {
+        action: 'deposit',
+        step: 'AWAITING_SMS',
+        data: { provider: 'telebirr' }
+      });
+
+      await bot.sendMessage(
+        chatId,
+        `📱 *Deposit via Telebirr*\n\n` +
+          `1. Transfer the desired amount to our Telebirr account:\n` +
+          `   👉 \`${TELEBIRR_ACCOUNT}\`\n\n` +
+          `2. Once transferred, **copy and paste the complete confirmation SMS** you receive into this chat.\n\n` +
+          `⚠️ *Notice:* Only received-money confirmation SMS will be accepted.`,
+        { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_deposit') }
+      );
+      return;
+    }
+
+    if (data === 'deposit_cbe') {
+      setSession(userId, {
+        action: 'deposit',
+        step: 'AWAITING_SMS',
+        data: { provider: 'cbe_birr' }
+      });
+
+      await bot.sendMessage(
+        chatId,
+        `🏦 *Deposit via CBE Birr*\n\n` +
+          `1. Transfer the desired amount to our CBE account:\n` +
+          `   👉 \`${CBE_ACCOUNT}\`\n\n` +
+          `2. Once transferred, **copy and paste the complete confirmation SMS** you receive into this chat.\n\n` +
+          `⚠️ *Notice:* Forwarded SMS with 'From:' / 'Time:' lines are supported.`,
+        { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_deposit') }
+      );
+      return;
+    }
+
+    // --- WITHDRAWAL SELECTION ---
+    if (data === 'withdraw_src_balance' || data === 'withdraw_src_referral') {
+      const source = data === 'withdraw_src_balance' ? 'balance' : 'referralBonusBalance';
+      const player = await getPlayer(userId);
+
+      if (source === 'referralBonusBalance') {
+        const gamesWon = getGamesWonCount(player);
+        if (gamesWon < 10) {
+          await bot.sendMessage(
+            chatId,
+            `❌ *Referral Bonus Locked*\n\nYou need at least *10 games won* to withdraw referral bonus.\n` +
+              `Current wins: *${gamesWon}/10*.`,
+            { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+          );
+          return;
+        }
       }
 
-    }
-
-    lastPromoDate = today;
-    lastPromoHour = now.hour;
-
-    console.log('✅ Promo broadcast completed');
-
-  } catch (error) {
-
-    console.error(
-      '❌ PROMO BROADCAST ERROR:',
-      error
-    );
-
-  }
-
-  }, 30 * 1000);
-
-
-// ============================================================
-// WITHDRAWAL APOLOGY BROADCAST
-// SENDS ONLY 2 TIMES: 10:00 AM AND 10:00 PM ETHIOPIA TIME
-// ============================================================
-
-const withdrawalApologyMessage = `
-🙏 ይቅርታ ውድ የEdel Bingo ተጫዋቾች
-
-በአሁኑ ጊዜ የWithdrawal አገልግሎታችን ላይ ጊዜያዊ ችግር እየተከሰተ ስለሆነ የWithdrawal ጥያቄዎችን ለጊዜው መቀበል አቁመናል።
-
-🙏 ለሚያደርስባችሁ እንግልት በጣም እንጠይቃለን።
-
-🔧 ችግሩን ለመፍታት እየሰራን ነው።
-✅ አገልግሎቱ እንደተመለሰ እናሳውቃችኋለን።
-
-❤️ ስለ ትዕግስታችሁና ስለ ትብብራችሁ እናመሰግናለን።
-
-Edel Bingo — መልካም ጨዋታ!
-`;
-
-let withdrawalApologyPostsSent = 0;
-
-setInterval(async () => {
-
-  try {
-
-    // STOP FOREVER AFTER 2 POSTS
-    if (withdrawalApologyPostsSent >= 2) {
-      return;
-    }
-
-    const now = getEthiopiaTimeParts();
-
-    // ONLY RUN AT 10:00 AM OR 10:00 PM ETHIOPIA TIME
-    if (
-      now.minute !== 0 ||
-      (now.hour !== 10 && now.hour !== 22)
-    ) {
-      return;
-    }
-
-    console.log(
-      `🙏 Sending withdrawal apology post #${withdrawalApologyPostsSent + 1} at ${now.hour}:00`
-    );
-
-    // --------------------------------------------------------
-    // SEND TO BOT USERS
-    // --------------------------------------------------------
-
-    for (const chatId of Object.keys(broadcastUsers)) {
-
-      try {
-
+      const available = player ? player[source] || 0 : 0;
+      if (available <= 0) {
         await bot.sendMessage(
           chatId,
-          withdrawalApologyMessage
+          `❌ You have 0.00 Br in this balance.`,
+          { reply_markup: getMainMenuKeyboard() }
         );
-
-      } catch (error) {
-
-        console.error(
-          `❌ Could not send withdrawal apology to ${chatId}:`,
-          error.message
-        );
-
-      }
-
-    }
-
-    // Count the post ONLY after the broadcast attempt
-    withdrawalApologyPostsSent++;
-
-    console.log(
-      `✅ Withdrawal apology broadcast #${withdrawalApologyPostsSent} completed`
-    );
-
-  } catch (error) {
-
-    console.error(
-      '❌ WITHDRAWAL APOLOGY BROADCAST ERROR:',
-      error
-    );
-
-  }
-
-}, 30 * 1000);
-
-// ============================================================
-// PRIVATE SUPPORT SYSTEM
-// ============================================================
-
-if (supportBot) {
-
-  // Player starts support
-  supportBot.onText(/\/start/, async (msg) => {
-    await supportBot.sendMessage(
-      msg.chat.id,
-      '👋 Welcome to እድል Bingo Support.\n\nSend your question here. Only the support admin can see your messages.'
-    );
-  });
-
-  // Handle all support messages
-  supportBot.on('message', async (msg) => {
-    try {
-      if (!msg.chat || !msg.from) return;
-
-      const playerId = String(msg.from.id);
-
-      // Admin replying to a player's message
-      if (playerId === String(ADMIN_ID)) {
-
-        if (!msg.reply_to_message) return;
-
-        const adminMessageId = String(
-          msg.reply_to_message.message_id
-        );
-
-        const snapshot = await db
-          .ref(`supportMessages/${adminMessageId}`)
-          .once('value');
-
-        const ticket = snapshot.val();
-
-        if (!ticket || !ticket.playerId) return;
-
-        await supportBot.copyMessage(
-          ticket.playerId,
-          msg.chat.id,
-          msg.message_id
-        );
-
         return;
       }
 
-      // Ignore commands other than /start
-      if (msg.text && msg.text.startsWith('/')) return;
-
-      // Forward player's message privately to admin
-      const forwarded = await supportBot.forwardMessage(
-        ADMIN_ID,
-        msg.chat.id,
-        msg.message_id
-      );
-
-      // Save connection between admin message and player
-      await db.ref(`supportMessages/${forwarded.message_id}`).set({
-        playerId,
-        username: msg.from.username || '',
-        firstName: msg.from.first_name || '',
-        createdAt: Date.now()
+      setSession(userId, {
+        action: 'withdrawal',
+        step: 'AWAITING_AMOUNT',
+        data: { source, available }
       });
 
-      await supportBot.sendMessage(
-        msg.chat.id,
-        '✅ Your message has been sent to support. We will reply here.'
+      await bot.sendMessage(
+        chatId,
+        `💸 *Withdrawal from ${source === 'balance' ? 'Main Balance' : 'Referral Bonus'}*\n\n` +
+          `Available: *${formatCurrency(available)}*\n\n` +
+          `Please enter the **amount in Birr** you wish to withdraw:`,
+        { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_withdraw') }
       );
-
-    } catch (error) {
-      console.error('❌ Support bot error:', error);
+      return;
     }
-  });
 
-  console.log('✅ Private Support Bot started');
-}
+    // --- TRANSFER CONFIRMATION ---
+    if (data === 'confirm_transfer') {
+      await executeTransfer(chatId, userId);
+      return;
+    }
 
-module.exports = { bot, processGatewaySMS };
+    // --- ADMIN ACTIONS (SECURED) ---
+    if (data.startsWith('admin_approve_') || data.startsWith('admin_reject_')) {
+      if (String(userId) !== String(ADMIN_ID)) {
+        console.warn(`[UNAUTHORIZED ACCESS] Attempt by user ${userId} to trigger admin callback.`);
+        await bot.answerCallbackQuery(query.id, {
+          text: '⛔ Unauthorized. Admin access only.',
+          show_alert: true
+        });
+        return;
+      }
+
+      const isApprove = data.startsWith('admin_approve_');
+      const txId = data.replace(isApprove ? 'admin_approve_' : 'admin_reject_', '');
+
+      await handleAdminWithdrawalAction(chatId, userId, txId, isApprove);
+      return;
+    }
+  } catch (err) {
+    console.error('[Callback Error]', err);
+  }
+});
+
+// ==========================================
+// 12. TEXT & SESSION MESSAGE HANDLER
+// ==========================================
+
+bot.on('message', async (msg) => {
+  // Ignore command messages here (handled by onText)
+  if (!msg.text || msg.text.startsWith('/')) {
+    return;
+  }
+
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  const text = msg.text.trim();
+
+  const session = getSession(userId);
+  if (!session) {
+    return;
+  }
+
+  try {
+    // --- 1. DEPOSIT FLOW ---
+    if (session.action === 'deposit' && session.step === 'AWAITING_SMS') {
+      await processDepositSMS(chatId, userId, text);
+      return;
+    }
+
+    // --- 2. WITHDRAWAL FLOW ---
+    if (session.action === 'withdrawal') {
+      if (session.step === 'AWAITING_AMOUNT') {
+        const amount = parseFloat(text);
+        if (isNaN(amount) || amount <= 0) {
+          await bot.sendMessage(
+            chatId,
+            '⚠️ Please enter a valid positive number for the amount.',
+            { reply_markup: getCancelKeyboard('cancel_withdraw') }
+          );
+          return;
+        }
+
+        if (amount > session.data.available) {
+          await bot.sendMessage(
+            chatId,
+            `⚠️ Amount exceeds available balance (${formatCurrency(session.data.available)}). Please enter a smaller amount:`,
+            { reply_markup: getCancelKeyboard('cancel_withdraw') }
+          );
+          return;
+        }
+
+        session.data.amount = amount;
+        session.step = 'AWAITING_ACCOUNT_INFO';
+        setSession(userId, session);
+
+        await bot.sendMessage(
+          chatId,
+          `🏦 *Receiving Account Information*\n\n` +
+            `Please enter your **Telebirr or CBE account/phone number** where you want to receive the ${formatCurrency(amount)}:`,
+          { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_withdraw') }
+        );
+        return;
+      }
+
+      if (session.step === 'AWAITING_ACCOUNT_INFO') {
+        session.data.accountInfo = text;
+        session.data.method = text.length <= 13 && /^[0-9+]+$/.test(text) ? 'Telebirr' : 'CBE/Bank';
+        await createWithdrawalRequest(chatId, userId);
+        return;
+      }
+    }
+
+    // --- 3. TRANSFER FLOW ---
+    if (session.action === 'transfer') {
+      if (session.step === 'AWAITING_RECIPIENT_PHONE') {
+        const normalized = normalizeEthiopianPhone(text);
+        if (!normalized) {
+          await bot.sendMessage(
+            chatId,
+            '⚠️ *Invalid phone number format*\n\nPlease enter a valid Ethiopian phone number (e.g. 0912345678 or 251912345678):',
+            { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_transfer') }
+          );
+          return;
+        }
+
+        // Find recipient in database
+        const recipient = await findActivePlayerByPhone(normalized);
+
+        if (!recipient) {
+          await bot.sendMessage(
+            chatId,
+            `❌ No ZA Bingo player found registered with phone \`${formatPhoneDisplay(normalized)}\`.\n` +
+              `Please ensure your friend has started @ZA_Bingo_Bot.`,
+            { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_transfer') }
+          );
+          return;
+        }
+
+        if (String(recipient.telegramId) === String(userId)) {
+          await bot.sendMessage(
+            chatId,
+            `❌ You cannot transfer funds to yourself.`,
+            { reply_markup: getMainMenuKeyboard() }
+          );
+          clearSession(userId);
+          return;
+        }
+
+        session.data.recipientId = recipient.telegramId;
+        session.data.recipientPhone = normalized;
+        session.data.recipientName = recipient.firstName || 'Player';
+        session.step = 'AWAITING_TRANSFER_AMOUNT';
+        setSession(userId, session);
+
+        await bot.sendMessage(
+          chatId,
+          `👤 *Recipient:* ${session.data.recipientName} (\`${formatPhoneDisplay(normalized)}\`)\n\n` +
+            `Please enter the amount in Birr to transfer *(Minimum 10 Br)*:`,
+          { parse_mode: 'Markdown', reply_markup: getCancelKeyboard('cancel_transfer') }
+        );
+        return;
+      }
+
+      if (session.step === 'AWAITING_TRANSFER_AMOUNT') {
+        const amount = parseFloat(text);
+        if (isNaN(amount) || amount < 10) {
+          await bot.sendMessage(
+            chatId,
+            '⚠️ Minimum transfer amount is 10 Br. Please enter 10 or more:',
+            { reply_markup: getCancelKeyboard('cancel_transfer') }
+          );
+          return;
+        }
+
+        const sender = await getPlayer(userId);
+        const senderBalance = sender ? sender.balance || 0 : 0;
+
+        if (amount > senderBalance) {
+          await bot.sendMessage(
+            chatId,
+            `❌ *Insufficient Balance*\n\nYour balance: ${formatCurrency(senderBalance)}\nRequired: ${formatCurrency(amount)}`,
+            { parse_mode: 'Markdown', reply_markup: getMainMenuKeyboard() }
+          );
+          clearSession(userId);
+          return;
+        }
+
+        session.data.amount = amount;
+        session.step = 'CONFIRMATION';
+        setSession(userId, session);
+
+        await bot.sendMessage(
+          chatId,
+          `⚠️ *Confirm Transfer*\n\n` +
+            `👤 *Recipient:* ${session.data.recipientName}\n` +
+            `📱 *Phone:* \`${formatPhoneDisplay(session.data.recipientPhone)}\`\n` +
+            `💸 *Amount:* ${formatCurrency(amount)}\n\n` +
+            `Are you sure you want to proceed?`,
+          {
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '✅ Confirm & Send', callback_data: 'confirm_transfer' }],
+                [{ text: '❌ Cancel', callback_data: 'cancel_transfer' }]
+              ]
+            }
+          }
+        );
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('[Message Handler Error]', error);
+    await bot.sendMessage(chatId, '❌ An unexpected error occurred. Please try again later.');
+  }
+});
+
+// ==========================================
+// 13. PROCESS ERROR HANDLING & CLEAN EXIT
+// ==========================================
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]', err);
+});
+
+console.log('[ZA Bingo Bot] Initialized successfully and listening for events.');
+
+module.exports = bot;
